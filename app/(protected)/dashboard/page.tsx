@@ -1,12 +1,37 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
+import { ProjectList } from '@/components/projects/ProjectList';
+import { getUserProjects } from '@/lib/firestore/projects';
+import { Project } from '@/types/project';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProjects() {
+      if (!currentUser) return;
+
+      try {
+        setLoading(true);
+        const userProjects = await getUserProjects(currentUser.uid, { limitCount: 6 });
+        setProjects(userProjects);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProjects();
+  }, [currentUser]);
 
   return (
     <div className="space-y-8">
@@ -49,6 +74,25 @@ export default function DashboardPage() {
             </Link>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Recent Projects */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">Recent Projects</h2>
+          <Link href="/projects/new">
+            <Button variant="primary" className="text-sm">
+              New Project
+            </Button>
+          </Link>
+        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        ) : (
+          <ProjectList projects={projects} emptyMessage="No projects yet. Create your first project to get started!" />
+        )}
       </div>
 
       {/* Stats Overview */}
