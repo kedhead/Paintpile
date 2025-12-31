@@ -24,10 +24,12 @@ export const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(100, 'Name is too long'),
   description: z.string().max(500, 'Description is too long').optional(),
   type: z.enum(['warhammer', 'd&d', 'historical', 'other'], {
-    errorMap: () => ({ message: 'Please select a project type' }),
+    required_error: 'Please select a project type',
+    invalid_type_error: 'Please select a project type',
   }),
   status: z.enum(['not-started', 'in-progress', 'completed'], {
-    errorMap: () => ({ message: 'Please select a status' }),
+    required_error: 'Please select a status',
+    invalid_type_error: 'Please select a status',
   }),
   startDate: z.date().optional(),
 });
