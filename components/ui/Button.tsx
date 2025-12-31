@@ -13,12 +13,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        'bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-500 active:bg-orange-700',
+        'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500 active:bg-primary-700',
       secondary:
-        'bg-white text-orange-500 border-2 border-orange-500 hover:bg-orange-50 focus:ring-orange-500',
+        'bg-white text-secondary-500 border-2 border-secondary-500 hover:bg-secondary-50 focus:ring-secondary-500',
       ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
       danger:
-        'bg-rose-500 text-white hover:bg-rose-600 focus:ring-rose-500 active:bg-rose-700',
+        'bg-accent-500 text-white hover:bg-accent-600 focus:ring-accent-500 active:bg-accent-700',
     };
 
     const sizeStyles = 'px-6 py-2.5 text-base';

@@ -55,28 +55,28 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Stats</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-gradient-to-br from-orange-50 to-amber-50">
+          <Card className="bg-gradient-to-br from-primary-50 to-purple-50">
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-orange-500">0</div>
+                <div className="text-4xl font-bold text-primary-500">0</div>
                 <div className="mt-2 text-sm font-medium text-gray-600">Projects</div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-orange-50">
+          <Card className="bg-gradient-to-br from-secondary-50 to-blue-50">
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-amber-500">0</div>
+                <div className="text-4xl font-bold text-secondary-500">0</div>
                 <div className="mt-2 text-sm font-medium text-gray-600">Photos</div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-rose-50 to-orange-50">
+          <Card className="bg-gradient-to-br from-accent-50 to-red-50">
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-rose-500">0</div>
+                <div className="text-4xl font-bold text-accent-500">0</div>
                 <div className="mt-2 text-sm font-medium text-gray-600">Unpainted</div>
               </div>
             </CardContent>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-600 font-bold">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary-100 text-primary-600 font-bold">
                   1
                 </div>
               </div>
@@ -107,7 +107,7 @@ export default function DashboardPage() {
 
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 text-amber-600 font-bold">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-secondary-100 text-secondary-600 font-bold">
                   2
                 </div>
               </div>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-rose-100 text-rose-600 font-bold">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-success-100 text-success-600 font-bold">
                   3
                 </div>
               </div>

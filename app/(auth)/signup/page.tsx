@@ -64,7 +64,7 @@ export default function SignupPage() {
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+          <div className="mb-4 p-3 rounded-lg bg-accent-50 border border-accent-200 text-accent-700 text-sm">
             {error}
           </div>
         )}
@@ -149,7 +149,7 @@ export default function SignupPage() {
 
         <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link href="/login" className="text-orange-500 hover:text-orange-600 font-medium">
+          <Link href="/login" className="text-primary-500 hover:text-primary-600 font-medium">
             Log in
           </Link>
         </div>

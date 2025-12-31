@@ -49,31 +49,31 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/dashboard" className="text-2xl font-bold text-gray-900">
-                Paint<span className="text-orange-500">Pile</span>
+                Paint<span className="text-primary-500">Pile</span>
               </Link>
 
               <div className="hidden md:ml-10 md:flex md:space-x-8">
                 <Link
                   href="/dashboard"
-                  className="text-gray-700 hover:text-orange-500 px-3 py-2 text-sm font-medium transition"
+                  className="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium transition"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/projects/new"
-                  className="text-gray-700 hover:text-orange-500 px-3 py-2 text-sm font-medium transition"
+                  className="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium transition"
                 >
                   Projects
                 </Link>
                 <Link
                   href="/pile"
-                  className="text-gray-700 hover:text-orange-500 px-3 py-2 text-sm font-medium transition"
+                  className="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium transition"
                 >
                   Pile of Shame
                 </Link>
                 <Link
                   href="/profile"
-                  className="text-gray-700 hover:text-orange-500 px-3 py-2 text-sm font-medium transition"
+                  className="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium transition"
                 >
                   Profile
                 </Link>

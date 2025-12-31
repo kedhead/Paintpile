@@ -60,7 +60,7 @@ export default function LoginPage() {
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+          <div className="mb-4 p-3 rounded-lg bg-accent-50 border border-accent-200 text-accent-700 text-sm">
             {error}
           </div>
         )}
@@ -128,7 +128,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center text-sm text-gray-600">
           Don't have an account?{' '}
-          <Link href="/signup" className="text-orange-500 hover:text-orange-600 font-medium">
+          <Link href="/signup" className="text-primary-500 hover:text-primary-600 font-medium">
             Sign up
           </Link>
         </div>

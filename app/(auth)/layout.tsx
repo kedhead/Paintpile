@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   // Show loading spinner while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <Spinner size="lg" />
       </div>
     );
@@ -31,13 +31,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Paint<span className="text-orange-500">Pile</span>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            Paint<span className="text-primary-400">Pile</span>
           </h1>
-          <p className="text-gray-600">Your miniature painting journal</p>
+          <p className="text-gray-300">Your miniature painting journal</p>
         </div>
         {children}
       </div>

@@ -28,15 +28,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           className={cn(
             'block w-full rounded-lg border px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1',
             error
-              ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500'
-              : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500',
+              ? 'border-accent-300 focus:border-accent-500 focus:ring-accent-500'
+              : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500',
             'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
             className
           )}
           {...props}
         />
         {error && (
-          <p className="mt-1.5 text-sm text-rose-600" role="alert">
+          <p className="mt-1.5 text-sm text-accent-600" role="alert">
             {error}
           </p>
         )}
