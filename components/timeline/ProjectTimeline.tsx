@@ -104,7 +104,7 @@ export function ProjectTimeline({ projectId }: ProjectTimelineProps) {
       </CardHeader>
       <CardContent>
         {events.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
+          <div className="text-center text-muted-foreground py-8">
             <p>No timeline events yet.</p>
             <p className="text-sm mt-2">
               Events will appear here as you work on your project.
@@ -115,8 +115,8 @@ export function ProjectTimeline({ projectId }: ProjectTimelineProps) {
             {groupedEvents.map((group, groupIdx) => (
               <div key={groupIdx}>
                 {/* Date Header */}
-                <div className="sticky top-0 bg-gray-50 px-3 py-2 rounded-lg mb-4">
-                  <h3 className="text-sm font-semibold text-gray-700">
+                <div className="sticky top-0 bg-card border border-border px-3 py-2 rounded-lg mb-4">
+                  <h3 className="text-sm font-semibold text-foreground">
                     {group.date}
                   </h3>
                 </div>
@@ -124,7 +124,7 @@ export function ProjectTimeline({ projectId }: ProjectTimelineProps) {
                 {/* Events for this date */}
                 <div className="relative">
                   {/* Vertical line */}
-                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200" />
+                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-border" />
 
                   {/* Events */}
                   <div className="space-y-0">

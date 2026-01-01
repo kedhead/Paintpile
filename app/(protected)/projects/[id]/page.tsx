@@ -228,14 +228,10 @@ export default function ProjectDetailPage() {
           <div className="lg:col-span-2">
             <div className="relative aspect-[4/3] bg-muted rounded-xl overflow-hidden border border-border">
               {photos.length > 0 ? (
-                <PhotoGallery
-                  photos={photos}
-                  projectId={projectId}
-                  userId={currentUser?.uid}
-                  onDelete={isOwner ? handleDeletePhoto : undefined}
-                  onPhotoUpdate={loadPhotos}
-                  canDelete={isOwner}
-                  canAnnotate={isOwner}
+                <img
+                  src={photos[0].url}
+                  alt={photos[0].caption || project.name}
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -252,6 +248,16 @@ export default function ProjectDetailPage() {
                 </div>
               )}
             </div>
+            {/* Upload more photos button */}
+            {isOwner && photos.length > 0 && (
+              <div className="mt-4">
+                <PhotoUpload
+                  userId={currentUser!.uid}
+                  projectId={projectId}
+                  onUploadComplete={loadPhotos}
+                />
+              </div>
+            )}
           </div>
 
           {/* Sidebar - Project Info */}
@@ -343,7 +349,28 @@ export default function ProjectDetailPage() {
 
             {/* Progress Log Tab */}
             <TabsContent value="log" className="mt-0">
-              <ProjectTimeline projectId={projectId} />
+              <div className="space-y-6">
+                {/* Photo Gallery */}
+                {photos.length > 0 && (
+                  <div>
+                    <h3 className="font-display font-bold mb-4">Project Photos ({photos.length})</h3>
+                    <PhotoGallery
+                      photos={photos}
+                      projectId={projectId}
+                      userId={currentUser?.uid}
+                      onDelete={isOwner ? handleDeletePhoto : undefined}
+                      onPhotoUpdate={loadPhotos}
+                      canDelete={isOwner}
+                      canAnnotate={isOwner}
+                    />
+                  </div>
+                )}
+
+                {/* Timeline */}
+                <div>
+                  <ProjectTimeline projectId={projectId} />
+                </div>
+              </div>
             </TabsContent>
 
             {/* Palette & Recipes Tab */}
