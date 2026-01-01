@@ -13,7 +13,8 @@ import { PileItem } from '@/types/pile';
  * Field mapping:
  * - notes → description
  * - quantity → quantity
- * - tags: ['shame']
+ * - type → converted to tag (e.g., 'warhammer', 'd&d')
+ * - tags: ['shame', pile.type]
  */
 export async function migratePileToProjects(): Promise<{
   success: number;
@@ -61,6 +62,11 @@ export async function migratePileToProjects(): Promise<{
         }
 
         // Create project document with same ID as pile item for traceability
+n        // Convert type to tag and add shame tag
+        const tags = ["shame"];
+        if (pileItem.type) {
+          tags.push(pileItem.type);
+        }
         const projectsRef = collection(db, 'projects');
         const newProjectRef = doc(projectsRef);
 
@@ -69,10 +75,9 @@ export async function migratePileToProjects(): Promise<{
           userId: pileItem.userId,
           name: pileItem.name,
           description: pileItem.notes || '',
-          type: pileItem.type,
           status: projectStatus,
           quantity: pileItem.quantity,
-          tags: ['shame'],
+          tags,
           startDate: null,
           createdAt: pileItem.createdAt || serverTimestamp(),
           updatedAt: serverTimestamp(),

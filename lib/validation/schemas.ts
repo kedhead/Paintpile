@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/utils/constants';
+import { PROJECT_STATUSES } from '@/lib/utils/constants';
 
 // Authentication Schemas
 export const loginSchema = z.object({
@@ -23,10 +23,6 @@ export const signupSchema = z
 export const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(100, 'Name is too long'),
   description: z.string().max(500, 'Description is too long').optional(),
-  type: z.enum(['warhammer', 'd&d', 'historical', 'other'], {
-    required_error: 'Please select a project type',
-    invalid_type_error: 'Please select a project type',
-  }),
   status: z.enum(['not-started', 'in-progress', 'completed'], {
     required_error: 'Please select a status',
     invalid_type_error: 'Please select a status',

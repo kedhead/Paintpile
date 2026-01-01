@@ -1,14 +1,12 @@
 import { Timestamp } from 'firebase/firestore';
 
 export type ProjectStatus = 'not-started' | 'in-progress' | 'completed';
-export type ProjectType = 'warhammer' | 'd&d' | 'historical' | 'other';
 
 export interface Project {
   projectId: string;
   userId: string;
   name: string;
   description?: string;
-  type: ProjectType;
   status: ProjectStatus;
   quantity?: number;
   tags: string[];
@@ -23,7 +21,6 @@ export interface Project {
 export interface ProjectFormData {
   name: string;
   description?: string;
-  type: ProjectType;
   status: ProjectStatus;
   quantity?: number;
   tags?: string[];

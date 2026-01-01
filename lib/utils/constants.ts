@@ -1,14 +1,6 @@
-import { ProjectType, ProjectStatus } from '@/types/project';
+import { ProjectStatus } from '@/types/project';
 import { PaintType } from '@/types/paint';
 import { PileStatus, PileType } from '@/types/pile';
-
-// Project Types
-export const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
-  { value: 'warhammer', label: 'Warhammer' },
-  { value: 'd&d', label: 'D&D' },
-  { value: 'historical', label: 'Historical' },
-  { value: 'other', label: 'Other' },
-];
 
 // Project Status Options
 export const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
@@ -19,7 +11,10 @@ export const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
 
 // Project Tags
 export const TAG_SHAME = 'shame';
-export const PROJECT_TAGS = [
+
+// Suggested tags for projects (users can also create custom tags)
+export const SUGGESTED_TAGS = [
+  // Status/Purpose Tags
   'shame',
   'commission',
   'personal',
@@ -27,6 +22,28 @@ export const PROJECT_TAGS = [
   'competition',
   'tutorial',
   'showcase',
+  
+  // Game System Tags  
+  'warhammer',
+  'warhammer-40k',
+  'age-of-sigmar',
+  'd&d',
+  'pathfinder',
+  'historical',
+  'star-wars',
+  'board-game',
+  
+  // Model Type Tags
+  'infantry',
+  'vehicle',
+  'monster',
+  'terrain',
+  'character',
+  
+  // Other
+  'custom',
+  'kitbash',
+  'conversion',
 ] as const;
 
 // Pile Types

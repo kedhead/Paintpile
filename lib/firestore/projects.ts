@@ -35,7 +35,6 @@ export async function createProject(
     userId,
     name: projectData.name,
     description: projectData.description || '',
-    type: projectData.type,
     status: projectData.status,
     quantity: projectData.quantity || 1,
     tags: projectData.tags || [],
