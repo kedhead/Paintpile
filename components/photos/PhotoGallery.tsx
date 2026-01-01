@@ -4,19 +4,31 @@ import { useState, useEffect } from 'react';
 import { Photo } from '@/types/photo';
 import { Paint } from '@/types/paint';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
+import { PhotoAnnotator } from '@/components/annotations/PhotoAnnotator';
 
 interface PhotoGalleryProps {
   photos: Photo[];
+  projectId?: string;
   onDelete?: (photoId: string) => void;
+  onPhotoUpdate?: () => void;
   canDelete?: boolean;
+  canAnnotate?: boolean;
 }
 
-export function PhotoGallery({ photos, onDelete, canDelete = false }: PhotoGalleryProps) {
+export function PhotoGallery({
+  photos,
+  projectId,
+  onDelete,
+  onPhotoUpdate,
+  canDelete = false,
+  canAnnotate = false,
+}: PhotoGalleryProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [annotatingPhoto, setAnnotatingPhoto] = useState<Photo | null>(null);
   const [photoPaints, setPhotoPaints] = useState<Record<string, Paint[]>>({});
 
   useEffect(() => {
@@ -135,12 +147,52 @@ export function PhotoGallery({ photos, onDelete, canDelete = false }: PhotoGalle
                   />
                 </div>
               )}
+
+              {/* Annotations info */}
+              {selectedPhoto.annotations && selectedPhoto.annotations.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {selectedPhoto.annotations.length} annotation{selectedPhoto.annotations.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                {canAnnotate && projectId && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setAnnotatingPhoto(selectedPhoto);
+                      setSelectedPhoto(null);
+                    }}
+                  >
+                    <Palette className="h-4 w-4 mr-1" />
+                    {selectedPhoto.annotations && selectedPhoto.annotations.length > 0 ? 'Edit' : 'Add'} Annotations
+                  </Button>
+                )}
+              </div>
+
               <p className="text-sm text-gray-500">
                 Uploaded {formatRelativeTime(selectedPhoto.createdAt)}
               </p>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Photo Annotator */}
+      {annotatingPhoto && projectId && (
+        <PhotoAnnotator
+          photo={annotatingPhoto}
+          projectId={projectId}
+          onClose={() => setAnnotatingPhoto(null)}
+          onUpdate={() => {
+            if (onPhotoUpdate) {
+              onPhotoUpdate();
+            }
+          }}
+        />
       )}
     </>
   );

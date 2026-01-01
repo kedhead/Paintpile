@@ -9,9 +9,12 @@ import {
   serverTimestamp,
   updateDoc,
   increment,
+  getDoc,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
-import { Photo } from '@/types/photo';
+import { Photo, PhotoAnnotation } from '@/types/photo';
 import { incrementUserStats } from './users';
 
 /**
@@ -104,4 +107,84 @@ export async function updatePhotoCaption(
 ): Promise<void> {
   const photoRef = doc(db, 'projects', projectId, 'photos', photoId);
   await updateDoc(photoRef, { caption });
+}
+
+/**
+ * Add an annotation to a photo
+ */
+export async function addAnnotationToPhoto(
+  projectId: string,
+  photoId: string,
+  annotation: PhotoAnnotation
+): Promise<void> {
+  const photoRef = doc(db, 'projects', projectId, 'photos', photoId);
+  await updateDoc(photoRef, {
+    annotations: arrayUnion(annotation),
+  });
+}
+
+/**
+ * Update an annotation on a photo
+ */
+export async function updateAnnotation(
+  projectId: string,
+  photoId: string,
+  annotationId: string,
+  updates: Partial<PhotoAnnotation>
+): Promise<void> {
+  const photoRef = doc(db, 'projects', projectId, 'photos', photoId);
+  const photoSnap = await getDoc(photoRef);
+
+  if (!photoSnap.exists()) {
+    throw new Error('Photo not found');
+  }
+
+  const photo = photoSnap.data() as Photo;
+  const annotations = photo.annotations || [];
+
+  const updatedAnnotations = annotations.map((ann) =>
+    ann.id === annotationId ? { ...ann, ...updates } : ann
+  );
+
+  await updateDoc(photoRef, {
+    annotations: updatedAnnotations,
+  });
+}
+
+/**
+ * Delete an annotation from a photo
+ */
+export async function deleteAnnotation(
+  projectId: string,
+  photoId: string,
+  annotationId: string
+): Promise<void> {
+  const photoRef = doc(db, 'projects', projectId, 'photos', photoId);
+  const photoSnap = await getDoc(photoRef);
+
+  if (!photoSnap.exists()) {
+    throw new Error('Photo not found');
+  }
+
+  const photo = photoSnap.data() as Photo;
+  const annotations = photo.annotations || [];
+
+  const updatedAnnotations = annotations.filter((ann) => ann.id !== annotationId);
+
+  await updateDoc(photoRef, {
+    annotations: updatedAnnotations,
+  });
+}
+
+/**
+ * Move an annotation to a new position
+ */
+export async function moveAnnotation(
+  projectId: string,
+  photoId: string,
+  annotationId: string,
+  x: number,
+  y: number
+): Promise<void> {
+  await updateAnnotation(projectId, photoId, annotationId, { x, y });
 }

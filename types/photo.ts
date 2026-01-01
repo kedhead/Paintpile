@@ -11,6 +11,23 @@ export interface Photo {
   createdAt: Timestamp;
   width: number;
   height: number;
+  annotations?: PhotoAnnotation[];
+}
+
+export interface PhotoAnnotation {
+  id: string;
+  x: number;                    // X coordinate (percentage 0-100)
+  y: number;                    // Y coordinate (percentage 0-100)
+  label: string;                // "Hat", "Skin", "Jacket"
+  recipeId?: string;            // Optional link to saved recipe
+  paints: AnnotationPaint[];    // Paints for this area
+}
+
+export interface AnnotationPaint {
+  paintId: string;
+  role: 'base' | 'highlight' | 'shadow';
+  ratio?: string;
+  notes?: string;
 }
 
 export interface PhotoUpload {

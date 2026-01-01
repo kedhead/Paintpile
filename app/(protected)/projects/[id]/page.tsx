@@ -300,8 +300,11 @@ export default function ProjectDetailPage() {
           ) : (
             <PhotoGallery
               photos={photos}
+              projectId={projectId}
               onDelete={isOwner ? handleDeletePhoto : undefined}
+              onPhotoUpdate={loadPhotos}
               canDelete={isOwner}
+              canAnnotate={isOwner}
             />
           )}
         </CardContent>
