@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Project } from '@/types/project';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/utils/constants';
+import { PROJECT_STATUSES } from '@/lib/utils/constants';
 
 interface ProjectListProps {
   projects: Project[];
@@ -28,7 +28,6 @@ export function ProjectList({ projects, emptyMessage = 'No projects yet' }: Proj
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {projects.map((project) => {
-        const projectType = PROJECT_TYPES.find((t) => t.value === project.type)?.label || project.type;
         const projectStatus = PROJECT_STATUSES.find((s) => s.value === project.status)?.label || project.status;
 
         return (
@@ -37,10 +36,11 @@ export function ProjectList({ projects, emptyMessage = 'No projects yet' }: Proj
               <CardHeader>
                 <CardTitle className="text-lg line-clamp-2">{project.name}</CardTitle>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                    {projectType}
-                  </span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  {project.tags?.map((tag) => (
+                    <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                      {tag}
+                    </span>
+                  ))}
                     project.status === 'completed' ? 'bg-success-100 text-success-700' :
                     project.status === 'in-progress' ? 'bg-secondary-100 text-secondary-700' :
                     'bg-gray-100 text-gray-700'

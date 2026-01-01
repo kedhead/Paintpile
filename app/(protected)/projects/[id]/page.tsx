@@ -14,7 +14,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { formatDate } from '@/lib/utils/formatters';
-import { PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/utils/constants';
+import { PROJECT_STATUSES } from '@/lib/utils/constants';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -140,7 +140,6 @@ export default function ProjectDetailPage() {
   }
 
   const isOwner = project.userId === currentUser?.uid;
-  const projectType = PROJECT_TYPES.find((t) => t.value === project.type)?.label || project.type;
   const projectStatus = PROJECT_STATUSES.find((s) => s.value === project.status)?.label || project.status;
 
   return (
@@ -152,9 +151,11 @@ export default function ProjectDetailPage() {
             <div>
               <CardTitle className="text-3xl">{project.name}</CardTitle>
               <div className="mt-2 flex flex-wrap gap-2">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-700">
-                  {projectType}
-                </span>
+                {project.tags?.map((tag) => (
+                  <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-700">
+                    {tag}
+                  </span>
+                ))}
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                   project.status === 'completed' ? 'bg-success-100 text-success-700' :
                   project.status === 'in-progress' ? 'bg-secondary-100 text-secondary-700' :
