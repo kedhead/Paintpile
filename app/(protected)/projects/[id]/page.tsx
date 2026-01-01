@@ -13,8 +13,14 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
+import { ProjectPaintLibrary } from '@/components/paints/ProjectPaintLibrary';
+import { RecipeCard } from '@/components/recipes/RecipeCard';
+import { RecipeEditor } from '@/components/recipes/RecipeEditor';
+import { TechniqueList } from '@/components/techniques/TechniqueList';
 import { formatDate } from '@/lib/utils/formatters';
 import { PROJECT_STATUSES } from '@/lib/utils/constants';
+import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRecipe } from '@/lib/firestore/paint-recipes';
+import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -24,10 +30,14 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [recipes, setRecipes] = useState<PaintRecipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
+  const [loadingRecipes, setLoadingRecipes] = useState(true);
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showRecipeEditor, setShowRecipeEditor] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<PaintRecipe | null>(null);
 
   useEffect(() => {
     async function loadProject() {
@@ -58,6 +68,7 @@ export default function ProjectDetailPage() {
     if (currentUser) {
       loadProject();
       loadPhotos();
+      loadRecipes();
     }
   }, [projectId, currentUser]);
 
@@ -70,6 +81,18 @@ export default function ProjectDetailPage() {
       console.error('Error loading photos:', err);
     } finally {
       setLoadingPhotos(false);
+    }
+  }
+
+  async function loadRecipes() {
+    try {
+      setLoadingRecipes(true);
+      const projectRecipes = await getProjectRecipes(projectId);
+      setRecipes(projectRecipes);
+    } catch (err) {
+      console.error('Error loading recipes:', err);
+    } finally {
+      setLoadingRecipes(false);
     }
   }
 
@@ -114,6 +137,46 @@ export default function ProjectDetailPage() {
       console.error('Error deleting photo:', err);
       alert('Failed to delete photo');
     }
+  }
+
+  async function handleSaveRecipe(data: PaintRecipeFormData) {
+    try {
+      if (editingRecipe) {
+        await updatePaintRecipe(projectId, editingRecipe.recipeId, data);
+      } else {
+        await createPaintRecipe(projectId, data);
+      }
+      await loadRecipes();
+      setShowRecipeEditor(false);
+      setEditingRecipe(null);
+    } catch (err) {
+      console.error('Error saving recipe:', err);
+      throw err;
+    }
+  }
+
+  async function handleDeleteRecipe(recipeId: string) {
+    if (!confirm('Delete this recipe? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await deletePaintRecipe(projectId, recipeId);
+      await loadRecipes();
+    } catch (err) {
+      console.error('Error deleting recipe:', err);
+      alert('Failed to delete recipe');
+    }
+  }
+
+  function handleEditRecipe(recipe: PaintRecipe) {
+    setEditingRecipe(recipe);
+    setShowRecipeEditor(true);
+  }
+
+  function handleCancelRecipeEditor() {
+    setShowRecipeEditor(false);
+    setEditingRecipe(null);
   }
 
   if (loading) {
@@ -244,18 +307,79 @@ export default function ProjectDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Paints Section (Placeholder) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Paints Used ({project.paintCount})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-gray-500 py-8">
-            <p>Paint tracking feature coming soon!</p>
-            <p className="text-sm mt-2">Track which paints you're using for this project.</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Paint Library Section */}
+      {isOwner && <ProjectPaintLibrary projectId={projectId} />}
+
+      {/* Paint Recipes Section */}
+      {isOwner && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Paint Recipes ({recipes.length})</CardTitle>
+              {!showRecipeEditor && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowRecipeEditor(true)}
+                >
+                  Create Recipe
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {showRecipeEditor ? (
+              <RecipeEditor
+                initialData={editingRecipe ? {
+                  name: editingRecipe.name,
+                  description: editingRecipe.description,
+                  paints: editingRecipe.paints,
+                } : undefined}
+                onSave={handleSaveRecipe}
+                onCancel={handleCancelRecipeEditor}
+              />
+            ) : loadingRecipes ? (
+              <div className="flex items-center justify-center py-12">
+                <Spinner size="lg" />
+              </div>
+            ) : recipes.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <p className="mb-4">No paint recipes yet.</p>
+                <p className="text-sm">Create recipes to track paint combinations for different areas.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {recipes.map((recipe) => (
+                  <div key={recipe.recipeId} className="relative">
+                    <RecipeCard recipe={recipe} />
+                    <div className="absolute top-3 right-3 flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditRecipe(recipe)}
+                        className="h-8 w-8 p-0"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteRecipe(recipe.recipeId)}
+                        className="h-8 w-8 p-0"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Techniques Section */}
+      {isOwner && <TechniqueList projectId={projectId} />}
     </div>
   );
 }
