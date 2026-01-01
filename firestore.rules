@@ -58,10 +58,18 @@ service cloud.firestore {
       }
     }
 
-    // Global paints database (read-only for users, admin-only write)
+    // Global paints database
     match /paints/{paintId} {
       allow read: if true;
-      allow write: if false; // Only admins can modify through Firebase Console or scripts
+      // Allow authenticated users to write (for seeding)
+      // In production, you may want to restrict this to specific admin users
+      allow write: if isAuthenticated();
+    }
+
+    // Pile collection (top-level)
+    match /pile/{pileId} {
+      allow read: if isOwner(resource.data.userId);
+      allow write: if isAuthenticated() && isOwner(request.resource.data.userId);
     }
   }
 }
