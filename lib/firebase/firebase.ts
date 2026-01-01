@@ -15,18 +15,14 @@ const firebaseConfig = {
 };
 
 // Validate that all required environment variables are present
-const requiredEnvVars = [
-  'NEXT_PUBLIC_FIREBASE_API_KEY',
-  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-  'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-  'NEXT_PUBLIC_FIREBASE_APP_ID',
-];
+const missingEnvVars = [];
 
-const missingEnvVars = requiredEnvVars.filter(
-  (varName) => !process.env[varName]
-);
+if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) missingEnvVars.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+if (!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) missingEnvVars.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) missingEnvVars.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+if (!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET) missingEnvVars.push('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET');
+if (!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID) missingEnvVars.push('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID');
+if (!process.env.NEXT_PUBLIC_FIREBASE_APP_ID) missingEnvVars.push('NEXT_PUBLIC_FIREBASE_APP_ID');
 
 if (missingEnvVars.length > 0) {
   console.warn(
