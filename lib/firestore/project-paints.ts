@@ -28,13 +28,17 @@ export async function addPaintToProject(
 ): Promise<void> {
   const paintRef = doc(db, 'projects', projectId, 'paints', paintId);
 
-  const paintDoc: ProjectPaint = {
+  const paintDoc: any = {
     paintId,
     projectId,
-    addedAt: serverTimestamp() as any,
-    notes,
+    addedAt: serverTimestamp(),
     usageCount: 0,
   };
+
+  // Only add notes if provided (Firestore doesn't allow undefined)
+  if (notes !== undefined) {
+    paintDoc.notes = notes;
+  }
 
   await setDoc(paintRef, paintDoc);
 
