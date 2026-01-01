@@ -6,18 +6,18 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProjectList } from '@/components/projects/ProjectList';
-import { getUserProjects } from '@/lib/firestore/projects';
+import { getUserProjects, getProjectsByTag } from '@/lib/firestore/projects';
 import { getUserProfile } from '@/lib/firestore/users';
-import { getPileStats } from '@/lib/firestore/pile';
 import { Project } from '@/types/project';
 import { User } from '@/types/user';
+import { TAG_SHAME } from '@/lib/utils/constants';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [pileStats, setPileStats] = useState<{ unpainted: number } | null>(null);
+  const [unpaintedCount, setUnpaintedCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,15 +28,20 @@ export default function DashboardPage() {
         setLoading(true);
 
         // Load all data in parallel
-        const [userProjects, profile, stats] = await Promise.all([
+        const [userProjects, profile, shameProjects] = await Promise.all([
           getUserProjects(currentUser.uid, { limitCount: 6 }),
           getUserProfile(currentUser.uid),
-          getPileStats(currentUser.uid),
+          getProjectsByTag(currentUser.uid, TAG_SHAME),
         ]);
 
         setProjects(userProjects);
         setUserProfile(profile);
-        setPileStats(stats);
+
+        // Calculate unpainted count from shame-tagged projects
+        const unpainted = shameProjects
+          .filter((p) => p.status === 'not-started')
+          .reduce((sum, p) => sum + (p.quantity || 1), 0);
+        setUnpaintedCount(unpainted);
       } catch (error) {
         console.error('Error loading dashboard:', error);
       } finally {
@@ -139,7 +144,7 @@ export default function DashboardPage() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <div className="text-4xl font-bold text-gray-600">
-                  {pileStats?.unpainted || 0}
+                  {unpaintedCount}
                 </div>
                 <div className="mt-2 text-sm font-medium text-gray-600">Unpainted</div>
               </div>
