@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Photo, PhotoAnnotation } from '@/types/photo';
 import { AnnotationMarker } from './AnnotationMarker';
 import { AnnotationPanel } from './AnnotationPanel';
@@ -36,11 +36,18 @@ export function PhotoAnnotator({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const moveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     updateContainerSize();
     window.addEventListener('resize', updateContainerSize);
-    return () => window.removeEventListener('resize', updateContainerSize);
+    return () => {
+      window.removeEventListener('resize', updateContainerSize);
+      // Clear any pending saves on unmount
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+      }
+    };
   }, []);
 
   function updateContainerSize() {
@@ -74,7 +81,7 @@ export function PhotoAnnotator({
       await addAnnotationToPhoto(projectId, photo.photoId, annotation, userId);
       setAnnotations([...annotations, annotation]);
       setSelectedAnnotationId(annotation.id);
-      onUpdate();
+      // Don't call onUpdate() - will refresh when annotator closes
     } catch (err) {
       console.error('Error adding annotation:', err);
       alert('Failed to add annotation');
@@ -94,7 +101,7 @@ export function PhotoAnnotator({
           ann.id === updatedAnnotation.id ? updatedAnnotation : ann
         )
       );
-      onUpdate();
+      // Don't call onUpdate() - no need to reload gallery for annotation edits
     } catch (err) {
       console.error('Error updating annotation:', err);
       alert('Failed to update annotation');
@@ -108,23 +115,42 @@ export function PhotoAnnotator({
       await deleteAnnotation(projectId, photo.photoId, selectedAnnotationId);
       setAnnotations(annotations.filter((ann) => ann.id !== selectedAnnotationId));
       setSelectedAnnotationId(null);
-      onUpdate();
+      // Don't call onUpdate() - will refresh when annotator closes
     } catch (err) {
       console.error('Error deleting annotation:', err);
       alert('Failed to delete annotation');
     }
   }
 
-  async function handleMoveAnnotation(annotationId: string, x: number, y: number) {
-    try {
-      await moveAnnotation(projectId, photo.photoId, annotationId, x, y);
-      setAnnotations(
-        annotations.map((ann) => (ann.id === annotationId ? { ...ann, x, y } : ann))
-      );
-      onUpdate();
-    } catch (err) {
-      console.error('Error moving annotation:', err);
+  function handleClose() {
+    // Save any pending moves before closing
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
     }
+    // Refresh the gallery to show updated annotation count
+    onUpdate();
+    onClose();
+  }
+
+  function handleMoveAnnotation(annotationId: string, x: number, y: number) {
+    // Update UI immediately for smooth dragging
+    setAnnotations(
+      annotations.map((ann) => (ann.id === annotationId ? { ...ann, x, y } : ann))
+    );
+
+    // Debounce Firestore save - only save after user stops dragging for 500ms
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+    }
+
+    moveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await moveAnnotation(projectId, photo.photoId, annotationId, x, y);
+        // Don't call onUpdate() - no need to reload the entire photo gallery
+      } catch (err) {
+        console.error('Error saving annotation position:', err);
+      }
+    }, 500);
   }
 
   const selectedAnnotation = annotations.find((ann) => ann.id === selectedAnnotationId) || null;
@@ -184,7 +210,7 @@ export function PhotoAnnotator({
               </span>
             </div>
 
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={handleClose}>
               <X className="h-4 w-4 mr-1" />
               Close
             </Button>
