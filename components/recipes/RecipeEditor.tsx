@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { PaintRecipeFormData, PaintRole, PaintRecipeEntry } from '@/types/paint-recipe';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { PaintSelector } from '@/components/paints/PaintSelector';
+import { PaintSelectorModal } from '@/components/paints/PaintSelectorModal';
 import { PaintChip } from '@/components/paints/PaintChip';
 import { Paint } from '@/types/paint';
 import { getPaintsByIds } from '@/lib/firestore/paints';
@@ -235,7 +235,7 @@ export function RecipeEditor({ initialData, onSave, onCancel }: RecipeEditorProp
 
       {/* Paint Selector Modal */}
       {showPaintSelector && (
-        <PaintSelector
+        <PaintSelectorModal
           selectedPaintIds={[]}
           onSelectionChange={handleAddPaint}
           onClose={() => setShowPaintSelector(false)}

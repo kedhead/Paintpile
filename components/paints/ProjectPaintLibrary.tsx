@@ -5,7 +5,7 @@ import { Paint } from '@/types/paint';
 import { ProjectPaint } from '@/types/paint';
 import { getProjectPaints, removePaintFromProject, updateProjectPaintNotes, getProjectPaint } from '@/lib/firestore/project-paints';
 import { PaintChip } from '@/components/paints/PaintChip';
-import { PaintSelector } from '@/components/paints/PaintSelector';
+import { PaintSelectorModal } from '@/components/paints/PaintSelectorModal';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Plus, Trash2, Edit2, X, Check } from 'lucide-react';
@@ -264,7 +264,7 @@ export function ProjectPaintLibrary({ projectId }: ProjectPaintLibraryProps) {
 
       {/* Paint Selector Modal */}
       {showPaintSelector && (
-        <PaintSelector
+        <PaintSelectorModal
           selectedPaintIds={paints.map(p => p.paintId)}
           onSelectionChange={handleAddPaints}
           onClose={() => setShowPaintSelector(false)}
