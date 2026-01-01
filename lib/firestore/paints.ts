@@ -15,10 +15,17 @@ import { Paint } from '@/types/paint';
  */
 export async function getAllPaints(): Promise<Paint[]> {
   const paintsRef = collection(db, 'paints');
-  const q = query(paintsRef, orderBy('brand'), orderBy('name'));
 
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => doc.data() as Paint);
+  const querySnapshot = await getDocs(paintsRef);
+  const paints = querySnapshot.docs.map((doc) => doc.data() as Paint);
+
+  // Sort in memory instead of using Firestore orderBy (avoids needing composite index)
+  return paints.sort((a, b) => {
+    if (a.brand !== b.brand) {
+      return a.brand.localeCompare(b.brand);
+    }
+    return a.name.localeCompare(b.name);
+  });
 }
 
 /**
@@ -26,14 +33,13 @@ export async function getAllPaints(): Promise<Paint[]> {
  */
 export async function getPaintsByBrand(brand: string): Promise<Paint[]> {
   const paintsRef = collection(db, 'paints');
-  const q = query(
-    paintsRef,
-    where('brand', '==', brand),
-    orderBy('name')
-  );
+  const q = query(paintsRef, where('brand', '==', brand));
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => doc.data() as Paint);
+  const paints = querySnapshot.docs.map((doc) => doc.data() as Paint);
+
+  // Sort by name in memory
+  return paints.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
