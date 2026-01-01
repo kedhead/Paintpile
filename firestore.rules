@@ -69,7 +69,8 @@ service cloud.firestore {
     // Pile collection (top-level)
     match /pile/{pileId} {
       allow read: if isOwner(resource.data.userId);
-      allow write: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow create, update: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
   }
 }
