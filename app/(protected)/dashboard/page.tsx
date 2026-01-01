@@ -7,30 +7,44 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProjectList } from '@/components/projects/ProjectList';
 import { getUserProjects } from '@/lib/firestore/projects';
+import { getUserProfile } from '@/lib/firestore/users';
+import { getPileStats } from '@/lib/firestore/pile';
 import { Project } from '@/types/project';
+import { User } from '@/types/user';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [pileStats, setPileStats] = useState<{ unpainted: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadProjects() {
+    async function loadDashboardData() {
       if (!currentUser) return;
 
       try {
         setLoading(true);
-        const userProjects = await getUserProjects(currentUser.uid, { limitCount: 6 });
+
+        // Load all data in parallel
+        const [userProjects, profile, stats] = await Promise.all([
+          getUserProjects(currentUser.uid, { limitCount: 6 }),
+          getUserProfile(currentUser.uid),
+          getPileStats(currentUser.uid),
+        ]);
+
         setProjects(userProjects);
+        setUserProfile(profile);
+        setPileStats(stats);
       } catch (error) {
-        console.error('Error loading projects:', error);
+        console.error('Error loading dashboard:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    loadProjects();
+    loadDashboardData();
   }, [currentUser]);
 
   return (
@@ -102,7 +116,9 @@ export default function DashboardPage() {
           <Card className="bg-gradient-to-br from-primary-50 to-purple-50">
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-primary-500">0</div>
+                <div className="text-4xl font-bold text-primary-500">
+                  {userProfile?.stats?.projectCount || 0}
+                </div>
                 <div className="mt-2 text-sm font-medium text-gray-600">Projects</div>
               </div>
             </CardContent>
@@ -111,16 +127,20 @@ export default function DashboardPage() {
           <Card className="bg-gradient-to-br from-secondary-50 to-blue-50">
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-secondary-500">0</div>
+                <div className="text-4xl font-bold text-secondary-500">
+                  {userProfile?.stats?.photoCount || 0}
+                </div>
                 <div className="mt-2 text-sm font-medium text-gray-600">Photos</div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-accent-50 to-red-50">
+          <Card className="bg-gradient-to-br from-gray-50 to-gray-100">
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-accent-500">0</div>
+                <div className="text-4xl font-bold text-gray-600">
+                  {pileStats?.unpainted || 0}
+                </div>
                 <div className="mt-2 text-sm font-medium text-gray-600">Unpainted</div>
               </div>
             </CardContent>
