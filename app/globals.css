@@ -1,3 +1,96 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Default to dark theme - matching Brush Forge aesthetic */
+    /* Background - Very dark blue-gray */
+    --background: 220 15% 8%;
+    --foreground: 0 0% 98%;
+
+    /* Cards - Slightly lighter than background */
+    --card: 220 13% 13%;
+    --card-foreground: 0 0% 98%;
+
+    /* Popover */
+    --popover: 220 13% 13%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary - Orange/Amber accent (matching buttons in screenshots) */
+    --primary: 38 92% 50%;
+    --primary-foreground: 220 15% 8%;
+
+    /* Secondary - Muted blue for secondary actions */
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 98%;
+
+    /* Muted - For subtle elements */
+    --muted: 220 13% 18%;
+    --muted-foreground: 215 15% 60%;
+
+    /* Accent - Orange for highlights */
+    --accent: 38 92% 50%;
+    --accent-foreground: 220 15% 8%;
+
+    /* Destructive - Red for errors */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Border & Input - Subtle dark borders */
+    --border: 220 13% 20%;
+    --input: 220 13% 18%;
+    --ring: 38 92% 50%;
+
+    /* Sidebar */
+    --sidebar: 220 15% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-accent: 38 92% 50%;
+
+    /* Radius */
+    --radius: 0.75rem;
+  }
+
+  /* Light mode (optional - mainly using dark) */
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 217 91% 60%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 38 92% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Typography improvements */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}

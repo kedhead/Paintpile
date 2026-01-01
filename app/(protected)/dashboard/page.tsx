@@ -1,209 +1,141 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
-import { ProjectList } from '@/components/projects/ProjectList';
-import { getUserProjects, getProjectsByTag } from '@/lib/firestore/projects';
-import { getUserProfile } from '@/lib/firestore/users';
+import { ProjectCard } from '@/components/projects/ProjectCard';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { getUserProjects } from '@/lib/firestore/projects';
 import { Project } from '@/types/project';
-import { User } from '@/types/user';
-import { TAG_SHAME } from '@/lib/utils/constants';
-import Link from 'next/link';
+import { Search, Plus } from 'lucide-react';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [unpaintedCount, setUnpaintedCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
-    async function loadDashboardData() {
+    async function loadProjects() {
       if (!currentUser) return;
 
       try {
         setLoading(true);
-
-        // Load all data in parallel
-        const [userProjects, profile, shameProjects] = await Promise.all([
-          getUserProjects(currentUser.uid, { limitCount: 6 }),
-          getUserProfile(currentUser.uid),
-          getProjectsByTag(currentUser.uid, TAG_SHAME),
-        ]);
-
+        const userProjects = await getUserProjects(currentUser.uid);
         setProjects(userProjects);
-        setUserProfile(profile);
-
-        // Calculate unpainted count from shame-tagged projects
-        const unpainted = shameProjects
-          .filter((p) => p.status === 'not-started')
-          .reduce((sum, p) => sum + (p.quantity || 1), 0);
-        setUnpaintedCount(unpainted);
       } catch (error) {
-        console.error('Error loading dashboard:', error);
+        console.error('Error loading projects:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    loadDashboardData();
+    loadProjects();
   }, [currentUser]);
 
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const filterButtons = [
+    { id: 'all', label: 'All' },
+    { id: 'planning', label: 'Planning' },
+    { id: 'in-progress', label: 'In Progress' },
+    { id: 'completed', label: 'Completed' },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-4xl font-bold text-gray-900">
-          Welcome back, {currentUser?.displayName || 'Painter'}!
-        </h1>
-        <p className="mt-2 text-lg text-gray-600">
-          Ready to conquer your pile of shame?
-        </p>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-xl">Start a New Project</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              Document your miniature painting journey with photos and notes.
-            </p>
-            <Link href="/projects/new">
-              <Button variant="primary">New Project</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-xl">Track Your Pile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              Add unpainted miniatures to your pile and track your progress.
-            </p>
-            <Link href="/pile">
-              <Button variant="secondary">View Pile</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Projects */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Recent Projects</h2>
-          <Link href="/projects/new">
-            <Button variant="primary" className="text-sm">
-              New Project
-            </Button>
-          </Link>
+    <DashboardLayout>
+      <div className="min-h-screen p-8">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-5xl font-display font-bold text-foreground mb-2">
+            MY GALLERY
+          </h1>
+          <p className="text-lg font-hand text-muted-foreground italic">
+            "Every mini tells a story. Keep track of yours."
+          </p>
         </div>
+
+        {/* Search and Filters */}
+        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+          {/* Search Bar */}
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search projects, techniques..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex gap-2">
+            {filterButtons.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setStatusFilter(filter.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === filter.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Projects Grid */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-20">
             <Spinner size="lg" />
           </div>
         ) : (
-          <ProjectList projects={projects} emptyMessage="No projects yet. Create your first project to get started!" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map((project) => (
+              <ProjectCard key={project.projectId} project={project} />
+            ))}
+
+            {/* New Project Card */}
+            <button
+              onClick={() => router.push('/projects/new')}
+              className="group relative rounded-xl border-2 border-dashed border-border bg-card/50 overflow-hidden transition-all hover:border-primary hover:bg-card/80 min-h-[300px] flex flex-col items-center justify-center"
+            >
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <Plus className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-display text-lg font-semibold mb-1">New Project</h3>
+              <p className="text-sm text-muted-foreground">Start a new journey</p>
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && filteredProjects.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground mb-4">
+              {searchQuery || statusFilter !== 'all'
+                ? 'No projects match your filters.'
+                : 'No projects yet. Start your first project!'}
+            </p>
+          </div>
         )}
       </div>
-
-      {/* Stats Overview */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-gradient-to-br from-primary-50 to-purple-50">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-primary-500">
-                  {userProfile?.stats?.projectCount || 0}
-                </div>
-                <div className="mt-2 text-sm font-medium text-gray-600">Projects</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-secondary-50 to-blue-50">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-secondary-500">
-                  {userProfile?.stats?.photoCount || 0}
-                </div>
-                <div className="mt-2 text-sm font-medium text-gray-600">Photos</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-gray-50 to-gray-100">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-600">
-                  {unpaintedCount}
-                </div>
-                <div className="mt-2 text-sm font-medium text-gray-600">Unpainted</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Getting Started */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary-100 text-primary-600 font-bold">
-                  1
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Create your first project</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Start documenting your miniature painting with photos and progress updates.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-secondary-100 text-secondary-600 font-bold">
-                  2
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Add to your pile</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Track all your unpainted miniatures and watch your progress over time.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-success-100 text-success-600 font-bold">
-                  3
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Share your work</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Set projects to public and share your painting journey with the community.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    </DashboardLayout>
   );
 }

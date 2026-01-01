@@ -27,6 +27,8 @@ export function AnnotationMarker({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const markerRef = useRef<HTMLDivElement>(null);
+  const lastMoveTime = useRef<number>(0);
+  const pendingMove = useRef<{ x: number; y: number } | null>(null);
 
   // Calculate pixel position from percentage
   const pixelX = (annotation.x / 100) * containerWidth;
