@@ -38,6 +38,30 @@ export default function SeedPage() {
     }
   }
 
+  async function handleClearDatabase() {
+    if (!confirm('Are you sure you want to delete ALL paints from the database? This cannot be undone!')) {
+      return;
+    }
+
+    try {
+      setMessage('Clearing paint database...');
+      const paints = await getAllPaints();
+
+      const { db } = await import('@/lib/firebase/firebase');
+      const { doc, deleteDoc } = await import('firebase/firestore');
+
+      for (const paint of paints) {
+        await deleteDoc(doc(db, 'paints', paint.paintId));
+      }
+
+      setMessage(`✅ Successfully deleted ${paints.length} paints!`);
+      setPaintCount(0);
+    } catch (err) {
+      console.error('Error clearing database:', err);
+      setMessage('❌ Error clearing database. Check console for details.');
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       <Card>
@@ -89,6 +113,14 @@ export default function SeedPage() {
             className="w-full"
           >
             Check Current Paint Count
+          </Button>
+
+          <Button
+            variant="danger"
+            onClick={handleClearDatabase}
+            className="w-full"
+          >
+            Clear Paint Database
           </Button>
 
           {message && (

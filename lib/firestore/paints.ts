@@ -71,15 +71,29 @@ export async function getPaintsByIds(paintIds: string[]): Promise<Paint[]> {
  */
 export async function seedPaintDatabase(): Promise<number> {
   const paints: Omit<Paint, 'paintId'>[] = [
-    // Citadel Paints (40 paints)
-    // Base Paints
+    // ===== CITADEL PAINTS =====
+
+    // BASE PAINTS (22 colors)
     { brand: 'Citadel', name: 'Abaddon Black', hexColor: '#000000', type: 'base' },
     { brand: 'Citadel', name: 'Corax White', hexColor: '#FFFFFF', type: 'base' },
-    { brand: 'Citadel', name: 'Mephiston Red', hexColor: '#9C1E1E', type: 'base' },
+    { brand: 'Citadel', name: 'Celestra Grey', hexColor: '#90A8A4', type: 'base' },
+    { brand: 'Citadel', name: 'Death Guard Green', hexColor: '#556229', type: 'base' },
+    { brand: 'Citadel', name: 'Deathworld Forest', hexColor: '#5C6730', type: 'base' },
+    { brand: 'Citadel', name: 'Incubi Darkness', hexColor: '#0B474A', type: 'base' },
     { brand: 'Citadel', name: 'Caliban Green', hexColor: '#00401F', type: 'base' },
+    { brand: 'Citadel', name: 'Waaagh! Flesh', hexColor: '#1A5E3C', type: 'base' },
+    { brand: 'Citadel', name: 'Castellan Green', hexColor: '#264715', type: 'base' },
+    { brand: 'Citadel', name: 'Nocturne Green', hexColor: '#1C331E', type: 'base' },
+    { brand: 'Citadel', name: 'Kantor Blue', hexColor: '#02134E', type: 'base' },
     { brand: 'Citadel', name: 'Macragge Blue', hexColor: '#0F3D7C', type: 'base' },
+    { brand: 'Citadel', name: 'Thousand Sons Blue', hexColor: '#005B7C', type: 'base' },
     { brand: 'Citadel', name: 'Naggaroth Night', hexColor: '#3F286E', type: 'base' },
+    { brand: 'Citadel', name: 'Daemonette Hide', hexColor: '#696684', type: 'base' },
+    { brand: 'Citadel', name: 'Screamer Pink', hexColor: '#7C1645', type: 'base' },
+    { brand: 'Citadel', name: 'Khorne Red', hexColor: '#6A0001', type: 'base' },
+    { brand: 'Citadel', name: 'Mephiston Red', hexColor: '#9C1E1E', type: 'base' },
     { brand: 'Citadel', name: 'Rhinox Hide', hexColor: '#5C3726', type: 'base' },
+    { brand: 'Citadel', name: 'Mournfang Brown', hexColor: '#6A4F3B', type: 'base' },
     { brand: 'Citadel', name: 'Zandri Dust', hexColor: '#9E915C', type: 'base' },
     { brand: 'Citadel', name: 'Mechanicus Standard Grey', hexColor: '#3D4B4D', type: 'base' },
     { brand: 'Citadel', name: 'Rakarth Flesh', hexColor: '#A7A297', type: 'base' },
