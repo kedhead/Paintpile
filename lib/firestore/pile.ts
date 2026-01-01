@@ -50,14 +50,17 @@ export async function addToPile(
  */
 export async function getUserPile(userId: string): Promise<PileItem[]> {
   const pileRef = collection(db, 'pile');
-  const q = query(
-    pileRef,
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
-  );
+  const q = query(pileRef, where('userId', '==', userId));
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => doc.data() as PileItem);
+  const items = querySnapshot.docs.map((doc) => doc.data() as PileItem);
+
+  // Sort by createdAt in memory to avoid needing a composite index
+  return items.sort((a, b) => {
+    const aTime = a.createdAt?.toMillis?.() || 0;
+    const bTime = b.createdAt?.toMillis?.() || 0;
+    return bTime - aTime; // desc order
+  });
 }
 
 /**

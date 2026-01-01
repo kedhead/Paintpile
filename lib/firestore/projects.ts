@@ -77,27 +77,32 @@ export async function getUserProjects(
 ): Promise<Project[]> {
   const projectsRef = collection(db, 'projects');
 
-  let q = query(
-    projectsRef,
-    where('userId', '==', userId),
-    orderBy('updatedAt', 'desc')
-  );
+  let q = query(projectsRef, where('userId', '==', userId));
 
   if (options?.status) {
     q = query(
       projectsRef,
       where('userId', '==', userId),
-      where('status', '==', options.status),
-      orderBy('updatedAt', 'desc')
+      where('status', '==', options.status)
     );
   }
 
+  const querySnapshot = await getDocs(q);
+  let projects = querySnapshot.docs.map((doc) => doc.data() as Project);
+
+  // Sort by updatedAt in memory to avoid needing a composite index
+  projects.sort((a, b) => {
+    const aTime = a.updatedAt?.toMillis?.() || 0;
+    const bTime = b.updatedAt?.toMillis?.() || 0;
+    return bTime - aTime; // desc order
+  });
+
+  // Apply limit after sorting
   if (options?.limitCount) {
-    q = query(q, limit(options.limitCount));
+    projects = projects.slice(0, options.limitCount);
   }
 
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => doc.data() as Project);
+  return projects;
 }
 
 /**

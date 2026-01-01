@@ -69,6 +69,37 @@ export async function incrementUserStats(
   value: number = 1
 ): Promise<void> {
   const userRef = doc(db, 'users', userId);
+
+  // Check if user profile exists
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    console.warn(`User profile not found for userId: ${userId}. Creating minimal profile.`);
+    // Create a minimal user profile if it doesn't exist
+    // This can happen if profile creation failed during signup
+    await setDoc(userRef, {
+      userId,
+      email: '',
+      displayName: 'User',
+      username: '',
+      bio: '',
+      photoURL: '',
+      createdAt: serverTimestamp(),
+      settings: {
+        publicProfile: true,
+        showPileStats: true,
+      },
+      stats: {
+        projectCount: field === 'projectCount' ? value : 0,
+        photoCount: field === 'photoCount' ? value : 0,
+        pileCount: field === 'pileCount' ? value : 0,
+        paintCount: field === 'paintCount' ? value : 0,
+      },
+    });
+    return;
+  }
+
+  // Profile exists, update the stats
   await updateDoc(userRef, {
     [`stats.${field}`]: increment(value),
   });
