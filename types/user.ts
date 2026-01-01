@@ -15,12 +15,16 @@ export interface User {
 export interface UserSettings {
   publicProfile: boolean;
   showPileStats: boolean;
+  isPublic?: boolean;
+  emailNotifications?: boolean;
+  theme?: 'light' | 'dark';
 }
 
 export interface UserStats {
   projectCount: number;
   photoCount: number;
   pileCount: number;
+  paintCount: number;
 }
 
 export type UserFormData = Omit<User, 'userId' | 'createdAt' | 'stats'>;

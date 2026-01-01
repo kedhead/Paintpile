@@ -28,6 +28,7 @@ export async function createUserProfile(
       projectCount: 0,
       photoCount: 0,
       pileCount: 0,
+      paintCount: 0,
     },
   };
 
@@ -64,7 +65,7 @@ export async function updateUserProfile(
  */
 export async function incrementUserStats(
   userId: string,
-  field: 'projectCount' | 'photoCount' | 'pileCount',
+  field: 'projectCount' | 'photoCount' | 'pileCount' | 'paintCount',
   value: number = 1
 ): Promise<void> {
   const userRef = doc(db, 'users', userId);
