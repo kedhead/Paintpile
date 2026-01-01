@@ -104,7 +104,7 @@ export default function DashboardPage() {
             <Spinner size="lg" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredProjects.map((project) => (
               <ProjectCard key={project.projectId} project={project} />
             ))}
@@ -112,13 +112,13 @@ export default function DashboardPage() {
             {/* New Project Card */}
             <button
               onClick={() => router.push('/projects/new')}
-              className="group relative rounded-xl border-2 border-dashed border-border bg-card/50 overflow-hidden transition-all hover:border-primary hover:bg-card/80 min-h-[300px] flex flex-col items-center justify-center"
+              className="group relative rounded-lg border-2 border-dashed border-border bg-card/50 overflow-hidden transition-all hover:border-primary hover:bg-card/80 aspect-[4/3] flex flex-col items-center justify-center p-4"
             >
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                <Plus className="w-8 h-8 text-primary" />
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                <Plus className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-display text-lg font-semibold mb-1">New Project</h3>
-              <p className="text-sm text-muted-foreground">Start a new journey</p>
+              <h3 className="font-display text-sm font-semibold mb-0.5">New Project</h3>
+              <p className="text-xs text-muted-foreground">Start a new journey</p>
             </button>
           </div>
         )}
