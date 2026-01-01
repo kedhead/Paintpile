@@ -58,8 +58,12 @@ export function PileItemForm({ userId, editingItem, onClose }: PileItemFormProps
         tags.unshift(TAG_SHAME);
       }
 
+      // Extract only the fields we need (exclude startDate since pile form doesn't use it)
       const projectData = {
-        ...data,
+        name: data.name,
+        description: data.description,
+        status: data.status,
+        quantity: data.quantity,
         tags,
       };
 
