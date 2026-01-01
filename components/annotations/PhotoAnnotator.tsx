@@ -164,7 +164,7 @@ export function PhotoAnnotator({
           <div className="bg-gray-800 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
-                variant={isAdding ? 'primary' : 'ghost'}
+                variant={isAdding ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => {
                   setIsAdding(!isAdding);
@@ -176,7 +176,7 @@ export function PhotoAnnotator({
               </Button>
 
               <Button
-                variant={isDraggable ? 'primary' : 'ghost'}
+                variant={isDraggable ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => {
                   setIsDraggable(!isDraggable);
