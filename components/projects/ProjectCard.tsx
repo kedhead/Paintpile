@@ -10,19 +10,26 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  const coverPhoto = project.coverPhotoUrl || '/placeholder-project.jpg';
+  // TODO: Get actual cover photo from project photos
+  const coverPhoto = '/placeholder-project.jpg';
   const timeAgo = project.updatedAt
-    ? formatDistanceToNow(new Date(project.updatedAt), { addSuffix: true })
+    ? formatDistanceToNow(new Date(project.updatedAt.toDate()), { addSuffix: true })
     : null;
 
   const statusStyles = {
-    planning: 'bg-secondary/20 text-secondary-foreground border-secondary/30',
+    'not-started': 'bg-secondary/20 text-secondary-foreground border-secondary/30',
     'in-progress': 'bg-primary/20 text-primary border-primary/30',
     completed: 'bg-success-500/20 text-success-500 border-success-500/30',
-    abandoned: 'bg-muted text-muted-foreground border-border',
   };
 
-  const statusBadge = statusStyles[project.status as keyof typeof statusStyles] || statusStyles.planning;
+  const statusLabels = {
+    'not-started': 'Planning',
+    'in-progress': 'In Progress',
+    completed: 'Completed',
+  };
+
+  const statusBadge = statusStyles[project.status as keyof typeof statusStyles] || statusStyles['not-started'];
+  const statusLabel = statusLabels[project.status as keyof typeof statusLabels] || 'Planning';
 
   return (
     <Link href={`/projects/${project.projectId}`}>
@@ -35,9 +42,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
             fill
             className="object-cover transition-transform group-hover:scale-105"
           />
-          {project.status === 'planning' && (
+          {project.status === 'not-started' && (
             <div className="absolute top-3 right-3 px-3 py-1 bg-background/80 backdrop-blur-sm rounded-md text-xs font-medium uppercase tracking-wide">
-              Planning
+              {statusLabel}
             </div>
           )}
         </div>

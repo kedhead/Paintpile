@@ -50,7 +50,7 @@ export default function DashboardPage() {
 
   const filterButtons = [
     { id: 'all', label: 'All' },
-    { id: 'planning', label: 'Planning' },
+    { id: 'not-started', label: 'Planning' },
     { id: 'in-progress', label: 'In Progress' },
     { id: 'completed', label: 'Completed' },
   ];
