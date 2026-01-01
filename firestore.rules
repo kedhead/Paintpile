@@ -56,6 +56,33 @@ service cloud.firestore {
         // Only project owner can write paints
         allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
+
+      // Project paint recipes subcollection
+      match /paintRecipes/{recipeId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write recipes
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+
+      // Project techniques subcollection
+      match /techniques/{techniqueId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write techniques
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+
+      // Project timeline subcollection
+      match /timeline/{eventId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write timeline events
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
     }
 
     // Global paints database
