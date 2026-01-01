@@ -4,10 +4,15 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProject, deleteProject, updateProject } from '@/lib/firestore/projects';
+import { getProjectPhotos, deletePhotoFromProject } from '@/lib/firestore/photos';
+import { deletePhoto as deletePhotoStorage } from '@/lib/firebase/storage';
 import { Project } from '@/types/project';
+import { Photo } from '@/types/photo';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { PhotoUpload } from '@/components/photos/PhotoUpload';
+import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { formatDate } from '@/lib/utils/formatters';
 import { PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/utils/constants';
 
@@ -18,7 +23,9 @@ export default function ProjectDetailPage() {
   const projectId = params.id as string;
 
   const [project, setProject] = useState<Project | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -50,8 +57,21 @@ export default function ProjectDetailPage() {
 
     if (currentUser) {
       loadProject();
+      loadPhotos();
     }
   }, [projectId, currentUser]);
+
+  async function loadPhotos() {
+    try {
+      setLoadingPhotos(true);
+      const projectPhotos = await getProjectPhotos(projectId);
+      setPhotos(projectPhotos);
+    } catch (err) {
+      console.error('Error loading photos:', err);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  }
 
   async function handleDelete() {
     if (!project || !currentUser) return;
@@ -80,6 +100,19 @@ export default function ProjectDetailPage() {
     } catch (err) {
       console.error('Error updating project:', err);
       alert('Failed to update project visibility');
+    }
+  }
+
+  async function handleDeletePhoto(photoId: string) {
+    if (!currentUser) return;
+
+    try {
+      await deletePhotoStorage(currentUser.uid, projectId, photoId);
+      await deletePhotoFromProject(currentUser.uid, projectId, photoId);
+      setPhotos((prev) => prev.filter((p) => p.photoId !== photoId));
+    } catch (err) {
+      console.error('Error deleting photo:', err);
+      alert('Failed to delete photo');
     }
   }
 
@@ -180,16 +213,33 @@ export default function ProjectDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Photos Section (Placeholder) */}
+      {/* Photos Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Photos ({project.photoCount})</CardTitle>
+          <CardTitle>Photos ({photos.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-gray-500 py-8">
-            <p>Photo upload feature coming soon!</p>
-            <p className="text-sm mt-2">You'll be able to upload progress photos here.</p>
-          </div>
+          {isOwner && (
+            <div className="mb-6">
+              <PhotoUpload
+                userId={currentUser!.uid}
+                projectId={projectId}
+                onUploadComplete={loadPhotos}
+              />
+            </div>
+          )}
+
+          {loadingPhotos ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner size="lg" />
+            </div>
+          ) : (
+            <PhotoGallery
+              photos={photos}
+              onDelete={isOwner ? handleDeletePhoto : undefined}
+              canDelete={isOwner}
+            />
+          )}
         </CardContent>
       </Card>
 
