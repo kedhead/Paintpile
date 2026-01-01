@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Photo } from '@/types/photo';
+import { Paint } from '@/types/paint';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { getPaintsByIds } from '@/lib/firestore/paints';
+import { PaintChipList } from '@/components/paints/PaintChip';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -14,6 +17,24 @@ interface PhotoGalleryProps {
 
 export function PhotoGallery({ photos, onDelete, canDelete = false }: PhotoGalleryProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [photoPaints, setPhotoPaints] = useState<Record<string, Paint[]>>({});
+
+  useEffect(() => {
+    loadAllPaints();
+  }, [photos]);
+
+  async function loadAllPaints() {
+    const paintsMap: Record<string, Paint[]> = {};
+
+    for (const photo of photos) {
+      if (photo.paintIds && photo.paintIds.length > 0) {
+        const paints = await getPaintsByIds(photo.paintIds);
+        paintsMap[photo.photoId] = paints;
+      }
+    }
+
+    setPhotoPaints(paintsMap);
+  }
 
   if (photos.length === 0) {
     return (
@@ -52,11 +73,28 @@ export function PhotoGallery({ photos, onDelete, canDelete = false }: PhotoGalle
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
-            {photo.caption && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2 rounded-b-lg">
-                <p className="text-sm line-clamp-2">{photo.caption}</p>
-              </div>
-            )}
+            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2 rounded-b-lg">
+              {photo.caption && (
+                <p className="text-sm line-clamp-2 mb-1">{photo.caption}</p>
+              )}
+              {photoPaints[photo.photoId] && photoPaints[photo.photoId].length > 0 && (
+                <div className="flex gap-1 flex-wrap">
+                  {photoPaints[photo.photoId].slice(0, 3).map((paint) => (
+                    <div
+                      key={paint.paintId}
+                      className="w-4 h-4 rounded-full border border-white"
+                      style={{ backgroundColor: paint.hexColor }}
+                      title={`${paint.brand} - ${paint.name}`}
+                    />
+                  ))}
+                  {photoPaints[photo.photoId].length > 3 && (
+                    <div className="text-xs flex items-center">
+                      +{photoPaints[photo.photoId].length - 3}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -80,14 +118,27 @@ export function PhotoGallery({ photos, onDelete, canDelete = false }: PhotoGalle
               alt={selectedPhoto.caption || 'Project photo'}
               className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
             />
-            {selectedPhoto.caption && (
-              <div className="bg-white rounded-lg p-4 mt-4">
-                <p className="text-gray-900">{selectedPhoto.caption}</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Uploaded {formatRelativeTime(selectedPhoto.createdAt)}
-                </p>
-              </div>
-            )}
+            <div className="bg-white rounded-lg p-4 mt-4 space-y-3">
+              {selectedPhoto.caption && (
+                <div>
+                  <p className="text-gray-900">{selectedPhoto.caption}</p>
+                </div>
+              )}
+              {photoPaints[selectedPhoto.photoId] && photoPaints[selectedPhoto.photoId].length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Paints Used ({photoPaints[selectedPhoto.photoId].length}):
+                  </p>
+                  <PaintChipList
+                    paints={photoPaints[selectedPhoto.photoId]}
+                    size="sm"
+                  />
+                </div>
+              )}
+              <p className="text-sm text-gray-500">
+                Uploaded {formatRelativeTime(selectedPhoto.createdAt)}
+              </p>
+            </div>
           </div>
         </div>
       )}

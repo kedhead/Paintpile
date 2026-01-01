@@ -51,6 +51,16 @@ export async function searchPaints(searchTerm: string): Promise<Paint[]> {
 }
 
 /**
+ * Get paints by IDs
+ */
+export async function getPaintsByIds(paintIds: string[]): Promise<Paint[]> {
+  if (paintIds.length === 0) return [];
+
+  const paints = await getAllPaints();
+  return paints.filter((paint) => paintIds.includes(paint.paintId));
+}
+
+/**
  * Seed the paint database (run once)
  */
 export async function seedPaintDatabase(): Promise<number> {

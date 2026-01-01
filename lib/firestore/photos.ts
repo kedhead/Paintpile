@@ -24,6 +24,7 @@ export async function addPhotoToProject(
     url: string;
     thumbnailUrl: string;
     caption?: string;
+    paintIds?: string[];
     width: number;
     height: number;
   }
@@ -39,6 +40,7 @@ export async function addPhotoToProject(
     url: photoData.url,
     thumbnailUrl: photoData.thumbnailUrl,
     caption: photoData.caption || '',
+    paintIds: photoData.paintIds || [],
     width: photoData.width,
     height: photoData.height,
     createdAt: serverTimestamp(),

@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { uploadProjectPhoto } from '@/lib/firebase/storage';
 import { addPhotoToProject } from '@/lib/firestore/photos';
 import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/lib/utils/constants';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Paintbrush } from 'lucide-react';
+import { PaintSelector } from '@/components/paints/PaintSelector';
+import { Paint } from '@/types/paint';
 
 interface PhotoUploadProps {
   userId: string;
@@ -18,6 +20,8 @@ interface PreviewFile {
   file: File;
   preview: string;
   progress: number;
+  caption?: string;
+  selectedPaints: Paint[];
   error?: string;
 }
 
@@ -25,11 +29,14 @@ export function PhotoUpload({ userId, projectId, onUploadComplete }: PhotoUpload
   const [files, setFiles] = useState<PreviewFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  const [editingPaintsIndex, setEditingPaintsIndex] = useState<number | null>(null);
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       progress: 0,
+      selectedPaints: [],
     }));
 
     setFiles((prev) => [...prev, ...newFiles]);
@@ -90,6 +97,8 @@ export function PhotoUpload({ userId, projectId, onUploadComplete }: PhotoUpload
           thumbnailUrl,
           width: dimensions.width,
           height: dimensions.height,
+          caption: fileData.caption,
+          paintIds: fileData.selectedPaints.map((p) => p.paintId),
         });
 
         // Mark as complete
@@ -157,12 +166,26 @@ export function PhotoUpload({ userId, projectId, onUploadComplete }: PhotoUpload
                   className="w-full h-32 object-cover rounded-lg"
                 />
                 {!isUploading && (
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="absolute top-2 right-2 bg-accent-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => removeFile(index)}
+                      className="absolute top-2 right-2 bg-accent-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setEditingPaintsIndex(index)}
+                      className="absolute top-2 left-2 bg-primary-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Add paints"
+                    >
+                      <Paintbrush className="h-4 w-4" />
+                    </button>
+                    {fileData.selectedPaints.length > 0 && (
+                      <div className="absolute bottom-2 left-2 bg-white rounded-full px-2 py-1 text-xs font-medium">
+                        {fileData.selectedPaints.length} paint{fileData.selectedPaints.length !== 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </>
                 )}
                 {fileData.progress > 0 && fileData.progress < 100 && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-75 rounded-b-lg p-2">
@@ -204,6 +227,51 @@ export function PhotoUpload({ userId, projectId, onUploadComplete }: PhotoUpload
                 Clear All
               </Button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Paint Selector Modal */}
+      {editingPaintsIndex !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Select Paints for Photo {editingPaintsIndex + 1}
+                </h3>
+                <button
+                  onClick={() => setEditingPaintsIndex(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <PaintSelector
+                selectedPaints={files[editingPaintsIndex].selectedPaints}
+                onPaintsChange={(paints) => {
+                  setFiles((prev) => {
+                    const newFiles = [...prev];
+                    newFiles[editingPaintsIndex] = {
+                      ...newFiles[editingPaintsIndex],
+                      selectedPaints: paints,
+                    };
+                    return newFiles;
+                  });
+                }}
+              />
+            </div>
+            <div className="p-6 border-t border-gray-200">
+              <Button
+                variant="primary"
+                onClick={() => setEditingPaintsIndex(null)}
+                className="w-full"
+              >
+                Done
+              </Button>
+            </div>
           </div>
         </div>
       )}
