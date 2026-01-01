@@ -19,4 +19,6 @@ export interface ProjectPaint {
   paintId: string;
   projectId: string;
   addedAt: Timestamp;
+  notes?: string;            // User notes about this paint in the project
+  usageCount: number;        // How many photos/annotations use this paint
 }
