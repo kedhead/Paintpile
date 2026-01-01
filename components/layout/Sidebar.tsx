@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutGrid, Palette, BookOpen, Plus } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutGrid, Palette, BookOpen, Plus, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   onNewProject?: () => void;
@@ -10,6 +11,17 @@ interface SidebarProps {
 
 export function Sidebar({ onNewProject }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { currentUser, signOut } = useAuth();
+
+  async function handleSignOut() {
+    try {
+      await signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
+  }
 
   const navigation = [
     {
@@ -74,14 +86,38 @@ export function Sidebar({ onNewProject }: SidebarProps) {
         })}
       </nav>
 
-      {/* New Project Button */}
-      <div className="p-4 border-t border-border">
+      {/* User Profile & Actions */}
+      <div className="p-4 border-t border-border space-y-3">
+        {/* User Info */}
+        <div className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <span className="text-primary font-semibold">
+              {currentUser?.displayName?.[0]?.toUpperCase() || currentUser?.email?.[0]?.toUpperCase() || 'U'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-foreground font-medium truncate">
+              {currentUser?.displayName || 'User'}
+            </p>
+          </div>
+        </div>
+
+        {/* New Project Button */}
         <button
           onClick={onNewProject}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-5 h-5" />
           New Project
+        </button>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg text-sm transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
         </button>
       </div>
     </div>

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProjectCard } from '@/components/projects/ProjectCard';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { getUserProjects } from '@/lib/firestore/projects';
 import { Project } from '@/types/project';
 import { Search, Plus } from 'lucide-react';
@@ -56,8 +55,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <DashboardLayout>
-      <div className="min-h-screen p-8">
+    <div className="min-h-screen p-8">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-5xl font-display font-bold text-foreground mb-2">
@@ -135,7 +133,6 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }
