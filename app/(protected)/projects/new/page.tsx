@@ -166,7 +166,7 @@ export default function NewProjectPage() {
 
             {/* Form Actions */}
             <div className="flex gap-4">
-              <Button type="submit" variant="primary" className="flex-1" isLoading={isLoading}>
+              <Button type="submit" variant="default" className="flex-1" isLoading={isLoading}>
                 Create Project
               </Button>
               <Button

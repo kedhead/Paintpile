@@ -209,7 +209,7 @@ export function PhotoUpload({ userId, projectId, onUploadComplete }: PhotoUpload
           <div className="flex gap-2">
             <Button
               onClick={uploadFiles}
-              variant="primary"
+              variant="default"
               isLoading={isUploading}
               disabled={isUploading}
               className="flex-1"
@@ -265,7 +265,7 @@ export function PhotoUpload({ userId, projectId, onUploadComplete }: PhotoUpload
             </div>
             <div className="p-6 border-t border-gray-200">
               <Button
-                variant="primary"
+                variant="default"
                 onClick={() => setEditingPaintsIndex(null)}
                 className="w-full"
               >

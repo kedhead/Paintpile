@@ -240,7 +240,7 @@ export function AnnotationPanel({
         {/* Actions */}
         <div className="pt-4 border-t border-gray-200">
           <Button
-            variant="danger"
+            variant="destructive"
             size="sm"
             onClick={onDelete}
             className="w-full"

@@ -132,7 +132,7 @@ export function ProjectPaintLibrary({ projectId, userId }: ProjectPaintLibraryPr
           <div className="flex items-center justify-between">
             <CardTitle>Paint Library ({paints.length})</CardTitle>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() => setShowPaintSelector(true)}
             >

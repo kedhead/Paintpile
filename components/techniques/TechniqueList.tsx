@@ -140,7 +140,7 @@ export function TechniqueList({ projectId, userId }: TechniqueListProps) {
           <CardTitle>Techniques ({techniques.length})</CardTitle>
           {!showAddForm && (
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() => setShowAddForm(true)}
             >
@@ -197,7 +197,7 @@ export function TechniqueList({ projectId, userId }: TechniqueListProps) {
               <div className="flex gap-2 pt-2">
                 <Button
                   type="submit"
-                  variant="primary"
+                  variant="default"
                   size="sm"
                   isLoading={isSubmitting}
                   disabled={isSubmitting}

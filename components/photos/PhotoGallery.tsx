@@ -162,7 +162,7 @@ export function PhotoGallery({
               <div className="flex gap-2 pt-2">
                 {canAnnotate && projectId && (
                   <Button
-                    variant="primary"
+                    variant="default"
                     size="sm"
                     onClick={() => {
                       setAnnotatingPhoto(selectedPhoto);

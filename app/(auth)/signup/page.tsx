@@ -103,7 +103,7 @@ export default function SignupPage() {
             {...register('confirmPassword')}
           />
 
-          <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
+          <Button type="submit" variant="default" className="w-full" isLoading={isLoading}>
             Sign Up
           </Button>
         </form>

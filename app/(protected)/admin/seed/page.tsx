@@ -98,7 +98,7 @@ export default function SeedPage() {
           )}
 
           <Button
-            variant="primary"
+            variant="default"
             onClick={handleSeed}
             isLoading={isSeeding}
             disabled={isSeeding}
@@ -116,7 +116,7 @@ export default function SeedPage() {
           </Button>
 
           <Button
-            variant="danger"
+            variant="destructive"
             onClick={handleClearDatabase}
             className="w-full"
           >

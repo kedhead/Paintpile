@@ -58,7 +58,7 @@ export function PaintSelectorModal({
         {/* Footer */}
         <div className="flex gap-3 p-4 border-t border-gray-200">
           <Button
-            variant="primary"
+            variant="default"
             onClick={handleConfirm}
             disabled={selectedPaints.length === 0}
             className="flex-1"

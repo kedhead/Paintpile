@@ -186,7 +186,7 @@ export function PileItemForm({ userId, editingItem, onClose }: PileItemFormProps
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               isLoading={isSubmitting}
               disabled={isSubmitting}
               className="flex-1"

@@ -318,7 +318,7 @@ export default function EditProfilePage() {
         <div className="flex gap-3 mt-6">
           <Button
             type="submit"
-            variant="primary"
+            variant="default"
             isLoading={isSubmitting}
             disabled={isSubmitting}
             className="flex-1"

@@ -62,7 +62,7 @@ export default function ProfilePage() {
           <p className="text-gray-600 mt-1">View and manage your profile</p>
         </div>
         <Button
-          variant="primary"
+          variant="default"
           onClick={() => router.push('/profile/edit')}
           className="flex items-center gap-2"
         >

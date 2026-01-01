@@ -133,7 +133,7 @@ export default function PilePage() {
             {showStats ? 'Hide' : 'Show'} Stats
           </Button>
           <Button
-            variant="primary"
+            variant="default"
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2"
           >
@@ -157,7 +157,7 @@ export default function PilePage() {
               <p className="text-lg font-medium">Your pile is empty!</p>
               <p className="text-sm mt-2">Add your first unpainted miniature to get started.</p>
               <Button
-                variant="primary"
+                variant="default"
                 onClick={() => setShowForm(true)}
                 className="mt-4"
               >
