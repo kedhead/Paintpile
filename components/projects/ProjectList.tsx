@@ -41,6 +41,7 @@ export function ProjectList({ projects, emptyMessage = 'No projects yet' }: Proj
                       {tag}
                     </span>
                   ))}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     project.status === 'completed' ? 'bg-success-100 text-success-700' :
                     project.status === 'in-progress' ? 'bg-secondary-100 text-secondary-700' :
                     'bg-gray-100 text-gray-700'
