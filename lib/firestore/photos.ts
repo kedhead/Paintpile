@@ -16,6 +16,7 @@ import {
 import { db } from '@/lib/firebase/firebase';
 import { Photo, PhotoAnnotation } from '@/types/photo';
 import { incrementUserStats } from './users';
+import { createTimelineEvent } from './timeline';
 
 /**
  * Add a photo to a project
@@ -60,6 +61,13 @@ export async function addPhotoToProject(
 
   // Increment user photo count
   await incrementUserStats(userId, 'photoCount', 1);
+
+  // Create timeline event
+  await createTimelineEvent(projectId, userId, 'photo_added', {
+    photoId,
+    photoUrl: photoData.thumbnailUrl,
+    photoCaption: photoData.caption,
+  });
 
   return photoId;
 }
@@ -115,12 +123,21 @@ export async function updatePhotoCaption(
 export async function addAnnotationToPhoto(
   projectId: string,
   photoId: string,
-  annotation: PhotoAnnotation
+  annotation: PhotoAnnotation,
+  userId?: string
 ): Promise<void> {
   const photoRef = doc(db, 'projects', projectId, 'photos', photoId);
   await updateDoc(photoRef, {
     annotations: arrayUnion(annotation),
   });
+
+  // Create timeline event if userId provided
+  if (userId) {
+    await createTimelineEvent(projectId, userId, 'annotation_added', {
+      photoId,
+      description: `Added annotation: ${annotation.label}`,
+    });
+  }
 }
 
 /**

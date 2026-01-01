@@ -10,9 +10,10 @@ import { Plus, Trash2, Edit2, X, Check } from 'lucide-react';
 
 interface TechniqueListProps {
   projectId: string;
+  userId?: string;
 }
 
-export function TechniqueList({ projectId }: TechniqueListProps) {
+export function TechniqueList({ projectId, userId }: TechniqueListProps) {
   const [techniques, setTechniques] = useState<ProjectTechnique[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -56,7 +57,7 @@ export function TechniqueList({ projectId }: TechniqueListProps) {
         await updateTechnique(projectId, editingId, formData);
       } else {
         // Create new technique
-        await addTechnique(projectId, formData);
+        await addTechnique(projectId, formData, userId);
       }
 
       await loadTechniques();

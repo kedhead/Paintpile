@@ -13,13 +13,15 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
 import { ProjectTechnique, TechniqueFormData } from '@/types/technique';
+import { createTimelineEvent } from './timeline';
 
 /**
  * Add a technique to a project
  */
 export async function addTechnique(
   projectId: string,
-  data: TechniqueFormData
+  data: TechniqueFormData,
+  userId?: string
 ): Promise<string> {
   const techniquesRef = collection(db, 'projects', projectId, 'techniques');
   const newTechniqueRef = doc(techniquesRef);
@@ -35,6 +37,15 @@ export async function addTechnique(
   };
 
   await setDoc(newTechniqueRef, technique);
+
+  // Create timeline event if userId provided
+  if (userId) {
+    await createTimelineEvent(projectId, userId, 'technique_added', {
+      techniqueId: newTechniqueRef.id,
+      techniqueName: data.name,
+      techniqueCategory: data.category,
+    });
+  }
 
   return newTechniqueRef.id;
 }

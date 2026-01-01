@@ -15,6 +15,7 @@ import { db } from '../firebase/firebase';
 import { ProjectPaint } from '@/types/paint';
 import { Paint } from '@/types/paint';
 import { getPaintsByIds } from './paints';
+import { createTimelineEvent } from './timeline';
 
 /**
  * Add a paint to a project's paint library
@@ -22,7 +23,8 @@ import { getPaintsByIds } from './paints';
 export async function addPaintToProject(
   projectId: string,
   paintId: string,
-  notes?: string
+  notes?: string,
+  userId?: string
 ): Promise<void> {
   const paintRef = doc(db, 'projects', projectId, 'paints', paintId);
 
@@ -35,6 +37,20 @@ export async function addPaintToProject(
   };
 
   await setDoc(paintRef, paintDoc);
+
+  // Create timeline event if userId provided
+  if (userId) {
+    // Get paint details for timeline event
+    const paints = await getPaintsByIds([paintId]);
+    if (paints.length > 0) {
+      const paint = paints[0];
+      await createTimelineEvent(projectId, userId, 'paint_added', {
+        paintId,
+        paintName: paint.name,
+        paintBrand: paint.brand,
+      });
+    }
+  }
 }
 
 /**

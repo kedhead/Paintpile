@@ -12,13 +12,15 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
 import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
+import { createTimelineEvent } from './timeline';
 
 /**
  * Create a new paint recipe for a project
  */
 export async function createPaintRecipe(
   projectId: string,
-  data: PaintRecipeFormData
+  data: PaintRecipeFormData,
+  userId?: string
 ): Promise<string> {
   const recipesRef = collection(db, 'projects', projectId, 'paintRecipes');
   const newRecipeRef = doc(recipesRef);
@@ -34,6 +36,15 @@ export async function createPaintRecipe(
   };
 
   await setDoc(newRecipeRef, recipe);
+
+  // Create timeline event if userId provided
+  if (userId) {
+    await createTimelineEvent(projectId, userId, 'recipe_created', {
+      recipeId: newRecipeRef.id,
+      recipeName: data.name,
+      recipeDescription: data.description,
+    });
+  }
 
   return newRecipeRef.id;
 }
@@ -72,7 +83,8 @@ export async function getProjectRecipes(projectId: string): Promise<PaintRecipe[
 export async function updatePaintRecipe(
   projectId: string,
   recipeId: string,
-  data: Partial<PaintRecipeFormData>
+  data: Partial<PaintRecipeFormData>,
+  userId?: string
 ): Promise<void> {
   const recipeRef = doc(db, 'projects', projectId, 'paintRecipes', recipeId);
 
@@ -80,6 +92,15 @@ export async function updatePaintRecipe(
     ...data,
     updatedAt: serverTimestamp(),
   });
+
+  // Create timeline event if userId provided
+  if (userId && data.name) {
+    await createTimelineEvent(projectId, userId, 'recipe_updated', {
+      recipeId,
+      recipeName: data.name,
+      recipeDescription: data.description,
+    });
+  }
 }
 
 /**

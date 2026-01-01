@@ -13,6 +13,7 @@ import { PhotoAnnotator } from '@/components/annotations/PhotoAnnotator';
 interface PhotoGalleryProps {
   photos: Photo[];
   projectId?: string;
+  userId?: string;
   onDelete?: (photoId: string) => void;
   onPhotoUpdate?: () => void;
   canDelete?: boolean;
@@ -22,6 +23,7 @@ interface PhotoGalleryProps {
 export function PhotoGallery({
   photos,
   projectId,
+  userId,
   onDelete,
   onPhotoUpdate,
   canDelete = false,
@@ -186,6 +188,7 @@ export function PhotoGallery({
         <PhotoAnnotator
           photo={annotatingPhoto}
           projectId={projectId}
+          userId={userId}
           onClose={() => setAnnotatingPhoto(null)}
           onUpdate={() => {
             if (onPhotoUpdate) {

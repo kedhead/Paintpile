@@ -16,6 +16,7 @@ import {
 interface PhotoAnnotatorProps {
   photo: Photo;
   projectId: string;
+  userId?: string;
   onClose: () => void;
   onUpdate: () => void;
 }
@@ -23,6 +24,7 @@ interface PhotoAnnotatorProps {
 export function PhotoAnnotator({
   photo,
   projectId,
+  userId,
   onClose,
   onUpdate,
 }: PhotoAnnotatorProps) {
@@ -69,7 +71,7 @@ export function PhotoAnnotator({
 
   async function handleAddAnnotation(annotation: PhotoAnnotation) {
     try {
-      await addAnnotationToPhoto(projectId, photo.photoId, annotation);
+      await addAnnotationToPhoto(projectId, photo.photoId, annotation, userId);
       setAnnotations([...annotations, annotation]);
       setSelectedAnnotationId(annotation.id);
       onUpdate();

@@ -17,6 +17,7 @@ import { ProjectPaintLibrary } from '@/components/paints/ProjectPaintLibrary';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
 import { RecipeEditor } from '@/components/recipes/RecipeEditor';
 import { TechniqueList } from '@/components/techniques/TechniqueList';
+import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
 import { formatDate } from '@/lib/utils/formatters';
 import { PROJECT_STATUSES } from '@/lib/utils/constants';
 import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRecipe } from '@/lib/firestore/paint-recipes';
@@ -140,11 +141,13 @@ export default function ProjectDetailPage() {
   }
 
   async function handleSaveRecipe(data: PaintRecipeFormData) {
+    if (!currentUser) return;
+
     try {
       if (editingRecipe) {
-        await updatePaintRecipe(projectId, editingRecipe.recipeId, data);
+        await updatePaintRecipe(projectId, editingRecipe.recipeId, data, currentUser.uid);
       } else {
-        await createPaintRecipe(projectId, data);
+        await createPaintRecipe(projectId, data, currentUser.uid);
       }
       await loadRecipes();
       setShowRecipeEditor(false);
@@ -301,6 +304,7 @@ export default function ProjectDetailPage() {
             <PhotoGallery
               photos={photos}
               projectId={projectId}
+              userId={currentUser?.uid}
               onDelete={isOwner ? handleDeletePhoto : undefined}
               onPhotoUpdate={loadPhotos}
               canDelete={isOwner}
@@ -311,7 +315,7 @@ export default function ProjectDetailPage() {
       </Card>
 
       {/* Paint Library Section */}
-      {isOwner && <ProjectPaintLibrary projectId={projectId} />}
+      {isOwner && <ProjectPaintLibrary projectId={projectId} userId={currentUser?.uid} />}
 
       {/* Paint Recipes Section */}
       {isOwner && (
@@ -382,7 +386,10 @@ export default function ProjectDetailPage() {
       )}
 
       {/* Techniques Section */}
-      {isOwner && <TechniqueList projectId={projectId} />}
+      {isOwner && <TechniqueList projectId={projectId} userId={currentUser?.uid} />}
+
+      {/* Project Timeline */}
+      {isOwner && <ProjectTimeline projectId={projectId} />}
     </div>
   );
 }

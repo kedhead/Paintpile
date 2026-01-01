@@ -13,9 +13,10 @@ import { addPaintToProject } from '@/lib/firestore/project-paints';
 
 interface ProjectPaintLibraryProps {
   projectId: string;
+  userId?: string;
 }
 
-export function ProjectPaintLibrary({ projectId }: ProjectPaintLibraryProps) {
+export function ProjectPaintLibrary({ projectId, userId }: ProjectPaintLibraryProps) {
   const [paints, setPaints] = useState<Paint[]>([]);
   const [paintMetadata, setPaintMetadata] = useState<Record<string, ProjectPaint>>({});
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export function ProjectPaintLibrary({ projectId }: ProjectPaintLibraryProps) {
   async function handleAddPaints(selectedPaintIds: string[]) {
     try {
       for (const paintId of selectedPaintIds) {
-        await addPaintToProject(projectId, paintId);
+        await addPaintToProject(projectId, paintId, undefined, userId);
       }
       await loadPaints();
       setShowPaintSelector(false);
