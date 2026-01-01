@@ -62,7 +62,7 @@ export async function migratePileToProjects(): Promise<{
         }
 
         // Create project document with same ID as pile item for traceability
-n        // Convert type to tag and add shame tag
+        // Convert type to tag and add shame tag
         const tags = ["shame"];
         if (pileItem.type) {
           tags.push(pileItem.type);
