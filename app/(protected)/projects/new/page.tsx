@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { projectSchema, type ProjectFormData } from '@/lib/validation/schemas';
@@ -10,7 +10,8 @@ import { createProject } from '@/lib/firestore/projects';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { PROJECT_TYPES, PROJECT_STATUSES } from '@/lib/utils/constants';
+import { TagInput } from '@/components/ui/TagInput';
+import { PROJECT_STATUSES } from '@/lib/utils/constants';
 
 export default function NewProjectPage() {
   const [error, setError] = useState('');
@@ -21,11 +22,14 @@ export default function NewProjectPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       status: 'not-started',
+      quantity: 1,
+      tags: [],
     },
   });
 
@@ -94,29 +98,37 @@ export default function NewProjectPage() {
               )}
             </div>
 
-            {/* Project Type */}
+            {/* Tags */}
             <div>
-              <label
-                htmlFor="type"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Project Type
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Tags
               </label>
-              <select
-                id="type"
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:border-primary-500 focus:ring-primary-500"
-                {...register('type')}
-              >
-                {PROJECT_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-              {errors.type && (
-                <p className="mt-1.5 text-sm text-accent-600">{errors.type.message}</p>
+              <Controller
+                name="tags"
+                control={control}
+                render={({ field }) => (
+                  <TagInput
+                    tags={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="Type tags like warhammer, commission, infantry..."
+                  />
+                )}
+              />
+              {errors.tags && (
+                <p className="mt-1.5 text-sm text-accent-600">{errors.tags.message}</p>
               )}
             </div>
+
+            {/* Quantity */}
+            <Input
+              label="Quantity (Optional)"
+              type="number"
+              placeholder="1"
+              error={errors.quantity?.message}
+              {...register('quantity', {
+                setValueAs: (value) => (value ? parseInt(value, 10) : 1),
+              })}
+            />
 
             {/* Status */}
             <div>
