@@ -10,6 +10,8 @@ export interface Project {
   description?: string;
   type: ProjectType;
   status: ProjectStatus;
+  quantity?: number;
+  tags: string[];
   startDate?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -23,5 +25,7 @@ export interface ProjectFormData {
   description?: string;
   type: ProjectType;
   status: ProjectStatus;
+  quantity?: number;
+  tags?: string[];
   startDate?: Date;
 }

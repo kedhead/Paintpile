@@ -17,6 +17,18 @@ export const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
   { value: 'completed', label: 'Completed' },
 ];
 
+// Project Tags
+export const TAG_SHAME = 'shame';
+export const PROJECT_TAGS = [
+  'shame',
+  'commission',
+  'personal',
+  'gift',
+  'competition',
+  'tutorial',
+  'showcase',
+] as const;
+
 // Pile Types
 export const PILE_TYPES: { value: PileType; label: string }[] = [
   { value: 'warhammer', label: 'Warhammer' },

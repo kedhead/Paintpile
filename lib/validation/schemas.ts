@@ -31,6 +31,8 @@ export const projectSchema = z.object({
     required_error: 'Please select a status',
     invalid_type_error: 'Please select a status',
   }),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1').max(10000, 'Quantity is too large').optional(),
+  tags: z.array(z.string().min(1).max(20)).max(10, 'Maximum 10 tags allowed').optional(),
   startDate: z.date().optional(),
 });
 
