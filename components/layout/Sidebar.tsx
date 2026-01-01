@@ -45,42 +45,44 @@ export function Sidebar({ onNewProject }: SidebarProps) {
   ];
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-border flex flex-col">
+    <div className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-border">
-        <Link href="/dashboard" className="block">
+      <div className="p-6">
+        <Link href="/dashboard" className="block group transition-transform hover:scale-105">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <Palette className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center">
+              <Palette className="w-6 h-6 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-lg font-display font-bold text-foreground">
+            <div className="flex flex-col">
+              <h1 className="text-xl font-display font-bold tracking-wider text-sidebar-primary leading-none">
                 PAINTPILE
               </h1>
-              <p className="text-xs text-muted-foreground">Painting Journal</p>
+              <p className="text-[10px] text-muted-foreground mt-1 tracking-widest uppercase">
+                Painting Journal
+              </p>
             </div>
           </div>
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-4 space-y-2 mt-4">
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 group ${
                 item.current
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-sidebar-accent text-sidebar-primary border-r-2 border-sidebar-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50'
               }`}
             >
               <Icon
-                className={`w-5 h-5 ${item.current ? 'text-primary' : ''}`}
+                className={`w-5 h-5 ${item.current ? 'text-sidebar-primary' : 'text-muted-foreground group-hover:text-foreground'}`}
               />
-              {item.name}
+              <span className="font-medium">{item.name}</span>
             </Link>
           );
         })}
@@ -105,7 +107,7 @@ export function Sidebar({ onNewProject }: SidebarProps) {
         {/* New Project Button */}
         <button
           onClick={onNewProject}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-md font-semibold transition-all shadow-[0_0_15px_-3px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_20px_-3px_hsl(var(--primary)/0.5)] hover:bg-primary/90"
         >
           <Plus className="w-5 h-5" />
           New Project
