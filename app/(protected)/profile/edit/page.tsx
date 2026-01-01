@@ -45,6 +45,12 @@ export default function EditProfilePage() {
     try {
       setLoading(true);
       const userProfile = await getUserProfile(currentUser!.uid);
+
+      if (!userProfile) {
+        console.error('User profile not found');
+        return;
+      }
+
       setProfile(userProfile);
 
       // Set form values
