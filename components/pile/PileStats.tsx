@@ -1,25 +1,22 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { Project } from '@/types/project';
+import { TAG_SHAME } from '@/lib/utils/constants';
 
 interface PileStatsProps {
-  stats: {
-    total: number;
-    unpainted: number;
-    painting: number;
-    painted: number;
-    byType: Record<string, number>;
-  };
+  projects: Project[];
 }
 
 const STATUS_COLORS = {
-  unpainted: '#6B7280', // gray
-  painting: '#2563EB', // blue
-  painted: '#16A34A', // green
+  'not-started': '#6B7280', // gray
+  'in-progress': '#2563EB', // blue
+  'completed': '#16A34A', // green
 };
 
-const TYPE_COLORS = [
+const TAG_COLORS = [
   '#C026D3', // primary (magenta)
   '#2563EB', // secondary (blue)
   '#16A34A', // success (green)
@@ -28,21 +25,51 @@ const TYPE_COLORS = [
   '#8B5CF6', // purple
 ];
 
-export function PileStats({ stats }: PileStatsProps) {
+export function PileStats({ projects }: PileStatsProps) {
+  // Calculate stats from projects
+  const stats = useMemo(() => {
+    const result = {
+      total: 0,
+      notStarted: 0,
+      inProgress: 0,
+      completed: 0,
+      byTag: {} as Record<string, number>,
+    };
+
+    projects.forEach((project) => {
+      const qty = project.quantity || 1;
+      result.total += qty;
+
+      // Count by status
+      if (project.status === 'not-started') result.notStarted += qty;
+      else if (project.status === 'in-progress') result.inProgress += qty;
+      else if (project.status === 'completed') result.completed += qty;
+
+      // Count by tags (excluding 'shame')
+      project.tags
+        ?.filter((tag) => tag !== TAG_SHAME)
+        .forEach((tag) => {
+          result.byTag[tag] = (result.byTag[tag] || 0) + qty;
+        });
+    });
+
+    return result;
+  }, [projects]);
+
   const statusData = [
-    { name: 'Unpainted', value: stats.unpainted, color: STATUS_COLORS.unpainted },
-    { name: 'In Progress', value: stats.painting, color: STATUS_COLORS.painting },
-    { name: 'Completed', value: stats.painted, color: STATUS_COLORS.painted },
+    { name: 'Not Started', value: stats.notStarted, color: STATUS_COLORS['not-started'] },
+    { name: 'In Progress', value: stats.inProgress, color: STATUS_COLORS['in-progress'] },
+    { name: 'Completed', value: stats.completed, color: STATUS_COLORS['completed'] },
   ];
 
-  const typeData = Object.entries(stats.byType).map(([type, count], index) => ({
-    name: type.charAt(0).toUpperCase() + type.slice(1),
+  const tagData = Object.entries(stats.byTag).map(([tag, count], index) => ({
+    name: tag.charAt(0).toUpperCase() + tag.slice(1),
     value: count,
-    color: TYPE_COLORS[index % TYPE_COLORS.length],
+    color: TAG_COLORS[index % TAG_COLORS.length],
   }));
 
   const completionRate = stats.total > 0
-    ? ((stats.painted / stats.total) * 100).toFixed(1)
+    ? ((stats.completed / stats.total) * 100).toFixed(1)
     : '0.0';
 
   return (
@@ -58,13 +85,13 @@ export function PileStats({ stats }: PileStatsProps) {
         </CardContent>
       </Card>
 
-      {/* Unpainted */}
+      {/* Not Started */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-medium text-gray-600">Unpainted</CardTitle>
+          <CardTitle className="text-sm font-medium text-gray-600">Not Started</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold text-gray-700">{stats.unpainted}</div>
+          <div className="text-4xl font-bold text-gray-700">{stats.notStarted}</div>
           <p className="text-sm text-gray-500 mt-1">waiting to start</p>
         </CardContent>
       </Card>
@@ -75,7 +102,7 @@ export function PileStats({ stats }: PileStatsProps) {
           <CardTitle className="text-sm font-medium text-gray-600">In Progress</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold text-secondary-600">{stats.painting}</div>
+          <div className="text-4xl font-bold text-secondary-600">{stats.inProgress}</div>
           <p className="text-sm text-gray-500 mt-1">currently painting</p>
         </CardContent>
       </Card>
@@ -86,7 +113,7 @@ export function PileStats({ stats }: PileStatsProps) {
           <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold text-success-600">{stats.painted}</div>
+          <div className="text-4xl font-bold text-success-600">{stats.completed}</div>
           <p className="text-sm text-gray-500 mt-1">{completionRate}% completion</p>
         </CardContent>
       </Card>
@@ -126,20 +153,20 @@ export function PileStats({ stats }: PileStatsProps) {
         </CardContent>
       </Card>
 
-      {/* Type Breakdown Chart */}
+      {/* Tag Breakdown Chart */}
       <Card className="md:col-span-2 lg:col-span-2">
         <CardHeader>
-          <CardTitle>By Type</CardTitle>
+          <CardTitle>By Tag</CardTitle>
         </CardHeader>
         <CardContent>
-          {typeData.length > 0 ? (
+          {tagData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={typeData}>
+              <BarChart data={tagData}>
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="value" fill="#C026D3">
-                  {typeData.map((entry, index) => (
+                  {tagData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Bar>

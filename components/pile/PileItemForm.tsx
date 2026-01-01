@@ -1,19 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { pileItemSchema } from '@/lib/validation/schemas';
-import { PileFormData, PileItem } from '@/types/pile';
-import { addToPile, updatePileItem } from '@/lib/firestore/pile';
+import { projectSchema, type ProjectFormData } from '@/lib/validation/schemas';
+import { Project } from '@/types/project';
+import { createProject, updateProject } from '@/lib/firestore/projects';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { TagInput } from '@/components/ui/TagInput';
 import { X } from 'lucide-react';
-import { PILE_TYPES, PILE_STATUSES } from '@/lib/utils/constants';
+import { PROJECT_STATUSES, TAG_SHAME } from '@/lib/utils/constants';
 
 interface PileItemFormProps {
   userId: string;
-  editingItem?: PileItem | null;
+  editingItem?: Project | null;
   onClose: () => void;
 }
 
@@ -23,37 +24,49 @@ export function PileItemForm({ userId, editingItem, onClose }: PileItemFormProps
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     setValue,
-  } = useForm<PileFormData>({
-    resolver: zodResolver(pileItemSchema),
+  } = useForm<ProjectFormData>({
+    resolver: zodResolver(projectSchema),
     defaultValues: {
       name: '',
       quantity: 1,
-      status: 'unpainted',
-      type: 'warhammer',
-      notes: '',
+      status: 'not-started',
+      tags: [TAG_SHAME],
+      description: '',
     },
   });
 
   useEffect(() => {
     if (editingItem) {
       setValue('name', editingItem.name);
-      setValue('quantity', editingItem.quantity);
+      setValue('quantity', editingItem.quantity || 1);
       setValue('status', editingItem.status);
-      setValue('type', editingItem.type);
-      setValue('notes', editingItem.notes || '');
+      setValue('tags', editingItem.tags || [TAG_SHAME]);
+      setValue('description', editingItem.description || '');
     }
   }, [editingItem, setValue]);
 
-  const onSubmit = async (data: PileFormData) => {
+  const onSubmit = async (data: ProjectFormData) => {
     try {
       setIsSubmitting(true);
 
+      // Ensure 'shame' tag is always included
+      const tags = [...(data.tags || [])];
+      if (!tags.includes(TAG_SHAME)) {
+        tags.unshift(TAG_SHAME);
+      }
+
+      const projectData = {
+        ...data,
+        tags,
+      };
+
       if (editingItem) {
-        await updatePileItem(editingItem.pileId, userId, data);
+        await updateProject(editingItem.projectId, projectData);
       } else {
-        await addToPile(userId, data);
+        await createProject(userId, projectData);
       }
 
       onClose();
@@ -109,23 +122,24 @@ export function PileItemForm({ userId, editingItem, onClose }: PileItemFormProps
           </div>
 
           <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-              Type *
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tags
             </label>
-            <select
-              id="type"
-              {...register('type')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              {PILE_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-            {errors.type && (
-              <p className="mt-1 text-sm text-accent-600">{errors.type.message}</p>
+            <Controller
+              name="tags"
+              control={control}
+              render={({ field }) => (
+                <TagInput
+                  tags={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="Add tags like warhammer, infantry... (shame tag is automatic)"
+                />
+              )}
+            />
+            {errors.tags && (
+              <p className="mt-1 text-sm text-accent-600">{errors.tags.message}</p>
             )}
+            <p className="mt-1 text-xs text-gray-500">The 'shame' tag will be added automatically</p>
           </div>
 
           <div>
@@ -137,7 +151,7 @@ export function PileItemForm({ userId, editingItem, onClose }: PileItemFormProps
               {...register('status')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              {PILE_STATUSES.map((status) => (
+              {PROJECT_STATUSES.map((status) => (
                 <option key={status.value} value={status.value}>
                   {status.label}
                 </option>
@@ -149,18 +163,18 @@ export function PileItemForm({ userId, editingItem, onClose }: PileItemFormProps
           </div>
 
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              Description
             </label>
             <textarea
-              id="notes"
-              {...register('notes')}
+              id="description"
+              {...register('description')}
               rows={3}
               placeholder="Any additional notes about this item..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
             />
-            {errors.notes && (
-              <p className="mt-1 text-sm text-accent-600">{errors.notes.message}</p>
+            {errors.description && (
+              <p className="mt-1 text-sm text-accent-600">{errors.description.message}</p>
             )}
           </div>
 
