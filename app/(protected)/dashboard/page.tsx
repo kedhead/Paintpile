@@ -7,7 +7,10 @@ import { Spinner } from '@/components/ui/Spinner';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { getUserProjects } from '@/lib/firestore/projects';
 import { Project } from '@/types/project';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -55,71 +58,73 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen p-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-5xl font-display font-bold text-foreground mb-2">
-            MY GALLERY
-          </h1>
-          <p className="text-lg font-hand text-muted-foreground italic">
-            "Every mini tells a story. Keep track of yours."
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Hero Header */}
+      <div className="relative h-64 md:h-80 overflow-hidden border-b border-border">
+        <div className="absolute inset-0 bg-gradient-to-br from-sidebar via-background to-sidebar"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40"></div>
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-2 drop-shadow-lg">
+              My Gallery
+            </h2>
+            <p className="text-muted-foreground max-w-xl text-lg font-light">
+              "Every mini tells a story. Keep track of yours."
+            </p>
+          </div>
         </div>
+      </div>
 
-        {/* Search and Filters */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
-          {/* Search Bar */}
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
+      <div className="max-w-7xl mx-auto p-6 md:p-10 -mt-8 relative z-10">
+        {/* Controls */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
               placeholder="Search projects, techniques..."
+              className="pl-10 bg-card border-border/50 shadow-sm focus:ring-primary"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-
-          {/* Filter Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
             {filterButtons.map((filter) => (
-              <button
+              <Button
                 key={filter.id}
+                variant={statusFilter === filter.id ? "default" : "outline"}
                 onClick={() => setStatusFilter(filter.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  statusFilter === filter.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                }`}
+                className="capitalize whitespace-nowrap"
               >
-                {filter.label}
-              </button>
+                {filter.label.replace("-", " ")}
+              </Button>
             ))}
+            <Button variant="outline" size="icon">
+              <Filter className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
-        {/* Projects Grid */}
+        {/* Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Spinner size="lg" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProjects.map((project) => (
               <ProjectCard key={project.projectId} project={project} />
             ))}
 
             {/* New Project Card */}
-            <button
-              onClick={() => router.push('/projects/new')}
-              className="group relative rounded-lg border-2 border-dashed border-border bg-card/50 overflow-hidden transition-all hover:border-primary hover:bg-card/80 aspect-[4/3] flex flex-col items-center justify-center p-4"
-            >
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                <Plus className="w-6 h-6 text-primary" />
+            <Link href="/projects/new">
+              <div className="block h-full min-h-[300px] border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-4xl font-light">+</span>
+                </div>
+                <h3 className="font-display font-bold text-lg">New Project</h3>
+                <p className="text-sm opacity-70">Start a new journey</p>
               </div>
-              <h3 className="font-display text-sm font-semibold mb-0.5">New Project</h3>
-              <p className="text-xs text-muted-foreground">Start a new journey</p>
-            </button>
+            </Link>
           </div>
         )}
 
@@ -133,6 +138,7 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
+      </div>
     </div>
   );
 }

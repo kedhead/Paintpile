@@ -8,9 +8,11 @@ import { getProjectPhotos, deletePhotoFromProject } from '@/lib/firestore/photos
 import { deletePhoto as deletePhotoStorage } from '@/lib/firebase/storage';
 import { Project } from '@/types/project';
 import { Photo } from '@/types/photo';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { ProjectPaintLibrary } from '@/components/paints/ProjectPaintLibrary';
@@ -19,9 +21,11 @@ import { RecipeEditor } from '@/components/recipes/RecipeEditor';
 import { TechniqueList } from '@/components/techniques/TechniqueList';
 import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
 import { formatDate } from '@/lib/utils/formatters';
-import { PROJECT_STATUSES } from '@/lib/utils/constants';
 import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRecipe } from '@/lib/firestore/paint-recipes';
 import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
+import { ArrowLeft, Calendar, Tag, Palette } from 'lucide-react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -192,204 +196,235 @@ export default function ProjectDetailPage() {
 
   if (error || !project) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center text-accent-600">
-            <p className="text-lg font-medium">{error || 'Project not found'}</p>
-            <Button variant="ghost" className="mt-4" onClick={() => router.push('/dashboard')}>
-              Back to Dashboard
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-lg font-medium text-muted-foreground mb-4">{error || 'Project not found'}</p>
+          <Button variant="outline" onClick={() => router.push('/dashboard')}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
     );
   }
 
   const isOwner = project.userId === currentUser?.uid;
-  const projectStatus = PROJECT_STATUSES.find((s) => s.value === project.status)?.label || project.status;
+  const coverPhoto = photos[0]?.url || '/placeholder-project.jpg';
 
   return (
-    <div className="space-y-6">
-      {/* Project Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-3xl">{project.name}</CardTitle>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {project.tags?.map((tag) => (
-                  <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-700">
-                    {tag}
-                  </span>
-                ))}
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  project.status === 'completed' ? 'bg-success-100 text-success-700' :
-                  project.status === 'in-progress' ? 'bg-secondary-100 text-secondary-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
-                  {projectStatus}
-                </span>
-                {project.isPublic && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
-                    Public
-                  </span>
-                )}
-              </div>
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto px-6 pt-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Link href="/dashboard">
+            <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-secondary transition-colors cursor-pointer">
+              <ArrowLeft className="w-5 h-5" />
             </div>
-            {isOwner && (
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={togglePublic}
-                  className="text-sm"
-                >
-                  {project.isPublic ? 'Make Private' : 'Make Public'}
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={handleDelete}
-                  isLoading={isDeleting}
-                  className="text-sm"
-                >
-                  Delete
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {project.description && (
-            <p className="text-gray-700 mb-4">{project.description}</p>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500">Created:</span>{' '}
-              <span className="font-medium">{formatDate(project.createdAt)}</span>
-            </div>
-            {project.startDate && (
-              <div>
-                <span className="text-gray-500">Started:</span>{' '}
-                <span className="font-medium">{formatDate(project.startDate)}</span>
-              </div>
-            )}
-            <div>
-              <span className="text-gray-500">Last Updated:</span>{' '}
-              <span className="font-medium">{formatDate(project.updatedAt)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </Link>
+          <h1 className="text-2xl font-display font-bold">Project Analysis</h1>
+        </div>
 
-      {/* Photos Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Photos ({photos.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isOwner && (
-            <div className="mb-6">
-              <PhotoUpload
-                userId={currentUser!.uid}
-                projectId={projectId}
-                onUploadComplete={loadPhotos}
-              />
-            </div>
-          )}
-
-          {loadingPhotos ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : (
-            <PhotoGallery
-              photos={photos}
-              projectId={projectId}
-              userId={currentUser?.uid}
-              onDelete={isOwner ? handleDeletePhoto : undefined}
-              onPhotoUpdate={loadPhotos}
-              canDelete={isOwner}
-              canAnnotate={isOwner}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Paint Library Section */}
-      {isOwner && <ProjectPaintLibrary projectId={projectId} userId={currentUser?.uid} />}
-
-      {/* Paint Recipes Section */}
-      {isOwner && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Paint Recipes ({recipes.length})</CardTitle>
-              {!showRecipeEditor && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setShowRecipeEditor(true)}
-                >
-                  Create Recipe
-                </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Image Area */}
+          <div className="lg:col-span-2">
+            <div className="relative aspect-[4/3] bg-muted rounded-xl overflow-hidden border border-border">
+              {photos.length > 0 ? (
+                <PhotoGallery
+                  photos={photos}
+                  projectId={projectId}
+                  userId={currentUser?.uid}
+                  onDelete={isOwner ? handleDeletePhoto : undefined}
+                  onPhotoUpdate={loadPhotos}
+                  canDelete={isOwner}
+                  canAnnotate={isOwner}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-4">No photos yet</p>
+                    {isOwner && (
+                      <PhotoUpload
+                        userId={currentUser!.uid}
+                        projectId={projectId}
+                        onUploadComplete={loadPhotos}
+                      />
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-          </CardHeader>
-          <CardContent>
-            {showRecipeEditor ? (
-              <RecipeEditor
-                initialData={editingRecipe ? {
-                  name: editingRecipe.name,
-                  description: editingRecipe.description,
-                  paints: editingRecipe.paints,
-                } : undefined}
-                onSave={handleSaveRecipe}
-                onCancel={handleCancelRecipeEditor}
-              />
-            ) : loadingRecipes ? (
-              <div className="flex items-center justify-center py-12">
-                <Spinner size="lg" />
+          </div>
+
+          {/* Sidebar - Project Info */}
+          <div className="space-y-6">
+            <div className="bg-card rounded-xl border border-border shadow-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <StatusBadge status={project.status} />
+                {project.isPublic && (
+                  <span className="text-xs text-muted-foreground uppercase tracking-widest">Public</span>
+                )}
               </div>
-            ) : recipes.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <p className="mb-4">No paint recipes yet.</p>
-                <p className="text-sm">Create recipes to track paint combinations for different areas.</p>
+              <h2 className="text-3xl font-display font-bold text-foreground mb-1">{project.name}</h2>
+              <p className="text-lg text-muted-foreground mb-6">{project.description || 'No description'}</p>
+
+              <div className="flex flex-col gap-3 py-4 border-y border-border">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>Created {formatDate(project.createdAt)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground opacity-60 italic">
+                  Last updated {formatDate(project.updatedAt)}
+                </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {recipes.map((recipe) => (
-                  <div key={recipe.recipeId} className="relative">
-                    <RecipeCard recipe={recipe} />
-                    <div className="absolute top-3 right-3 flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditRecipe(recipe)}
-                        className="h-8 w-8 p-0"
+
+              {project.tags && project.tags.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex gap-2 flex-wrap">
+                    {project.tags.map((tag) => (
+                      <div
+                        key={tag}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/50 border border-border text-[10px] font-bold uppercase tracking-wider text-secondary-foreground"
                       >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDeleteRecipe(recipe.recipeId)}
-                        className="h-8 w-8 p-0"
-                      >
-                        Delete
-                      </Button>
-                    </div>
+                        <Tag className="w-3 h-3" />
+                        {tag}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+              )}
+
+              {isOwner && (
+                <div className="mt-6 space-y-2">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={togglePublic}
+                  >
+                    {project.isPublic ? 'Make Private' : 'Make Public'}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete Project'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Section */}
+      <div className="max-w-7xl mx-auto px-6 mt-12 relative z-20">
+        <div className="bg-card rounded-xl border border-border shadow-xl p-6 md:p-8">
+          <Tabs defaultValue="log" className="w-full">
+            <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 h-auto gap-6 mb-6">
+              <TabsTrigger
+                value="log"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground px-0 py-2 text-muted-foreground transition-all text-base"
+              >
+                Progress Log
+              </TabsTrigger>
+              <TabsTrigger
+                value="colors"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground px-0 py-2 text-muted-foreground transition-all text-base"
+              >
+                Palette & Recipes
+              </TabsTrigger>
+              <TabsTrigger
+                value="techniques"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground px-0 py-2 text-muted-foreground transition-all text-base"
+              >
+                Techniques
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Progress Log Tab */}
+            <TabsContent value="log" className="mt-0">
+              <ProjectTimeline projectId={projectId} />
+            </TabsContent>
+
+            {/* Palette & Recipes Tab */}
+            <TabsContent value="colors" className="mt-0">
+              <div className="space-y-6">
+                {/* Paint Library */}
+                {isOwner && <ProjectPaintLibrary projectId={projectId} userId={currentUser?.uid} />}
+
+                {/* Recipes */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-display font-bold flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-primary" />
+                      Paint Recipes
+                    </h3>
+                    {isOwner && !showRecipeEditor && (
+                      <Button size="sm" onClick={() => setShowRecipeEditor(true)}>
+                        Create Recipe
+                      </Button>
+                    )}
+                  </div>
+
+                  {showRecipeEditor ? (
+                    <RecipeEditor
+                      initialData={editingRecipe ? {
+                        name: editingRecipe.name,
+                        description: editingRecipe.description,
+                        paints: editingRecipe.paints,
+                      } : undefined}
+                      onSave={handleSaveRecipe}
+                      onCancel={handleCancelRecipeEditor}
+                    />
+                  ) : loadingRecipes ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Spinner />
+                    </div>
+                  ) : recipes.length === 0 ? (
+                    <div className="p-4 bg-card rounded border border-border border-dashed text-center text-muted-foreground text-sm">
+                      <p>No custom mixes recorded yet.</p>
+                      {isOwner && (
+                        <Button variant="link" className="text-primary mt-1 h-auto p-0" onClick={() => setShowRecipeEditor(true)}>
+                          Create Recipe
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {recipes.map((recipe) => (
+                        <div key={recipe.recipeId} className="relative">
+                          <RecipeCard recipe={recipe} />
+                          {isOwner && (
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => handleEditRecipe(recipe)}>
+                                Edit
+                              </Button>
+                              <Button variant="destructive" size="sm" onClick={() => handleDeleteRecipe(recipe.recipeId)}>
+                                Delete
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            </TabsContent>
 
-      {/* Techniques Section */}
-      {isOwner && <TechniqueList projectId={projectId} userId={currentUser?.uid} />}
-
-      {/* Project Timeline */}
-      {isOwner && <ProjectTimeline projectId={projectId} />}
+            {/* Techniques Tab */}
+            <TabsContent value="techniques" className="mt-0">
+              {isOwner ? (
+                <TechniqueList projectId={projectId} userId={currentUser?.uid} />
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                  <p>Technique notes coming soon.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
