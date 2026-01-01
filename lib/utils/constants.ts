@@ -1,6 +1,6 @@
 import { ProjectType, ProjectStatus } from '@/types/project';
 import { PaintType } from '@/types/paint';
-import { PileStatus } from '@/types/pile';
+import { PileStatus, PileType } from '@/types/pile';
 
 // Project Types
 export const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
@@ -15,6 +15,15 @@ export const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
   { value: 'not-started', label: 'Not Started' },
   { value: 'in-progress', label: 'In Progress' },
   { value: 'completed', label: 'Completed' },
+];
+
+// Pile Types
+export const PILE_TYPES: { value: PileType; label: string }[] = [
+  { value: 'warhammer', label: 'Warhammer' },
+  { value: 'd&d', label: 'D&D' },
+  { value: 'historical', label: 'Historical' },
+  { value: 'board-game', label: 'Board Game' },
+  { value: 'other', label: 'Other' },
 ];
 
 // Pile Status Options

@@ -53,6 +53,20 @@ export const pileSchema = z.object({
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
 });
 
+export const pileItemSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
+  type: z.enum(['warhammer', 'd&d', 'historical', 'board-game', 'other'], {
+    required_error: 'Please select a type',
+    invalid_type_error: 'Please select a type',
+  }),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+  status: z.enum(['unpainted', 'painting', 'painted'], {
+    required_error: 'Please select a status',
+    invalid_type_error: 'Please select a status',
+  }),
+  notes: z.string().max(500, 'Notes are too long').optional(),
+});
+
 // Photo Upload Schema
 export const photoUploadSchema = z.object({
   caption: z.string().max(200, 'Caption is too long').optional(),
