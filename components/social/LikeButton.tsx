@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { likeProject, unlikeProject, isProjectLiked } from '@/lib/firestore/likes';
 import { Heart } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/cn';
 
 interface LikeButtonProps {
   userId: string;
