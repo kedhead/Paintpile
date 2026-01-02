@@ -26,9 +26,11 @@ import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRec
 import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
-import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Input } from '@/components/ui/Input';
+import { TagInput } from '@/components/ui/TagInput';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -50,6 +52,11 @@ export default function ProjectDetailPage() {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotationPaints, setAnnotationPaints] = useState<Paint[]>([]);
+  const [isEditingProject, setIsEditingProject] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedStatus, setEditedStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
+  const [editedTags, setEditedTags] = useState<string[]>([]);
   const heroImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -238,6 +245,45 @@ export default function ProjectDetailPage() {
       }
     } else {
       setAnnotationPaints([]);
+    }
+  }
+
+  function handleStartEditProject() {
+    if (!project) return;
+    setEditedName(project.name);
+    setEditedDescription(project.description || '');
+    setEditedStatus(project.status);
+    setEditedTags(project.tags || []);
+    setIsEditingProject(true);
+  }
+
+  function handleCancelEditProject() {
+    setIsEditingProject(false);
+  }
+
+  async function handleSaveProject() {
+    if (!project || !currentUser) return;
+
+    try {
+      await updateProject(project.projectId, {
+        name: editedName.trim(),
+        description: editedDescription.trim() || undefined,
+        status: editedStatus,
+        tags: editedTags,
+      });
+
+      setProject({
+        ...project,
+        name: editedName.trim(),
+        description: editedDescription.trim() || undefined,
+        status: editedStatus,
+        tags: editedTags,
+      });
+
+      setIsEditingProject(false);
+    } catch (err) {
+      console.error('Error updating project:', err);
+      alert('Failed to update project');
     }
   }
 
@@ -448,59 +494,146 @@ export default function ProjectDetailPage() {
           {/* Sidebar - Project Info */}
           <div className="space-y-6">
             <div className="bg-card rounded-xl border border-border shadow-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <StatusBadge status={project.status} />
-                {project.isPublic && (
-                  <span className="text-xs text-muted-foreground uppercase tracking-widest">Public</span>
-                )}
-              </div>
-              <h2 className="text-3xl font-display font-bold text-foreground mb-1">{project.name}</h2>
-              <p className="text-lg text-muted-foreground mb-6">{project.description || 'No description'}</p>
+              {isEditingProject ? (
+                /* Edit Mode */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-card-foreground">Edit Project</h3>
+                    <button
+                      onClick={handleCancelEditProject}
+                      className="text-muted-foreground hover:text-card-foreground"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
 
-              <div className="flex flex-col gap-3 py-4 border-y border-border">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>Created {formatDate(project.createdAt)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground opacity-60 italic">
-                  Last updated {formatDate(project.updatedAt)}
-                </div>
-              </div>
+                  <Input
+                    label="Project Name"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    placeholder="Enter project name"
+                  />
 
-              {project.tags && project.tags.length > 0 && (
-                <div className="mt-6">
-                  <div className="flex gap-2 flex-wrap">
-                    {project.tags.map((tag) => (
-                      <div
-                        key={tag}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/50 border border-border text-[10px] font-bold uppercase tracking-wider text-secondary-foreground"
-                      >
-                        <Tag className="w-3 h-3" />
-                        {tag}
-                      </div>
-                    ))}
+                  <div>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={editedDescription}
+                      onChange={(e) => setEditedDescription(e.target.value)}
+                      placeholder="Add a description"
+                      rows={3}
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={editedStatus}
+                      onChange={(e) => setEditedStatus(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="not-started">Not Started</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+
+                  <TagInput
+                    label="Tags"
+                    value={editedTags}
+                    onChange={setEditedTags}
+                    placeholder="Add tags"
+                  />
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      variant="default"
+                      onClick={handleSaveProject}
+                      className="flex-1"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelEditProject}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
-              )}
+              ) : (
+                /* View Mode */
+                <>
+                  <div className="flex items-center gap-3 mb-4">
+                    <StatusBadge status={project.status} />
+                    {project.isPublic && (
+                      <span className="text-xs text-muted-foreground uppercase tracking-widest">Public</span>
+                    )}
+                    {isOwner && (
+                      <button
+                        onClick={handleStartEditProject}
+                        className="ml-auto text-muted-foreground hover:text-primary transition-colors"
+                        title="Edit project"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <h2 className="text-3xl font-display font-bold text-foreground mb-1">{project.name}</h2>
+                  <p className="text-lg text-muted-foreground mb-6">{project.description || 'No description'}</p>
 
-              {isOwner && (
-                <div className="mt-6 space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={togglePublic}
-                  >
-                    {project.isPublic ? 'Make Private' : 'Make Public'}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete Project'}
-                  </Button>
-                </div>
+                  <div className="flex flex-col gap-3 py-4 border-y border-border">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4" />
+                      <span>Created {formatDate(project.createdAt)}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground opacity-60 italic">
+                      Last updated {formatDate(project.updatedAt)}
+                    </div>
+                  </div>
+
+                  {project.tags && project.tags.length > 0 && (
+                    <div className="mt-6">
+                      <div className="flex gap-2 flex-wrap">
+                        {project.tags.map((tag) => (
+                          <div
+                            key={tag}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/50 border border-border text-[10px] font-bold uppercase tracking-wider text-secondary-foreground"
+                          >
+                            <Tag className="w-3 h-3" />
+                            {tag}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {isOwner && (
+                    <div className="mt-6 space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={togglePublic}
+                      >
+                        {project.isPublic ? 'Make Private' : 'Make Public'}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? 'Deleting...' : 'Delete Project'}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
