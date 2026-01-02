@@ -6,7 +6,7 @@ import { ProjectCard } from '@/components/projects/ProjectCard';
 import { getPublicProjects } from '@/lib/firestore/projects';
 import { getProjectPhotos } from '@/lib/firestore/photos';
 import { Project } from '@/types/project';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
@@ -16,6 +16,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function loadPublicProjects() {
@@ -55,7 +56,7 @@ export default function GalleryPage() {
     }
 
     loadPublicProjects();
-  }, []);
+  }, [refreshKey]);
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
@@ -125,6 +126,15 @@ export default function GalleryPage() {
             ))}
             <Button variant="outline" size="icon">
               <Filter className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setRefreshKey(prev => prev + 1)}
+              disabled={loading}
+              title="Refresh gallery"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
