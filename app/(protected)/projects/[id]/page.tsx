@@ -8,6 +8,7 @@ import { getProjectPhotos, deletePhotoFromProject } from '@/lib/firestore/photos
 import { deletePhoto as deletePhotoStorage } from '@/lib/firebase/storage';
 import { Project } from '@/types/project';
 import { Photo } from '@/types/photo';
+import { Paint } from '@/types/paint';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -23,6 +24,8 @@ import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
 import { formatDate } from '@/lib/utils/formatters';
 import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRecipe } from '@/lib/firestore/paint-recipes';
 import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
+import { getPaintsByIds } from '@/lib/firestore/paints';
+import { PaintChipList } from '@/components/paints/PaintChip';
 import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -45,6 +48,8 @@ export default function ProjectDetailPage() {
   const [editingRecipe, setEditingRecipe] = useState<PaintRecipe | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [annotationPaints, setAnnotationPaints] = useState<Paint[]>([]);
   const heroImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -200,10 +205,14 @@ export default function ProjectDetailPage() {
 
   function handlePreviousPhoto() {
     setCurrentPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+    setSelectedAnnotationId(null);
+    setAnnotationPaints([]);
   }
 
   function handleNextPhoto() {
     setCurrentPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+    setSelectedAnnotationId(null);
+    setAnnotationPaints([]);
   }
 
   async function handleSetFeaturedPhoto(photoId: string) {
@@ -215,6 +224,20 @@ export default function ProjectDetailPage() {
     } catch (err) {
       console.error('Error setting featured photo:', err);
       alert('Failed to set featured photo');
+    }
+  }
+
+  async function handleAnnotationClick(annotationId: string, paintIds: string[]) {
+    setSelectedAnnotationId(annotationId);
+    if (paintIds.length > 0) {
+      try {
+        const paints = await getPaintsByIds(paintIds);
+        setAnnotationPaints(paints);
+      } catch (err) {
+        console.error('Error loading annotation paints:', err);
+      }
+    } else {
+      setAnnotationPaints([]);
     }
   }
 
@@ -283,11 +306,13 @@ export default function ProjectDetailPage() {
                           }, 0);
                           const hue = Math.abs(hash % 360);
                           const markerColor = `hsl(${hue}, 70%, 50%)`;
+                          const isSelected = selectedAnnotationId === annotation.id;
 
                           return (
-                            <div
+                            <button
                               key={annotation.id}
-                              className="absolute flex items-center gap-2 pointer-events-none"
+                              onClick={() => handleAnnotationClick(annotation.id, annotation.paints.map(p => p.paintId))}
+                              className="absolute flex items-center gap-2 cursor-pointer hover:scale-110 transition-transform"
                               style={{
                                 left: `${pixelX}px`,
                                 top: `${pixelY}px`,
@@ -296,16 +321,20 @@ export default function ProjectDetailPage() {
                             >
                               {/* Marker Dot */}
                               <div
-                                className="w-6 h-6 rounded-full border-2 border-white shadow-lg"
+                                className={`w-6 h-6 rounded-full border-2 shadow-lg ${
+                                  isSelected ? 'border-white scale-125' : 'border-white/80'
+                                }`}
                                 style={{ backgroundColor: markerColor }}
                               />
                               {/* Label */}
                               {annotation.label && (
-                                <div className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-black/70 text-white">
+                                <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                                  isSelected ? 'bg-white text-gray-900' : 'bg-black/70 text-white'
+                                }`}>
                                   {annotation.label}
                                 </div>
                               )}
-                            </div>
+                            </button>
                           );
                         })}
                       </>
@@ -381,6 +410,39 @@ export default function ProjectDetailPage() {
                 />
               </div>
             )}
+
+            {/* Selected Annotation Details */}
+            {selectedAnnotationId && photos.length > 0 && (() => {
+              const annotation = photos[currentPhotoIndex].annotations?.find(a => a.id === selectedAnnotationId);
+              if (!annotation) return null;
+
+              return (
+                <div className="mt-4 bg-card rounded-xl border border-border p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-card-foreground">
+                      {annotation.label}
+                    </h4>
+                    <button
+                      onClick={() => setSelectedAnnotationId(null)}
+                      className="text-xs text-muted-foreground hover:text-card-foreground"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  {annotation.notes && (
+                    <p className="text-sm text-muted-foreground mb-3">{annotation.notes}</p>
+                  )}
+                  {annotationPaints.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-card-foreground mb-2">
+                        Paints ({annotationPaints.length}):
+                      </p>
+                      <PaintChipList paints={annotationPaints} size="sm" />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Sidebar - Project Info */}

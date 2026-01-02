@@ -33,11 +33,19 @@ export function PhotoGallery({
   const [annotatingPhoto, setAnnotatingPhoto] = useState<Photo | null>(null);
   const [photoPaints, setPhotoPaints] = useState<Record<string, Paint[]>>({});
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [annotationPaints, setAnnotationPaints] = useState<Paint[]>([]);
   const imageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     loadAllPaints();
   }, [photos]);
+
+  useEffect(() => {
+    // Clear selected annotation when photo changes
+    setSelectedAnnotationId(null);
+    setAnnotationPaints([]);
+  }, [selectedPhoto]);
 
   async function loadAllPaints() {
     const paintsMap: Record<string, Paint[]> = {};
@@ -58,6 +66,20 @@ export function PhotoGallery({
         width: imageRef.current.clientWidth,
         height: imageRef.current.clientHeight,
       });
+    }
+  }
+
+  async function handleAnnotationClick(annotationId: string, paintIds: string[]) {
+    setSelectedAnnotationId(annotationId);
+    if (paintIds.length > 0) {
+      try {
+        const paints = await getPaintsByIds(paintIds);
+        setAnnotationPaints(paints);
+      } catch (err) {
+        console.error('Error loading annotation paints:', err);
+      }
+    } else {
+      setAnnotationPaints([]);
     }
   }
 
@@ -160,10 +182,16 @@ export function PhotoGallery({
                     const hue = Math.abs(hash % 360);
                     const markerColor = `hsl(${hue}, 70%, 50%)`;
 
+                    const isSelected = selectedAnnotationId === annotation.id;
+
                     return (
-                      <div
+                      <button
                         key={annotation.id}
-                        className="absolute flex items-center gap-2 pointer-events-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAnnotationClick(annotation.id, annotation.paints.map(p => p.paintId));
+                        }}
+                        className="absolute flex items-center gap-2 cursor-pointer hover:scale-110 transition-transform"
                         style={{
                           left: `${pixelX}px`,
                           top: `${pixelY}px`,
@@ -172,30 +200,34 @@ export function PhotoGallery({
                       >
                         {/* Marker Dot */}
                         <div
-                          className="w-6 h-6 rounded-full border-2 border-white shadow-lg"
+                          className={`w-6 h-6 rounded-full border-2 shadow-lg ${
+                            isSelected ? 'border-white scale-125' : 'border-white/80'
+                          }`}
                           style={{ backgroundColor: markerColor }}
                         />
                         {/* Label */}
                         {annotation.label && (
-                          <div className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-black/70 text-white">
+                          <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                            isSelected ? 'bg-white text-gray-900' : 'bg-black/70 text-white'
+                          }`}>
                             {annotation.label}
                           </div>
                         )}
-                      </div>
+                      </button>
                     );
                   })}
                 </>
               )}
             </div>
-            <div className="bg-white rounded-lg p-4 mt-4 space-y-3">
+            <div className="bg-card rounded-lg p-4 mt-4 space-y-3 border border-border">
               {selectedPhoto.caption && (
                 <div>
-                  <p className="text-gray-900">{selectedPhoto.caption}</p>
+                  <p className="text-card-foreground">{selectedPhoto.caption}</p>
                 </div>
               )}
               {photoPaints[selectedPhoto.photoId] && photoPaints[selectedPhoto.photoId].length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
+                  <p className="text-sm font-medium text-card-foreground mb-2">
                     Paints Used ({photoPaints[selectedPhoto.photoId].length}):
                   </p>
                   <PaintChipList
@@ -208,11 +240,44 @@ export function PhotoGallery({
               {/* Annotations info */}
               {selectedPhoto.annotations && selectedPhoto.annotations.length > 0 && (
                 <div>
-                  <p className="text-sm text-gray-600">
-                    {selectedPhoto.annotations.length} annotation{selectedPhoto.annotations.length !== 1 ? 's' : ''}
+                  <p className="text-sm text-muted-foreground">
+                    {selectedPhoto.annotations.length} annotation{selectedPhoto.annotations.length !== 1 ? 's' : ''} - Click markers to view details
                   </p>
                 </div>
               )}
+
+              {/* Selected Annotation Details */}
+              {selectedAnnotationId && (() => {
+                const annotation = selectedPhoto.annotations?.find(a => a.id === selectedAnnotationId);
+                if (!annotation) return null;
+
+                return (
+                  <div className="border-t border-border pt-3 mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-semibold text-card-foreground">
+                        {annotation.label}
+                      </h4>
+                      <button
+                        onClick={() => setSelectedAnnotationId(null)}
+                        className="text-xs text-muted-foreground hover:text-card-foreground"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    {annotation.notes && (
+                      <p className="text-sm text-muted-foreground mb-2">{annotation.notes}</p>
+                    )}
+                    {annotationPaints.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-card-foreground mb-2">
+                          Paints ({annotationPaints.length}):
+                        </p>
+                        <PaintChipList paints={annotationPaints} size="sm" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="flex gap-2 pt-2">
                 {canAnnotate && projectId && (
