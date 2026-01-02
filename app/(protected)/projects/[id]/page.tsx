@@ -542,12 +542,16 @@ export default function ProjectDetailPage() {
                     </select>
                   </div>
 
-                  <TagInput
-                    label="Tags"
-                    value={editedTags}
-                    onChange={setEditedTags}
-                    placeholder="Add tags"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-card-foreground mb-1">
+                      Tags
+                    </label>
+                    <TagInput
+                      tags={editedTags}
+                      onChange={setEditedTags}
+                      placeholder="Add tags"
+                    />
+                  </div>
 
                   <div className="flex gap-2 pt-4">
                     <Button

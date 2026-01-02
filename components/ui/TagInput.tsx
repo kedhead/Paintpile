@@ -49,17 +49,17 @@ export function TagInput({ tags, onChange, maxTags = 10, placeholder = 'Add tags
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg min-h-[42px] focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500">
+      <div className="flex flex-wrap gap-2 p-2 border border-border bg-input rounded-lg min-h-[42px] focus-within:ring-2 focus-within:ring-ring focus-within:border-ring">
         {tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 rounded text-sm"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-secondary/50 text-secondary-foreground rounded text-sm border border-border"
           >
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="hover:text-orange-600 focus:outline-none"
+              className="hover:text-destructive focus:outline-none"
             >
               ×
             </button>
@@ -74,19 +74,19 @@ export function TagInput({ tags, onChange, maxTags = 10, placeholder = 'Add tags
             onFocus={() => setShowSuggestions(inputValue.length > 0)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder={tags.length === 0 ? placeholder : ''}
-            className="flex-1 min-w-[120px] outline-none bg-transparent"
+            className="flex-1 min-w-[120px] outline-none bg-transparent text-card-foreground placeholder:text-muted-foreground"
           />
         )}
       </div>
 
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="border border-gray-300 rounded-lg bg-white shadow-lg max-h-48 overflow-y-auto">
+        <div className="border border-border rounded-lg bg-card shadow-lg max-h-48 overflow-y-auto">
           {filteredSuggestions.map((tag) => (
             <button
               key={tag}
               type="button"
               onClick={() => addTag(tag)}
-              className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+              className="w-full text-left px-3 py-2 hover:bg-muted text-sm text-card-foreground"
             >
               {tag}
             </button>
@@ -95,10 +95,10 @@ export function TagInput({ tags, onChange, maxTags = 10, placeholder = 'Add tags
       )}
 
       {tags.length >= maxTags && (
-        <p className="text-xs text-amber-600">Maximum {maxTags} tags reached</p>
+        <p className="text-xs text-destructive">Maximum {maxTags} tags reached</p>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Press Enter or comma to add a tag. Click × to remove.
       </p>
     </div>
