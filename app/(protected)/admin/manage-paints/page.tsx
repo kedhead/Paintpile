@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { AlertCircle, Palette, Trash2, CheckCircle } from 'lucide-react';
+import { db } from '@/lib/firebase/firebase';
+import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 
 export default function ManagePaintsPage() {
   const [loading, setLoading] = useState(false);
@@ -22,18 +24,52 @@ export default function ManagePaintsPage() {
       setResult(null);
       setOperation('clear');
 
-      const response = await fetch('/api/admin/clear-paints', {
-        method: 'POST',
-      });
+      console.log('Starting paint database clearing...');
 
-      const data = await response.json();
+      const paintsRef = collection(db, 'paints');
+      const snapshot = await getDocs(paintsRef);
 
-      if (!response.ok) {
-        setResult(data);
-        throw new Error(data.error || 'Clearing failed');
+      if (snapshot.empty) {
+        setResult({
+          success: true,
+          message: 'Database is already empty',
+          count: 0,
+        });
+        return;
       }
 
-      setResult(data);
+      // Delete in batches (Firestore limit is 500 per batch)
+      const batchSize = 500;
+      let batch = writeBatch(db);
+      let batchCount = 0;
+      let totalDeleted = 0;
+
+      for (const paintDoc of snapshot.docs) {
+        batch.delete(doc(db, 'paints', paintDoc.id));
+        batchCount++;
+        totalDeleted++;
+
+        if (batchCount >= batchSize) {
+          await batch.commit();
+          console.log(`Deleted batch of ${batchCount} paints`);
+          batch = writeBatch(db);
+          batchCount = 0;
+        }
+      }
+
+      // Commit remaining batch
+      if (batchCount > 0) {
+        await batch.commit();
+        console.log(`Deleted final batch of ${batchCount} paints`);
+      }
+
+      console.log(`Successfully deleted ${totalDeleted} paints`);
+
+      setResult({
+        success: true,
+        message: `Successfully deleted ${totalDeleted} paints`,
+        count: totalDeleted,
+      });
     } catch (err: any) {
       console.error('Clearing error:', err);
       setError(err.message || 'Failed to clear paint database');
@@ -70,7 +106,7 @@ export default function ManagePaintsPage() {
   }
 
   async function clearAndReseed() {
-    if (!confirm('This will DELETE all existing paints and add 500+ new paints. Continue?')) {
+    if (!confirm('This will DELETE all existing paints and add 300+ new paints. Continue?')) {
       return;
     }
 
@@ -80,18 +116,40 @@ export default function ManagePaintsPage() {
       setResult(null);
       setOperation('seed');
 
-      // Step 1: Clear existing paints
-      const clearResponse = await fetch('/api/admin/clear-paints', {
-        method: 'POST',
-      });
+      // Step 1: Clear existing paints (client-side)
+      console.log('Starting paint database clearing...');
 
-      const clearData = await clearResponse.json();
+      const paintsRef = collection(db, 'paints');
+      const snapshot = await getDocs(paintsRef);
 
-      if (!clearResponse.ok) {
-        throw new Error(clearData.error || 'Clearing failed');
+      if (!snapshot.empty) {
+        // Delete in batches (Firestore limit is 500 per batch)
+        const batchSize = 500;
+        let batch = writeBatch(db);
+        let batchCount = 0;
+        let totalDeleted = 0;
+
+        for (const paintDoc of snapshot.docs) {
+          batch.delete(doc(db, 'paints', paintDoc.id));
+          batchCount++;
+          totalDeleted++;
+
+          if (batchCount >= batchSize) {
+            await batch.commit();
+            console.log(`Deleted batch of ${batchCount} paints`);
+            batch = writeBatch(db);
+            batchCount = 0;
+          }
+        }
+
+        // Commit remaining batch
+        if (batchCount > 0) {
+          await batch.commit();
+          console.log(`Deleted final batch of ${batchCount} paints`);
+        }
+
+        console.log(`Successfully deleted ${totalDeleted} paints`);
       }
-
-      console.log(`Cleared ${clearData.count} paints`);
 
       // Step 2: Seed new paints
       const seedResponse = await fetch('/api/admin/seed-paints', {
@@ -134,20 +192,19 @@ export default function ManagePaintsPage() {
                   Comprehensive Paint Database
                 </p>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  The comprehensive database includes 500+ paints from major brands:
+                  The comprehensive database includes 300+ paints from major brands:
                 </p>
                 <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 list-disc list-inside space-y-1">
-                  <li>Citadel: 120 paints (base, layer, shade, metallic, contrast, technical)</li>
-                  <li>Army Painter Fanatic: 100 paints</li>
-                  <li>Vallejo Model Color: 80 paints</li>
-                  <li>Vallejo Game Color: 40 paints</li>
-                  <li>Scale75 Scalecolor: 60 paints</li>
-                  <li>ProAcryl: 50 paints</li>
-                  <li>Reaper MSP: 40 paints</li>
-                  <li>P3: 15 paints</li>
+                  <li>Army Painter Fanatic: 85 paints (NEW!)</li>
+                  <li>Citadel: 73 paints (base, layer, shade, metallic, contrast)</li>
+                  <li>Vallejo Model Color: 40 paints</li>
+                  <li>Reaper MSP: 28 paints</li>
+                  <li>ProAcryl: 28 paints</li>
+                  <li>Scale75 Scalecolor: 25 paints</li>
+                  <li>Vallejo Game Color: 22 paints</li>
                 </ul>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-2 font-medium">
-                  Total: 500+ paints
+                  Total: 301 paints
                 </p>
               </div>
             </div>
