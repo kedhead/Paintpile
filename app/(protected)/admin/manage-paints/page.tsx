@@ -85,18 +85,49 @@ export default function ManagePaintsPage() {
       setResult(null);
       setOperation('seed');
 
-      const response = await fetch('/api/admin/seed-paints', {
-        method: 'POST',
-      });
+      console.log('Starting paint database seeding...');
 
-      const data = await response.json();
+      // Import comprehensive paints data
+      const { COMPREHENSIVE_PAINTS } = await import('@/lib/data/comprehensive-paints');
 
-      if (!response.ok) {
-        setResult(data);
-        throw new Error(data.error || 'Seeding failed');
+      const paintsRef = collection(db, 'paints');
+      let count = 0;
+
+      // Seed paints in batches for better performance
+      const batchSize = 500;
+      let batch = writeBatch(db);
+      let batchCount = 0;
+
+      for (const paint of COMPREHENSIVE_PAINTS) {
+        const paintRef = doc(paintsRef);
+        batch.set(paintRef, {
+          paintId: paintRef.id,
+          ...paint,
+        });
+        batchCount++;
+        count++;
+
+        if (batchCount >= batchSize) {
+          await batch.commit();
+          console.log(`Seeded batch of ${batchCount} paints`);
+          batch = writeBatch(db);
+          batchCount = 0;
+        }
       }
 
-      setResult(data);
+      // Commit remaining batch
+      if (batchCount > 0) {
+        await batch.commit();
+        console.log(`Seeded final batch of ${batchCount} paints`);
+      }
+
+      console.log(`Successfully seeded ${count} paints`);
+
+      setResult({
+        success: true,
+        message: `Successfully seeded ${count} paints`,
+        count,
+      });
     } catch (err: any) {
       console.error('Seeding error:', err);
       setError(err.message || 'Failed to seed paint database');
@@ -151,18 +182,49 @@ export default function ManagePaintsPage() {
         console.log(`Successfully deleted ${totalDeleted} paints`);
       }
 
-      // Step 2: Seed new paints
-      const seedResponse = await fetch('/api/admin/seed-paints', {
-        method: 'POST',
-      });
+      // Step 2: Seed new paints (client-side)
+      console.log('Starting paint database seeding...');
 
-      const seedData = await seedResponse.json();
+      // Import comprehensive paints data
+      const { COMPREHENSIVE_PAINTS } = await import('@/lib/data/comprehensive-paints');
 
-      if (!seedResponse.ok) {
-        throw new Error(seedData.error || 'Seeding failed');
+      let count = 0;
+
+      // Seed paints in batches for better performance
+      const batchSize = 500;
+      let batch = writeBatch(db);
+      let batchCount = 0;
+
+      for (const paint of COMPREHENSIVE_PAINTS) {
+        const paintRef = doc(collection(db, 'paints'));
+        batch.set(paintRef, {
+          paintId: paintRef.id,
+          ...paint,
+        });
+        batchCount++;
+        count++;
+
+        if (batchCount >= batchSize) {
+          await batch.commit();
+          console.log(`Seeded batch of ${batchCount} paints`);
+          batch = writeBatch(db);
+          batchCount = 0;
+        }
       }
 
-      setResult(seedData);
+      // Commit remaining batch
+      if (batchCount > 0) {
+        await batch.commit();
+        console.log(`Seeded final batch of ${batchCount} paints`);
+      }
+
+      console.log(`Successfully seeded ${count} paints`);
+
+      setResult({
+        success: true,
+        message: `Successfully seeded ${count} paints`,
+        count,
+      });
     } catch (err: any) {
       console.error('Clear and reseed error:', err);
       setError(err.message || 'Failed to clear and reseed paint database');
