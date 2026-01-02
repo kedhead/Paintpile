@@ -1,34 +1,37 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllPaints, searchPaints, getPaintsByBrand } from '@/lib/firestore/paints';
-import { Paint } from '@/types/paint';
+import { getAllPaints } from '@/lib/firestore/paints';
+import { getAllPaintsForUser } from '@/lib/firestore/custom-paints';
+import { Paint, CustomPaint } from '@/types/paint';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
-import { Search, X, Check } from 'lucide-react';
+import { Search, X, Check, Sparkles } from 'lucide-react';
 import { PAINT_BRANDS } from '@/lib/utils/constants';
 
 interface PaintSelectorProps {
   selectedPaints: Paint[];
   onPaintsChange: (paints: Paint[]) => void;
   maxSelection?: number;
+  userId?: string; // If provided, will include custom paints
 }
 
 export function PaintSelector({
   selectedPaints,
   onPaintsChange,
   maxSelection,
+  userId,
 }: PaintSelectorProps) {
-  const [allPaints, setAllPaints] = useState<Paint[]>([]);
-  const [filteredPaints, setFilteredPaints] = useState<Paint[]>([]);
+  const [allPaints, setAllPaints] = useState<(Paint | CustomPaint)[]>([]);
+  const [filteredPaints, setFilteredPaints] = useState<(Paint | CustomPaint)[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<string>('all');
 
   useEffect(() => {
     loadPaints();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     filterPaints();
@@ -37,7 +40,10 @@ export function PaintSelector({
   async function loadPaints() {
     try {
       setLoading(true);
-      const paints = await getAllPaints();
+      // Load global paints + custom paints if userId is provided
+      const paints = userId
+        ? await getAllPaintsForUser(userId)
+        : await getAllPaints();
       setAllPaints(paints);
       setFilteredPaints(paints);
     } catch (err) {
@@ -202,9 +208,14 @@ export function PaintSelector({
                     style={{ backgroundColor: paint.hexColor }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">
-                      {paint.name}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-gray-900 truncate">
+                        {paint.name}
+                      </p>
+                      {'userId' in paint && (
+                        <Sparkles className="w-3 h-3 text-amber-500 flex-shrink-0" title="Custom paint" />
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 truncate">
                       {paint.brand} • {paint.type}
                     </p>

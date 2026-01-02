@@ -11,6 +11,7 @@ interface PaintSelectorModalProps {
   onSelectionChange: (selectedPaintIds: string[]) => void;
   onClose: () => void;
   multiSelect?: boolean;
+  userId?: string; // Pass through to PaintSelector for custom paints
 }
 
 export function PaintSelectorModal({
@@ -18,6 +19,7 @@ export function PaintSelectorModal({
   onSelectionChange,
   onClose,
   multiSelect = false,
+  userId,
 }: PaintSelectorModalProps) {
   const [selectedPaints, setSelectedPaints] = useState<Paint[]>([]);
 
@@ -52,6 +54,7 @@ export function PaintSelectorModal({
             selectedPaints={selectedPaints}
             onPaintsChange={setSelectedPaints}
             maxSelection={multiSelect ? undefined : 1}
+            userId={userId}
           />
         </div>
 
