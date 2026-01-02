@@ -1,33 +1,81 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { db } from '@/lib/firebase/firebase';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 
 export default function MigratePage() {
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function runMigration() {
+    if (!currentUser) {
+      setError('You must be logged in to run migrations');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       setResult(null);
 
-      const response = await fetch('/api/admin/migrate', {
-        method: 'POST',
-      });
+      // Migrate user's projects
+      const projectsRef = collection(db, 'projects');
+      const projectsQuery = query(projectsRef, where('userId', '==', currentUser.uid));
+      const projectsSnapshot = await getDocs(projectsQuery);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setResult(data); // Store the full response including details
-        throw new Error(data.error || 'Migration failed');
+      let projectsMigrated = 0;
+      for (const projectDoc of projectsSnapshot.docs) {
+        const data = projectDoc.data();
+        if (data.likeCount === undefined || data.commentCount === undefined) {
+          await updateDoc(doc(db, 'projects', projectDoc.id), {
+            likeCount: data.likeCount ?? 0,
+            commentCount: data.commentCount ?? 0,
+          });
+          projectsMigrated++;
+        }
       }
 
-      setResult(data);
+      // Migrate current user's data
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDocs(query(collection(db, 'users'), where('__name__', '==', currentUser.uid)));
+
+      let userMigrated = false;
+      let usernameMigrated = false;
+
+      if (!userDoc.empty) {
+        const userData = userDoc.docs[0].data();
+
+        // Update usernameLower if needed
+        if (userData.username && !userData.usernameLower) {
+          await updateDoc(userRef, {
+            usernameLower: userData.username.toLowerCase(),
+          });
+          usernameMigrated = true;
+        }
+
+        // Update user stats if needed
+        if (userData.stats?.followerCount === undefined || userData.stats?.followingCount === undefined) {
+          await updateDoc(userRef, {
+            'stats.followerCount': userData.stats?.followerCount ?? 0,
+            'stats.followingCount': userData.stats?.followingCount ?? 0,
+          });
+          userMigrated = true;
+        }
+      }
+
+      setResult({
+        projectsMigrated,
+        projectsTotal: projectsSnapshot.size,
+        usernameMigrated,
+        userStatsMigrated: userMigrated,
+      });
     } catch (err: any) {
       console.error('Migration error:', err);
       setError(err.message || 'Failed to run migration');
@@ -54,14 +102,17 @@ export default function MigratePage() {
                   Migrations Info
                 </p>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                  This will add the following fields to your database:
+                  This will add the following fields to YOUR data:
                 </p>
                 <ul className="text-sm text-amber-700 dark:text-amber-300 mt-2 list-disc list-inside space-y-1">
-                  <li>Projects: likeCount, commentCount (initialized to 0)</li>
-                  <li>Users: usernameLower, followerCount, followingCount</li>
+                  <li>Your Projects: likeCount, commentCount (initialized to 0)</li>
+                  <li>Your User Profile: usernameLower, followerCount, followingCount</li>
                 </ul>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mt-2">
                   Safe to run multiple times - already migrated items will be skipped.
+                </p>
+                <p className="text-sm text-amber-600 dark:text-amber-400 mt-2 font-medium">
+                  Note: Each user needs to run this migration for their own data.
                 </p>
               </div>
             </div>
@@ -105,7 +156,7 @@ export default function MigratePage() {
               </div>
             )}
 
-            {result && (
+            {result && !error && (
               <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div className="flex gap-3 mb-4">
                   <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0" />
@@ -114,30 +165,25 @@ export default function MigratePage() {
                       Migration Completed Successfully!
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                      {result.message}
+                      Your data has been migrated to support social features.
                     </p>
                   </div>
                 </div>
 
-                {result.results && (
-                  <div className="bg-white dark:bg-gray-900 rounded-lg p-4 space-y-2">
-                    <p className="text-sm font-medium text-foreground">Details:</p>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>
-                        Projects: {result.results.projects.migrated} migrated out of{' '}
-                        {result.results.projects.total} total
-                      </p>
-                      <p>
-                        Usernames: {result.results.usernames.migrated} migrated out of{' '}
-                        {result.results.usernames.total} total
-                      </p>
-                      <p>
-                        User Stats: {result.results.userStats.migrated} migrated out of{' '}
-                        {result.results.userStats.total} total
-                      </p>
-                    </div>
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-4 space-y-2">
+                  <p className="text-sm font-medium text-foreground">Details:</p>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>
+                      Projects: {result.projectsMigrated} migrated out of {result.projectsTotal} total
+                    </p>
+                    <p>
+                      Username: {result.usernameMigrated ? 'Migrated' : 'Already migrated or no username set'}
+                    </p>
+                    <p>
+                      User Stats: {result.userStatsMigrated ? 'Migrated' : 'Already migrated'}
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
