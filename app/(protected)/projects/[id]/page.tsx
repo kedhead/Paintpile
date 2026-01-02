@@ -828,7 +828,7 @@ export default function ProjectDetailPage() {
             <CommentList
               projectId={projectId}
               currentUserId={currentUser?.uid}
-              currentUsername={currentUser?.displayName}
+              currentUsername={currentUser?.displayName || undefined}
               currentUserPhoto={currentUser?.photoURL || undefined}
               isPublic={project.isPublic}
             />
