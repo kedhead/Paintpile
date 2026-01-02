@@ -38,7 +38,15 @@ export default function DashboardPage() {
             try {
               const photos = await getProjectPhotos(project.projectId);
               if (photos.length > 0) {
-                photoMap[project.projectId] = photos[0].thumbnailUrl || photos[0].url;
+                // Use featured photo if set, otherwise use first photo
+                let coverPhoto = photos[0];
+                if (project.featuredPhotoId) {
+                  const featuredPhoto = photos.find(p => p.photoId === project.featuredPhotoId);
+                  if (featuredPhoto) {
+                    coverPhoto = featuredPhoto;
+                  }
+                }
+                photoMap[project.projectId] = coverPhoto.thumbnailUrl || coverPhoto.url;
               }
             } catch (err) {
               console.error(`Error loading photos for project ${project.projectId}:`, err);

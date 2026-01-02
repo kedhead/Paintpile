@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProject, deleteProject, updateProject } from '@/lib/firestore/projects';
@@ -23,7 +23,7 @@ import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
 import { formatDate } from '@/lib/utils/formatters';
 import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRecipe } from '@/lib/firestore/paint-recipes';
 import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
-import { ArrowLeft, Calendar, Tag, Palette } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -43,6 +43,9 @@ export default function ProjectDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showRecipeEditor, setShowRecipeEditor] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<PaintRecipe | null>(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const heroImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     async function loadProject() {
@@ -186,6 +189,35 @@ export default function ProjectDetailPage() {
     setEditingRecipe(null);
   }
 
+  function updateHeroImageSize() {
+    if (heroImageRef.current) {
+      setImageSize({
+        width: heroImageRef.current.clientWidth,
+        height: heroImageRef.current.clientHeight,
+      });
+    }
+  }
+
+  function handlePreviousPhoto() {
+    setCurrentPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+  }
+
+  function handleNextPhoto() {
+    setCurrentPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+  }
+
+  async function handleSetFeaturedPhoto(photoId: string) {
+    if (!project || !currentUser) return;
+
+    try {
+      await updateProject(project.projectId, { featuredPhotoId: photoId });
+      setProject({ ...project, featuredPhotoId: photoId });
+    } catch (err) {
+      console.error('Error setting featured photo:', err);
+      alert('Failed to set featured photo');
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -226,13 +258,104 @@ export default function ProjectDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Image Area */}
           <div className="lg:col-span-2">
-            <div className="relative aspect-[4/3] bg-muted rounded-xl overflow-hidden border border-border">
+            <div className="relative aspect-[4/3] bg-muted rounded-xl overflow-hidden border border-border group">
               {photos.length > 0 ? (
-                <img
-                  src={photos[0].url}
-                  alt={photos[0].caption || project.name}
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  <div className="relative w-full h-full">
+                    <img
+                      ref={heroImageRef}
+                      src={photos[currentPhotoIndex].url}
+                      alt={photos[currentPhotoIndex].caption || project.name}
+                      className="w-full h-full object-cover"
+                      onLoad={updateHeroImageSize}
+                    />
+
+                    {/* Annotation Markers */}
+                    {photos[currentPhotoIndex].annotations && photos[currentPhotoIndex].annotations!.length > 0 && imageSize.width > 0 && (
+                      <>
+                        {photos[currentPhotoIndex].annotations!.map((annotation) => {
+                          const pixelX = (annotation.x / 100) * imageSize.width;
+                          const pixelY = (annotation.y / 100) * imageSize.height;
+
+                          // Generate consistent color from annotation ID
+                          const hash = annotation.id.split('').reduce((acc, char) => {
+                            return char.charCodeAt(0) + ((acc << 5) - acc);
+                          }, 0);
+                          const hue = Math.abs(hash % 360);
+                          const markerColor = `hsl(${hue}, 70%, 50%)`;
+
+                          return (
+                            <div
+                              key={annotation.id}
+                              className="absolute flex items-center gap-2 pointer-events-none"
+                              style={{
+                                left: `${pixelX}px`,
+                                top: `${pixelY}px`,
+                                transform: 'translate(-50%, -50%)',
+                              }}
+                            >
+                              {/* Marker Dot */}
+                              <div
+                                className="w-6 h-6 rounded-full border-2 border-white shadow-lg"
+                                style={{ backgroundColor: markerColor }}
+                              />
+                              {/* Label */}
+                              {annotation.label && (
+                                <div className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-black/70 text-white">
+                                  {annotation.label}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Navigation Arrows */}
+                  {photos.length > 1 && (
+                    <>
+                      <button
+                        onClick={handlePreviousPhoto}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
+                      <button
+                        onClick={handleNextPhoto}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Photo Counter */}
+                  {photos.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                      {currentPhotoIndex + 1} / {photos.length}
+                    </div>
+                  )}
+
+                  {/* Featured Photo Badge */}
+                  {project.featuredPhotoId === photos[currentPhotoIndex].photoId && (
+                    <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-current" />
+                      Featured
+                    </div>
+                  )}
+
+                  {/* Set Featured Button */}
+                  {isOwner && project.featuredPhotoId !== photos[currentPhotoIndex].photoId && (
+                    <button
+                      onClick={() => handleSetFeaturedPhoto(photos[currentPhotoIndex].photoId)}
+                      className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Star className="w-3 h-3" />
+                      Set as Featured
+                    </button>
+                  )}
+                </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">

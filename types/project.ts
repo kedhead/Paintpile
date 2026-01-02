@@ -16,6 +16,7 @@ export interface Project {
   isPublic: boolean;
   photoCount: number;
   paintCount: number;
+  featuredPhotoId?: string;
 }
 
 export interface ProjectFormData {
