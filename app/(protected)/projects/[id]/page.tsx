@@ -19,6 +19,8 @@ import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { ProjectPaintLibrary } from '@/components/paints/ProjectPaintLibrary';
 import { ProjectRecipeCard } from '@/components/recipes/ProjectRecipeCard';
 import { RecipeEditor } from '@/components/recipes/RecipeEditor';
+import { ProjectRecipesList } from '@/components/recipes/ProjectRecipesList';
+import { AddRecipeToProject } from '@/components/recipes/AddRecipeToProject';
 import { TechniqueList } from '@/components/techniques/TechniqueList';
 import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
 import { LikeButton } from '@/components/social/LikeButton';
@@ -60,6 +62,7 @@ export default function ProjectDetailPage() {
   const [editedStatus, setEditedStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
   const [editedTags, setEditedTags] = useState<string[]>([]);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showAddRecipe, setShowAddRecipe] = useState(false);
   const heroImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -747,15 +750,43 @@ export default function ProjectDetailPage() {
                 {/* Paint Library */}
                 {isOwner && <ProjectPaintLibrary projectId={projectId} userId={currentUser?.uid} />}
 
-                {/* Recipes */}
+                {/* Global Recipes */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-display font-bold flex items-center gap-2">
-                      <Palette className="w-4 h-4 text-primary" />
-                      Paint Recipes
-                    </h3>
+                    <div>
+                      <h3 className="font-display font-bold flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-primary" />
+                        Recipe Library
+                      </h3>
+                      <p className="text-sm text-muted-foreground">Recipes linked to this project</p>
+                    </div>
+                    {isOwner && currentUser && (
+                      <Button size="sm" onClick={() => setShowAddRecipe(true)}>
+                        Add Recipe
+                      </Button>
+                    )}
+                  </div>
+
+                  {currentUser && (
+                    <ProjectRecipesList
+                      projectId={projectId}
+                      isOwner={isOwner}
+                    />
+                  )}
+                </div>
+
+                {/* Legacy Project Recipes */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-display font-bold flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-muted-foreground" />
+                        Custom Mixes (Legacy)
+                      </h3>
+                      <p className="text-sm text-muted-foreground">Old project-specific recipes</p>
+                    </div>
                     {isOwner && !showRecipeEditor && (
-                      <Button size="sm" onClick={() => setShowRecipeEditor(true)}>
+                      <Button size="sm" variant="outline" onClick={() => setShowRecipeEditor(true)}>
                         Create Recipe
                       </Button>
                     )}
@@ -834,6 +865,18 @@ export default function ProjectDetailPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Add Recipe Modal */}
+      {showAddRecipe && currentUser && (
+        <AddRecipeToProject
+          projectId={projectId}
+          userId={currentUser.uid}
+          onClose={() => setShowAddRecipe(false)}
+          onSuccess={() => {
+            // Recipe added successfully - ProjectRecipesList will auto-refresh
+          }}
+        />
       )}
     </div>
   );
