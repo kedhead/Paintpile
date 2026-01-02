@@ -1,20 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Project } from '@/types/project';
 import { formatDistanceToNow } from 'date-fns';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Clock } from 'lucide-react';
+import { Clock, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ProjectCardProps {
   project: Project;
+  coverPhotoUrl?: string;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
-  // TODO: Get actual cover photo from project photos
-  const coverPhoto = '/placeholder-project.jpg';
+export function ProjectCard({ project, coverPhotoUrl }: ProjectCardProps) {
   const timeAgo = project.updatedAt
     ? formatDistanceToNow(new Date(project.updatedAt.toDate()), { addSuffix: true })
     : null;
@@ -28,12 +26,17 @@ export function ProjectCard({ project }: ProjectCardProps) {
         className="bg-card rounded-xl overflow-hidden border border-border shadow-md hover:shadow-xl hover:border-primary/50 transition-all duration-300 h-full flex flex-col group"
       >
         <div className="aspect-[4/3] overflow-hidden relative">
-          <Image
-            src={coverPhoto}
-            alt={project.name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-          />
+          {coverPhotoUrl ? (
+            <img
+              src={coverPhotoUrl}
+              alt={project.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-muted via-muted/50 to-muted flex items-center justify-center">
+              <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
+            </div>
+          )}
           <div className="absolute top-3 right-3">
             <StatusBadge status={project.status} />
           </div>

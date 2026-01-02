@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { getUserProjects } from '@/lib/firestore/projects';
+import { getProjectPhotos } from '@/lib/firestore/photos';
 import { Project } from '@/types/project';
 import { Search, Plus, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [coverPhotos, setCoverPhotos] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -28,6 +30,22 @@ export default function DashboardPage() {
         setLoading(true);
         const userProjects = await getUserProjects(currentUser.uid);
         setProjects(userProjects);
+
+        // Load cover photos for each project
+        const photoMap: Record<string, string> = {};
+        await Promise.all(
+          userProjects.map(async (project) => {
+            try {
+              const photos = await getProjectPhotos(project.projectId);
+              if (photos.length > 0) {
+                photoMap[project.projectId] = photos[0].thumbnailUrl || photos[0].url;
+              }
+            } catch (err) {
+              console.error(`Error loading photos for project ${project.projectId}:`, err);
+            }
+          })
+        );
+        setCoverPhotos(photoMap);
       } catch (error) {
         console.error('Error loading projects:', error);
       } finally {
@@ -112,7 +130,11 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProjects.map((project) => (
-              <ProjectCard key={project.projectId} project={project} />
+              <ProjectCard
+                key={project.projectId}
+                project={project}
+                coverPhotoUrl={coverPhotos[project.projectId]}
+              />
             ))}
 
             {/* New Project Card */}
