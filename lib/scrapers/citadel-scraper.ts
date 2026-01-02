@@ -1,15 +1,11 @@
 import { BasePaintScraper, ScrapedPaint, ScraperResult } from './base-scraper';
-import { PaintType } from '@/types/paint';
+import * as cheerio from 'cheerio';
 
 /**
  * Citadel Paint Scraper
- * Scrapes paint data from Games Workshop / Citadel website
+ * Scrapes paint data from Games Workshop website
  *
- * Note: This is a demonstration scraper. In production, you may want to:
- * - Use official APIs if available
- * - Handle rate limiting
- * - Cache results
- * - Handle dynamic content (may require headless browser)
+ * Target: https://www.games-workshop.com/en-US/Painting-Modelling
  */
 export class CitadelScraper extends BasePaintScraper {
   constructor() {
@@ -20,9 +16,22 @@ export class CitadelScraper extends BasePaintScraper {
     try {
       console.log('Starting Citadel paint scraping...');
 
-      // For demonstration, we'll use the static data we already have
-      // In a real implementation, this would fetch from the GW website
-      const paints = await this.fetchCitadelPaints();
+      const paints: ScrapedPaint[] = [];
+
+      // Scrape different paint lines
+      const categories = [
+        'base-paints',
+        'layer-paints',
+        'shade-paints',
+        'dry-paints',
+        'contrast-paints',
+        'technical-paints',
+      ];
+
+      for (const category of categories) {
+        const categoryPaints = await this.scrapeCitadelCategory(category);
+        paints.push(...categoryPaints);
+      }
 
       console.log(`Successfully scraped ${paints.length} Citadel paints`);
 
@@ -34,53 +43,78 @@ export class CitadelScraper extends BasePaintScraper {
   }
 
   /**
-   * Fetch Citadel paints
-   * TODO: Implement actual web scraping when API/website structure is available
+   * Scrape a specific Citadel paint category
    */
-  private async fetchCitadelPaints(): Promise<ScrapedPaint[]> {
-    // This would normally scrape the website
-    // For now, return empty array (we already have comprehensive data)
+  private async scrapeCitadelCategory(category: string): Promise<ScrapedPaint[]> {
+    try {
+      const url = `${this.baseUrl}/en-US/searchResults?N=2562821819+${this.getCategoryCode(category)}`;
+      const html = await this.fetchHTML(url);
 
-    // Example structure for when we implement real scraping:
-    /*
-    const html = await this.fetchHTML(`${this.baseUrl}/en-US/citadel-paints`);
-    const paints = this.parseProductPage(html);
-    return paints;
-    */
+      const $ = cheerio.load(html);
+      const paints: ScrapedPaint[] = [];
 
-    return [];
+      // Games Workshop uses product cards
+      $('.product').each((_, element) => {
+        try {
+          const name = $(element).find('.product__title').text().trim();
+          const link = $(element).find('a').attr('href');
+
+          if (!name) return;
+
+          // Extract color from product image or swatch if available
+          const colorSwatch = $(element).find('.color-swatch');
+          let hexColor = colorSwatch.attr('data-color') || '#808080';
+
+          hexColor = this.normalizeHexColor(hexColor);
+
+          const type = this.mapCitadelCategory(category);
+
+          paints.push({
+            brand: 'Citadel',
+            name: this.normalizeName(name.replace('Citadel', '').trim()),
+            hexColor,
+            type,
+            sourceUrl: link ? `${this.baseUrl}${link}` : url,
+          });
+        } catch (error: any) {
+          this.logError(`Error parsing Citadel paint: ${error.message}`);
+        }
+      });
+
+      return paints;
+    } catch (error: any) {
+      this.logError(`Failed to scrape category ${category}: ${error.message}`);
+      return [];
+    }
   }
 
   /**
-   * Parse product page HTML
-   * This is where you'd extract paint data from the HTML
+   * Get GW category code for filtering
    */
-  private parseProductPage(html: string): ScrapedPaint[] {
-    const paints: ScrapedPaint[] = [];
+  private getCategoryCode(category: string): string {
+    const codes: Record<string, string> = {
+      'base-paints': '1613190097',
+      'layer-paints': '1613190098',
+      'shade-paints': '1613190099',
+      'dry-paints': '1613190100',
+      'contrast-paints': '1613190101',
+      'technical-paints': '1613190102',
+    };
 
-    // Example parsing logic (would need to match actual HTML structure):
-    // - Find product containers
-    // - Extract paint name from product title
-    // - Extract color from color swatch or image
-    // - Extract type from product category
-    // - Build paint objects
-
-    return paints;
+    return codes[category] || '';
   }
 
   /**
-   * Map Citadel product categories to paint types
+   * Map Citadel category to paint type
    */
-  private mapCitadelCategory(category: string): PaintType {
-    const lower = category.toLowerCase();
+  private mapCitadelCategory(category: string): any {
+    if (category.includes('base')) return 'base';
+    if (category.includes('layer')) return 'layer';
+    if (category.includes('shade')) return 'shade';
+    if (category.includes('dry')) return 'layer';
+    if (category.includes('contrast')) return 'contrast';
+    if (category.includes('technical')) return 'technical';
 
-    if (lower.includes('base')) return 'base';
-    if (lower.includes('layer')) return 'layer';
-    if (lower.includes('shade')) return 'shade';
-    if (lower.includes('metallic')) return 'metallic';
-    if (lower.includes('contrast')) return 'contrast';
-    if (lower.includes('technical') || lower.includes('texture')) return 'technical';
-
-    return 'layer'; // default
+    return 'layer';
   }
 }
