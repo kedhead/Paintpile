@@ -26,6 +26,11 @@ service cloud.firestore {
       match /pile/{pileId} {
         allow read, write: if isOwner(userId);
       }
+
+      // User's saved recipes subcollection
+      match /savedRecipes/{recipeId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
     }
 
     // Projects collection
@@ -96,6 +101,15 @@ service cloud.firestore {
         allow update, delete: if isAuthenticated() &&
                                  resource.data.userId == request.auth.uid;
       }
+
+      // Project recipe usages subcollection
+      match /recipeUsages/{usageId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write recipe usages
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
     }
 
     // Global paints database
@@ -147,6 +161,18 @@ service cloud.firestore {
       // Delete only own likes
       allow delete: if isAuthenticated() &&
                        resource.data.userId == request.auth.uid;
+    }
+
+    // Global paint recipes collection
+    match /paintRecipes/{recipeId} {
+      // Anyone can read public recipes
+      allow read: if true;
+      // Only authenticated users can create recipes
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      // Only the owner can update or delete their recipes
+      allow update, delete: if isAuthenticated() &&
+                               resource.data.userId == request.auth.uid;
     }
   }
 }

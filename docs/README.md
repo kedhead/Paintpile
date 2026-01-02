@@ -21,6 +21,22 @@ Complete guide to managing, importing, and maintaining the paint database.
 - Import CSV: `/admin/import-paints`
 - Paint Library: `/paints`
 
+### [Recipe System Guide](./RECIPE_SYSTEM_GUIDE.md)
+Complete guide to creating, managing, and sharing paint recipes.
+
+**Topics covered**:
+- Creating comprehensive paint recipes
+- Managing your recipe library
+- Saving and sharing recipes
+- Using recipes in projects
+- Recipe structure and best practices
+- Migration from old system
+
+**Quick links**:
+- My Recipes: `/recipes`
+- Create Recipe: Click "New Recipe" on recipes page
+- Recipe Library: Coming soon
+
 ---
 
 ## Quick Start
@@ -130,8 +146,9 @@ Additional guides will be added as features are implemented:
 - Project management guide
 - Social features guide (gallery, follows, likes, comments)
 - Photo upload and annotation guide
-- Paint recipes and techniques guide
 - Pile of shame tracking guide
+- Public recipe browse guide
+- Recipe-to-project integration guide
 
 ---
 

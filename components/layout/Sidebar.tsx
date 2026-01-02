@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
@@ -43,10 +43,10 @@ export function Sidebar({ onNewProject }: SidebarProps) {
       current: pathname === '/paints',
     },
     {
-      name: 'Journal',
-      href: '/journal',
-      icon: Book,
-      current: pathname === '/journal',
+      name: 'Recipes',
+      href: '/recipes',
+      icon: ChefHat,
+      current: pathname === '/recipes' || pathname.startsWith('/recipes/'),
     },
   ];
 
