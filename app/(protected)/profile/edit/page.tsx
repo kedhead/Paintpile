@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserProfile, updateUserProfile } from '@/lib/firestore/users';
+import { getUserProfile, updateUserProfile, getUserByUsername } from '@/lib/firestore/users';
 import { uploadProfilePhoto } from '@/lib/firebase/storage';
 import { User } from '@/types/user';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema } from '@/lib/validation/schemas';
 import { ProfileFormData } from '@/lib/validation/schemas';
-import { Upload, X, ArrowLeft } from 'lucide-react';
+import { Upload, X, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function EditProfilePage() {
   const { currentUser } = useAuth();
@@ -25,6 +25,8 @@ export default function EditProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [usernameCheckStatus, setUsernameCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [usernameCheckTimer, setUsernameCheckTimer] = useState<NodeJS.Timeout | null>(null);
 
   const {
     register,
@@ -91,7 +93,59 @@ export default function EditProfilePage() {
     setAvatarPreview(null);
   }
 
+  async function checkUsernameAvailability(username: string) {
+    if (!username || username.length < 3) {
+      setUsernameCheckStatus('idle');
+      return;
+    }
+
+    // Don't check if it's the current user's username
+    if (profile?.username && username.toLowerCase() === profile.username.toLowerCase()) {
+      setUsernameCheckStatus('available');
+      return;
+    }
+
+    setUsernameCheckStatus('checking');
+
+    try {
+      const existingUser = await getUserByUsername(username);
+      if (existingUser && existingUser.userId !== currentUser?.uid) {
+        setUsernameCheckStatus('taken');
+      } else {
+        setUsernameCheckStatus('available');
+      }
+    } catch (err) {
+      console.error('Error checking username:', err);
+      setUsernameCheckStatus('idle');
+    }
+  }
+
+  function handleUsernameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const username = e.target.value;
+
+    // Clear existing timer
+    if (usernameCheckTimer) {
+      clearTimeout(usernameCheckTimer);
+    }
+
+    // Set status to idle while typing
+    setUsernameCheckStatus('idle');
+
+    // Debounce the username check
+    const timer = setTimeout(() => {
+      checkUsernameAvailability(username);
+    }, 500);
+
+    setUsernameCheckTimer(timer);
+  }
+
   const onSubmit = async (data: ProfileFormData) => {
+    // Check if username is taken before submitting
+    if (data.username && usernameCheckStatus === 'taken') {
+      alert('Username is already taken. Please choose another one.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -106,10 +160,11 @@ export default function EditProfilePage() {
         );
       }
 
-      // Update profile
+      // Update profile with usernameLower for case-insensitive lookups
       await updateUserProfile(currentUser!.uid, {
         displayName: data.displayName,
         username: data.username,
+        usernameLower: data.username?.toLowerCase(),
         bio: data.bio,
         photoURL,
       });
@@ -249,15 +304,42 @@ export default function EditProfilePage() {
                 </span>
                 <Input
                   id="username"
-                  {...register('username')}
+                  {...register('username', {
+                    onChange: handleUsernameChange,
+                  })}
                   placeholder="username"
-                  className="pl-8"
+                  className="pl-8 pr-10"
                   error={errors.username?.message}
                 />
+                {usernameCheckStatus !== 'idle' && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    {usernameCheckStatus === 'checking' && (
+                      <Spinner size="sm" />
+                    )}
+                    {usernameCheckStatus === 'available' && (
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    )}
+                    {usernameCheckStatus === 'taken' && (
+                      <XCircle className="h-5 w-5 text-red-500" />
+                    )}
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Lowercase letters, numbers, and underscores only
-              </p>
+              {usernameCheckStatus === 'taken' && (
+                <p className="text-xs text-red-600 mt-1">
+                  This username is already taken
+                </p>
+              )}
+              {usernameCheckStatus === 'available' && (
+                <p className="text-xs text-green-600 mt-1">
+                  Username is available!
+                </p>
+              )}
+              {usernameCheckStatus === 'idle' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Lowercase letters, numbers, and underscores only
+                </p>
+              )}
             </div>
 
             {/* Bio */}

@@ -17,6 +17,8 @@ export interface Project {
   photoCount: number;
   paintCount: number;
   featuredPhotoId?: string;
+  likeCount: number;
+  commentCount: number;
 }
 
 export interface ProjectFormData {

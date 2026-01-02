@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Palette, Book, PlusCircle, LogOut } from 'lucide-react';
+import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
@@ -25,10 +25,16 @@ export function Sidebar({ onNewProject }: SidebarProps) {
 
   const navigation = [
     {
-      name: 'Gallery',
+      name: 'My Gallery',
       href: '/dashboard',
       icon: LayoutDashboard,
       current: pathname === '/dashboard' || pathname.startsWith('/projects'),
+    },
+    {
+      name: 'Community',
+      href: '/gallery',
+      icon: Users,
+      current: pathname === '/gallery',
     },
     {
       name: 'Paint Library',

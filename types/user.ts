@@ -5,6 +5,7 @@ export interface User {
   email: string;
   displayName: string;
   username?: string;
+  usernameLower?: string; // For case-insensitive username lookups
   bio?: string;
   photoURL?: string;
   createdAt: Timestamp;
@@ -25,6 +26,8 @@ export interface UserStats {
   photoCount: number;
   pileCount: number;
   paintCount: number;
+  followerCount: number;
+  followingCount: number;
 }
 
 export type UserFormData = Omit<User, 'userId' | 'createdAt' | 'stats'>;

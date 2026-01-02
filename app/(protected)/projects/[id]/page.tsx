@@ -26,7 +26,7 @@ import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRec
 import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
-import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
@@ -57,6 +57,7 @@ export default function ProjectDetailPage() {
   const [editedDescription, setEditedDescription] = useState('');
   const [editedStatus, setEditedStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
   const [editedTags, setEditedTags] = useState<string[]>([]);
+  const [copiedLink, setCopiedLink] = useState(false);
   const heroImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -245,6 +246,26 @@ export default function ProjectDetailPage() {
       }
     } else {
       setAnnotationPaints([]);
+    }
+  }
+
+  async function handleShareProject() {
+    if (!project) return;
+
+    // Create shareable URL
+    const shareUrl = `${window.location.origin}/projects/${project.projectId}`;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedLink(true);
+
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedLink(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Error copying to clipboard:', err);
+      alert('Failed to copy link to clipboard');
     }
   }
 
@@ -618,25 +639,37 @@ export default function ProjectDetailPage() {
                     </div>
                   )}
 
-                  {isOwner && (
-                    <div className="mt-6 space-y-2">
+                  <div className="mt-6 space-y-2">
+                    {project.isPublic && (
                       <Button
-                        variant="outline"
+                        variant="default"
                         className="w-full"
-                        onClick={togglePublic}
+                        onClick={handleShareProject}
                       >
-                        {project.isPublic ? 'Make Private' : 'Make Public'}
+                        <Share2 className="h-4 w-4 mr-2" />
+                        {copiedLink ? 'Link Copied!' : 'Share Project'}
                       </Button>
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        onClick={handleDelete}
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? 'Deleting...' : 'Delete Project'}
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                    {isOwner && (
+                      <>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={togglePublic}
+                        >
+                          {project.isPublic ? 'Make Private' : 'Make Public'}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={handleDelete}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? 'Deleting...' : 'Delete Project'}
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </>
               )}
             </div>
