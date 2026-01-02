@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProjectCard } from '@/components/projects/ProjectCard';
+import { FollowButton } from '@/components/social/FollowButton';
 import { getUserByUsername, getUserPublicProjects } from '@/lib/firestore/users';
 import { getProjectPhotos } from '@/lib/firestore/photos';
 import { User } from '@/types/user';
@@ -14,12 +16,14 @@ import { formatDate } from '@/lib/utils/formatters';
 export default function UserProfilePage() {
   const params = useParams();
   const username = params.username as string;
+  const { currentUser } = useAuth();
 
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [coverPhotos, setCoverPhotos] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
 
   useEffect(() => {
     async function loadUserProfile() {
@@ -36,6 +40,7 @@ export default function UserProfilePage() {
         }
 
         setUser(foundUser);
+        setFollowerCount(foundUser.stats.followerCount || 0);
 
         // Check if profile is public
         if (!foundUser.settings.publicProfile) {
@@ -80,6 +85,11 @@ export default function UserProfilePage() {
 
     loadUserProfile();
   }, [username]);
+
+  function handleFollowChange(isFollowing: boolean) {
+    // Update local follower count
+    setFollowerCount((prev) => (isFollowing ? prev + 1 : prev - 1));
+  }
 
   if (loading) {
     return (
@@ -147,10 +157,21 @@ export default function UserProfilePage() {
 
             {/* User Info */}
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">
-                {user.displayName}
-              </h1>
-              <p className="text-lg text-muted-foreground mb-4">@{user.username}</p>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">
+                    {user.displayName}
+                  </h1>
+                  <p className="text-lg text-muted-foreground mb-4">@{user.username}</p>
+                </div>
+                {currentUser && currentUser.uid !== user.userId && (
+                  <FollowButton
+                    currentUserId={currentUser.uid}
+                    targetUserId={user.userId}
+                    onFollowChange={handleFollowChange}
+                  />
+                )}
+              </div>
 
               {user.bio && (
                 <p className="text-card-foreground mb-4 max-w-2xl">{user.bio}</p>
@@ -174,7 +195,7 @@ export default function UserProfilePage() {
                   <div className="text-sm text-muted-foreground">Public</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-foreground">{user.stats.followerCount || 0}</div>
+                  <div className="text-2xl font-bold text-foreground">{followerCount}</div>
                   <div className="text-sm text-muted-foreground">Followers</div>
                 </div>
                 <div>

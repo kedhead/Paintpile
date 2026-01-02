@@ -21,6 +21,8 @@ import { RecipeCard } from '@/components/recipes/RecipeCard';
 import { RecipeEditor } from '@/components/recipes/RecipeEditor';
 import { TechniqueList } from '@/components/techniques/TechniqueList';
 import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
+import { LikeButton } from '@/components/social/LikeButton';
+import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
 import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRecipe } from '@/lib/firestore/paint-recipes';
 import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
@@ -640,15 +642,26 @@ export default function ProjectDetailPage() {
                   )}
 
                   <div className="mt-6 space-y-2">
-                    {project.isPublic && (
-                      <Button
-                        variant="default"
-                        className="w-full"
-                        onClick={handleShareProject}
-                      >
-                        <Share2 className="h-4 w-4 mr-2" />
-                        {copiedLink ? 'Link Copied!' : 'Share Project'}
-                      </Button>
+                    {project.isPublic && currentUser && (
+                      <>
+                        <div className="flex items-center justify-center py-2">
+                          <LikeButton
+                            userId={currentUser.uid}
+                            projectId={project.projectId}
+                            initialLikeCount={project.likeCount || 0}
+                            size="lg"
+                            showCount={true}
+                          />
+                        </div>
+                        <Button
+                          variant="default"
+                          className="w-full"
+                          onClick={handleShareProject}
+                        >
+                          <Share2 className="h-4 w-4 mr-2" />
+                          {copiedLink ? 'Link Copied!' : 'Share Project'}
+                        </Button>
+                      </>
                     )}
                     {isOwner && (
                       <>
@@ -807,6 +820,21 @@ export default function ProjectDetailPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Comments Section */}
+      {project.isPublic && (
+        <div className="max-w-7xl mx-auto px-6 mt-12 pb-20">
+          <div className="bg-card rounded-xl border border-border shadow-xl p-6 md:p-8">
+            <CommentList
+              projectId={projectId}
+              currentUserId={currentUser?.uid}
+              currentUsername={currentUser?.displayName}
+              currentUserPhoto={currentUser?.photoURL || undefined}
+              isPublic={project.isPublic}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

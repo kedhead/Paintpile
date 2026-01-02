@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { Project } from '@/types/project';
 import { formatDistanceToNow } from 'date-fns';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { LikeButton } from '@/components/social/LikeButton';
 import { Clock, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -13,6 +15,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, coverPhotoUrl }: ProjectCardProps) {
+  const { currentUser } = useAuth();
   const timeAgo = project.updatedAt
     ? formatDistanceToNow(new Date(project.updatedAt.toDate()), { addSuffix: true })
     : null;
@@ -61,10 +64,16 @@ export function ProjectCard({ project, coverPhotoUrl }: ProjectCardProps) {
           </div>
 
           <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
-            <div className="flex -space-x-2">
-              {/* Paint chips placeholder */}
-              <div className="w-4 h-4 rounded-full bg-blue-500 border border-card shadow-sm" />
-              <div className="w-4 h-4 rounded-full bg-amber-500 border border-card shadow-sm" />
+            <div className="flex items-center gap-2">
+              {currentUser && (
+                <LikeButton
+                  userId={currentUser.uid}
+                  projectId={project.projectId}
+                  initialLikeCount={project.likeCount || 0}
+                  size="sm"
+                  showCount={true}
+                />
+              )}
             </div>
             {timeAgo && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">

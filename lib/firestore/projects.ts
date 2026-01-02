@@ -44,6 +44,8 @@ export async function createProject(
     isPublic: false,
     photoCount: 0,
     paintCount: 0,
+    likeCount: 0,
+    commentCount: 0,
   };
 
   await setDoc(newProjectRef, project);
