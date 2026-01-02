@@ -50,8 +50,12 @@ export function Sidebar({ onNewProject }: SidebarProps) {
       <div className="p-6">
         <Link href="/dashboard" className="block group transition-transform hover:scale-105">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center">
-              <Palette className="w-6 h-6 text-primary-foreground" />
+            <div className="w-12 h-12 flex items-center justify-center">
+              <img
+                src="/images/paintpile-logo-main.png"
+                alt="PaintPile Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <h1 className="text-xl font-display font-bold tracking-wider text-sidebar-primary leading-none">

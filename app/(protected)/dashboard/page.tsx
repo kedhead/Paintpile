@@ -87,7 +87,13 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       {/* Hero Header */}
       <div className="relative h-64 md:h-80 overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-sidebar via-background to-sidebar"></div>
+        <div className="absolute inset-0">
+          <img
+            src="/images/header.png"
+            alt="Painting workspace"
+            className="w-full h-full object-cover"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40"></div>
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
           <div className="max-w-7xl mx-auto">
