@@ -4,10 +4,19 @@ import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 
 /**
  * Admin API route for running database migrations
- * POST /api/admin/migrate
+ * GET /api/admin/migrate - Shows status
+ * POST /api/admin/migrate - Runs migrations
  *
  * Security: Add authorization check in production!
  */
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    message: 'Migration endpoint ready',
+    instructions: 'Send a POST request to this endpoint to run migrations',
+    endpoint: '/api/admin/migrate',
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // TODO: Add auth check here - only allow admin users

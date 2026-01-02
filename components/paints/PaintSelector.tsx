@@ -213,7 +213,9 @@ export function PaintSelector({
                         {paint.name}
                       </p>
                       {'userId' in paint && (
-                        <Sparkles className="w-3 h-3 text-amber-500 flex-shrink-0" title="Custom paint" />
+                        <span title="Custom paint">
+                          <Sparkles className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                        </span>
                       )}
                     </div>
                     <p className="text-sm text-gray-500 truncate">
