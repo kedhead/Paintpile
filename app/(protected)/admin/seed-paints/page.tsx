@@ -97,20 +97,25 @@ export default function SeedPaintsPage() {
 
             {/* Results */}
             {error && (
-              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                 <div className="flex gap-3 mb-2">
-                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-red-900 dark:text-red-200">
-                      Seeding Failed
+                    <p className="font-medium text-amber-900 dark:text-amber-200">
+                      {result?.existingCount ? 'Paints Already Exist' : 'Seeding Failed'}
                     </p>
-                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
                       {error}
                     </p>
+                    {result?.existingCount && (
+                      <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
+                        Your database already has {result.existingCount} paints. You can continue using these or contact support to reset the database.
+                      </p>
+                    )}
                   </div>
                 </div>
-                {result?.details && (
-                  <pre className="mt-3 p-3 bg-red-100 dark:bg-red-900/30 rounded text-xs overflow-auto max-h-40">
+                {result?.details && !result?.existingCount && (
+                  <pre className="mt-3 p-3 bg-amber-100 dark:bg-amber-900/30 rounded text-xs overflow-auto max-h-40">
                     {result.details}
                   </pre>
                 )}

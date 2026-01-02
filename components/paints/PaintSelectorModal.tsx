@@ -33,16 +33,16 @@ export function PaintSelectorModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-card border border-border rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="text-xl font-semibold text-foreground">
             Select Paint{multiSelect ? 's' : ''}
           </h2>
           <button
             onClick={handleCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -59,7 +59,7 @@ export function PaintSelectorModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-4 border-t border-gray-200">
+        <div className="flex gap-3 p-4 border-t border-border">
           <Button
             variant="default"
             onClick={handleConfirm}

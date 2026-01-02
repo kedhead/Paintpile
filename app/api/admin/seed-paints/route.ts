@@ -25,6 +25,19 @@ export async function POST(request: NextRequest) {
     // TODO: Add auth check here - only allow admin users
     console.log('Starting paint database seeding...');
 
+    // Check if paints already exist
+    const { getAllPaints } = await import('@/lib/firestore/paints');
+    const existingPaints = await getAllPaints();
+
+    if (existingPaints.length > 0) {
+      console.log(`Database already has ${existingPaints.length} paints. Skipping seed.`);
+      return NextResponse.json({
+        success: false,
+        error: `Database already contains ${existingPaints.length} paints. Please delete existing paints before seeding again.`,
+        existingCount: existingPaints.length,
+      }, { status: 400 });
+    }
+
     const count = await seedPaintDatabase();
 
     console.log(`Successfully seeded ${count} paints`);
