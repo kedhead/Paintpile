@@ -120,7 +120,7 @@ export function AnnotationPanel({
 
   if (!annotation) {
     return (
-      <div className="bg-white rounded-lg shadow-lg p-6 text-center text-gray-500">
+      <div className="bg-card rounded-lg shadow-lg p-6 text-center text-muted-foreground border border-border">
         <p>Select an annotation to view details</p>
         <p className="text-sm mt-1">or click on the photo to add a new one</p>
       </div>
@@ -145,13 +145,13 @@ export function AnnotationPanel({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-card rounded-lg shadow-lg p-6 border border-border">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Annotation Details</h3>
+          <h3 className="text-lg font-semibold text-card-foreground">Annotation Details</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-card-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -170,7 +170,7 @@ export function AnnotationPanel({
 
         {/* Notes Input */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-card-foreground mb-1">
             Notes
           </label>
           <textarea
@@ -179,14 +179,14 @@ export function AnnotationPanel({
             onBlur={handleNotesChange}
             placeholder="Add notes about this area (e.g., techniques used, paint ratios, etc.)"
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
           />
         </div>
 
         {/* Paints by Role */}
         <div className="space-y-4 mb-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-700">Paints</h4>
+            <h4 className="text-sm font-medium text-card-foreground">Paints</h4>
           </div>
 
           {roleOrder.map((role) => {
@@ -195,7 +195,7 @@ export function AnnotationPanel({
 
             return (
               <div key={role}>
-                <div className="text-xs font-semibold text-gray-700 uppercase mb-2">
+                <div className="text-xs font-semibold text-card-foreground uppercase mb-2">
                   {roleLabels[role]}
                 </div>
                 <div className="space-y-2">
@@ -214,12 +214,12 @@ export function AnnotationPanel({
                               handleUpdateRatio(annotationPaint.paintId, e.target.value)
                             }
                             placeholder="Ratio (e.g., 1:2, thin coat)"
-                            className="mt-1 w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="mt-1 w-full px-2 py-1 text-xs bg-input border border-border rounded text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                           />
                         </div>
                         <button
                           onClick={() => handleRemovePaint(annotationPaint.paintId)}
-                          className="text-gray-400 hover:text-accent-600 transition-colors p-1"
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -232,7 +232,7 @@ export function AnnotationPanel({
           })}
 
           {annotation.paints.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-4">
+            <p className="text-sm text-muted-foreground text-center py-4">
               No paints added yet
             </p>
           )}
@@ -240,13 +240,13 @@ export function AnnotationPanel({
 
         {/* Add Paint */}
         <div className="space-y-2 mb-4">
-          <label className="block text-xs font-medium text-gray-600">
+          <label className="block text-xs font-medium text-card-foreground">
             Add paint as
           </label>
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value as any)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="base">Base</option>
             <option value="highlight">Highlight</option>
@@ -264,7 +264,7 @@ export function AnnotationPanel({
         </div>
 
         {/* Actions */}
-        <div className="pt-4 border-t border-gray-200">
+        <div className="pt-4 border-t border-border">
           <Button
             variant="destructive"
             size="sm"
