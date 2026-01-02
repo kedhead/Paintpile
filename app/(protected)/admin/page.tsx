@@ -31,10 +31,32 @@ export default function AdminPage() {
                     Manage Paint Database
                   </h2>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Clear existing paints or seed comprehensive database with 500+ paints including Army Painter Fanatic
+                    Clear existing paints or seed comprehensive database with 300+ paints including Army Painter Fanatic
                   </p>
                   <Button variant="outline" size="sm">
                     Manage Paints →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Import Paints from CSV */}
+          <Link href="/admin/import-paints">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                  <Database className="w-6 h-6 text-green-600 dark:text-green-500" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Import Paints from CSV
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Upload CSV files to add new paints from any manufacturer (includes web scraping support)
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Import Paints →
                   </Button>
                 </div>
               </div>
@@ -70,7 +92,8 @@ export default function AdminPage() {
             Setup Checklist
           </h3>
           <ol className="text-sm text-amber-700 dark:text-amber-300 space-y-2 list-decimal list-inside">
-            <li>Seed the paint database with 500+ paints (recommended: use "Clear and Reseed" if you have old data)</li>
+            <li>Seed the paint database with 300+ paints (recommended: use "Clear and Reseed" if you have old data)</li>
+            <li>Optional: Import additional paints from CSV files (web scraping or manual data entry)</li>
             <li>Run migrations to add social fields to existing data (run once)</li>
             <li>Deploy Firestore security rules: <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">firebase deploy --only firestore:rules</code></li>
           </ol>
