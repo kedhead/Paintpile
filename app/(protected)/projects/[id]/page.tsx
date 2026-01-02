@@ -17,7 +17,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { ProjectPaintLibrary } from '@/components/paints/ProjectPaintLibrary';
-import { RecipeCard } from '@/components/recipes/RecipeCard';
+import { ProjectRecipeCard } from '@/components/recipes/ProjectRecipeCard';
 import { RecipeEditor } from '@/components/recipes/RecipeEditor';
 import { TechniqueList } from '@/components/techniques/TechniqueList';
 import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
@@ -788,7 +788,7 @@ export default function ProjectDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {recipes.map((recipe) => (
                         <div key={recipe.recipeId} className="relative">
-                          <RecipeCard recipe={recipe} />
+                          <ProjectRecipeCard recipe={recipe} />
                           {isOwner && (
                             <div className="absolute top-2 right-2 flex gap-1">
                               <Button variant="ghost" size="sm" onClick={() => handleEditRecipe(recipe)}>
