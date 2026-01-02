@@ -17,17 +17,12 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { ProjectPaintLibrary } from '@/components/paints/ProjectPaintLibrary';
-import { ProjectRecipeCard } from '@/components/recipes/ProjectRecipeCard';
-import { RecipeEditor } from '@/components/recipes/RecipeEditor';
 import { ProjectRecipesList } from '@/components/recipes/ProjectRecipesList';
 import { AddRecipeToProject } from '@/components/recipes/AddRecipeToProject';
-import { TechniqueList } from '@/components/techniques/TechniqueList';
 import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
 import { LikeButton } from '@/components/social/LikeButton';
 import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
-import { getProjectRecipes, createPaintRecipe, updatePaintRecipe, deletePaintRecipe } from '@/lib/firestore/paint-recipes';
-import { PaintRecipe, PaintRecipeFormData } from '@/types/paint-recipe';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
 import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Share2 } from 'lucide-react';
@@ -44,14 +39,10 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [recipes, setRecipes] = useState<PaintRecipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
-  const [loadingRecipes, setLoadingRecipes] = useState(true);
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showRecipeEditor, setShowRecipeEditor] = useState(false);
-  const [editingRecipe, setEditingRecipe] = useState<PaintRecipe | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
@@ -94,7 +85,6 @@ export default function ProjectDetailPage() {
     if (currentUser) {
       loadProject();
       loadPhotos();
-      loadRecipes();
     }
   }, [projectId, currentUser]);
 
@@ -110,17 +100,6 @@ export default function ProjectDetailPage() {
     }
   }
 
-  async function loadRecipes() {
-    try {
-      setLoadingRecipes(true);
-      const projectRecipes = await getProjectRecipes(projectId);
-      setRecipes(projectRecipes);
-    } catch (err) {
-      console.error('Error loading recipes:', err);
-    } finally {
-      setLoadingRecipes(false);
-    }
-  }
 
   async function handleDelete() {
     if (!project || !currentUser) return;
@@ -165,47 +144,8 @@ export default function ProjectDetailPage() {
     }
   }
 
-  async function handleSaveRecipe(data: PaintRecipeFormData) {
-    if (!currentUser) return;
 
-    try {
-      if (editingRecipe) {
-        await updatePaintRecipe(projectId, editingRecipe.recipeId, data, currentUser.uid);
-      } else {
-        await createPaintRecipe(projectId, data, currentUser.uid);
-      }
-      await loadRecipes();
-      setShowRecipeEditor(false);
-      setEditingRecipe(null);
-    } catch (err) {
-      console.error('Error saving recipe:', err);
-      throw err;
-    }
-  }
 
-  async function handleDeleteRecipe(recipeId: string) {
-    if (!confirm('Delete this recipe? This cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await deletePaintRecipe(projectId, recipeId);
-      await loadRecipes();
-    } catch (err) {
-      console.error('Error deleting recipe:', err);
-      alert('Failed to delete recipe');
-    }
-  }
-
-  function handleEditRecipe(recipe: PaintRecipe) {
-    setEditingRecipe(recipe);
-    setShowRecipeEditor(true);
-  }
-
-  function handleCancelRecipeEditor() {
-    setShowRecipeEditor(false);
-    setEditingRecipe(null);
-  }
 
   function updateHeroImageSize() {
     if (heroImageRef.current) {
@@ -708,23 +648,19 @@ export default function ProjectDetailPage() {
                 value="colors"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground px-0 py-2 text-muted-foreground transition-all text-base"
               >
-                Palette & Recipes
-              </TabsTrigger>
-              <TabsTrigger
-                value="techniques"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground px-0 py-2 text-muted-foreground transition-all text-base"
-              >
-                Techniques
+                Paints & Recipes
               </TabsTrigger>
             </TabsList>
 
             {/* Progress Log Tab */}
             <TabsContent value="log" className="mt-0">
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* Photo Gallery */}
                 {photos.length > 0 && (
-                  <div>
-                    <h3 className="font-display font-bold mb-4">Project Photos ({photos.length})</h3>
+                  <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+                    <h3 className="text-xl font-display font-bold mb-6 text-foreground">
+                      Project Photos ({photos.length})
+                    </h3>
                     <PhotoGallery
                       photos={photos}
                       projectId={projectId}
@@ -738,27 +674,26 @@ export default function ProjectDetailPage() {
                 )}
 
                 {/* Timeline */}
-                <div>
+                <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
                   <ProjectTimeline projectId={projectId} />
                 </div>
               </div>
             </TabsContent>
 
-            {/* Palette & Recipes Tab */}
+            {/* Paints & Recipes Tab */}
             <TabsContent value="colors" className="mt-0">
-              <div className="space-y-6">
-                {/* Paint Library */}
-                {isOwner && <ProjectPaintLibrary projectId={projectId} userId={currentUser?.uid} />}
-
-                {/* Global Recipes */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
+              <div className="space-y-8">
+                {/* Recipe Library Section */}
+                <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="font-display font-bold flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-primary" />
+                      <h3 className="text-xl font-display font-bold flex items-center gap-2 text-foreground">
+                        <Palette className="w-5 h-5 text-primary" />
                         Recipe Library
                       </h3>
-                      <p className="text-sm text-muted-foreground">Recipes linked to this project</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Paint recipes linked to this project
+                      </p>
                     </div>
                     {isOwner && currentUser && (
                       <Button size="sm" onClick={() => setShowAddRecipe(true)}>
@@ -775,78 +710,13 @@ export default function ProjectDetailPage() {
                   )}
                 </div>
 
-                {/* Legacy Project Recipes */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="font-display font-bold flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-muted-foreground" />
-                        Custom Mixes (Legacy)
-                      </h3>
-                      <p className="text-sm text-muted-foreground">Old project-specific recipes</p>
-                    </div>
-                    {isOwner && !showRecipeEditor && (
-                      <Button size="sm" variant="outline" onClick={() => setShowRecipeEditor(true)}>
-                        Create Recipe
-                      </Button>
-                    )}
+                {/* Paint Library Section */}
+                {isOwner && (
+                  <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+                    <ProjectPaintLibrary projectId={projectId} userId={currentUser?.uid} />
                   </div>
-
-                  {showRecipeEditor ? (
-                    <RecipeEditor
-                      initialData={editingRecipe ? {
-                        name: editingRecipe.name,
-                        description: editingRecipe.description,
-                        paints: editingRecipe.paints,
-                      } : undefined}
-                      onSave={handleSaveRecipe}
-                      onCancel={handleCancelRecipeEditor}
-                    />
-                  ) : loadingRecipes ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Spinner />
-                    </div>
-                  ) : recipes.length === 0 ? (
-                    <div className="p-4 bg-card rounded border border-border border-dashed text-center text-muted-foreground text-sm">
-                      <p>No custom mixes recorded yet.</p>
-                      {isOwner && (
-                        <Button variant="link" className="text-primary mt-1 h-auto p-0" onClick={() => setShowRecipeEditor(true)}>
-                          Create Recipe
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {recipes.map((recipe) => (
-                        <div key={recipe.recipeId} className="relative">
-                          <ProjectRecipeCard recipe={recipe} />
-                          {isOwner && (
-                            <div className="absolute top-2 right-2 flex gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditRecipe(recipe)}>
-                                Edit
-                              </Button>
-                              <Button variant="destructive" size="sm" onClick={() => handleDeleteRecipe(recipe.recipeId)}>
-                                Delete
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-            </TabsContent>
-
-            {/* Techniques Tab */}
-            <TabsContent value="techniques" className="mt-0">
-              {isOwner ? (
-                <TechniqueList projectId={projectId} userId={currentUser?.uid} />
-              ) : (
-                <div className="text-center py-10 text-muted-foreground">
-                  <p>Technique notes coming soon.</p>
-                </div>
-              )}
             </TabsContent>
           </Tabs>
         </div>
