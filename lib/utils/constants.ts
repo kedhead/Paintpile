@@ -68,6 +68,7 @@ export const PAINT_BRANDS = [
   'Vallejo Model Color',
   'Vallejo Game Color',
   'Army Painter',
+  'Army Painter Fanatic',
   'Reaper MSP',
   'Scale75',
   'ProAcryl',
