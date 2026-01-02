@@ -321,15 +321,41 @@ Previously, recipes and techniques were:
 - **Reusable**: Link to multiple projects
 - **Social features**: Likes, saves, comments (coming)
 
-### Migration Script (Coming Soon)
+### Running the Migration Script
 
-Automatic migration will:
-1. Convert project-scoped recipes to global recipes
-2. Merge technique data into recipe techniques field
-3. Create project recipe usage links
-4. Preserve all data
+**Prerequisites**:
+1. Download Firebase Admin SDK private key:
+   - Go to Firebase Console → Project Settings → Service Accounts
+   - Click "Generate New Private Key"
+   - Save as `serviceAccountKey.json` in project root
+2. Install dependencies: `npm install`
 
-**Note**: Old recipes will remain in projects until migration is run.
+**Run Migration**:
+```bash
+npm run migrate:recipes
+```
+
+**What it does**:
+1. Finds all projects with old paintRecipes subcollection
+2. For each recipe:
+   - Creates a new global recipe in `paintRecipes` collection
+   - Creates a `ProjectRecipeUsage` link in the project
+   - Preserves all original data
+3. Old recipes remain intact for safety (delete manually after verification)
+
+**After Migration**:
+1. Check `/recipes` to see migrated recipes
+2. Verify recipe links in project detail pages
+3. Old recipes in `projects/{id}/paintRecipes` can be deleted once verified
+
+**Migration Stats**:
+The script outputs:
+- Total projects scanned
+- Projects with recipes found
+- Total recipes migrated
+- Any errors encountered
+
+**Note**: Migration is safe to run multiple times (creates new global recipes each time, so run only once in production).
 
 ---
 
