@@ -11,7 +11,7 @@ interface LikeButtonProps {
   projectId: string;
   initialLikeCount?: number;
   onLikeChange?: (isLiked: boolean, newCount: number) => void;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'default' | 'lg';
   showCount?: boolean;
 }
 
@@ -20,7 +20,7 @@ export function LikeButton({
   projectId,
   initialLikeCount = 0,
   onLikeChange,
-  size = 'md',
+  size = 'default',
   showCount = true,
 }: LikeButtonProps) {
   const [liked, setLiked] = useState(false);
