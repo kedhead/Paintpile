@@ -1,0 +1,81 @@
+'use client';
+
+import Link from 'next/link';
+import { Shield, Database, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+
+export default function AdminPage() {
+  return (
+    <div className="min-h-screen bg-background p-6 md:p-10">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-8 h-8 text-primary" />
+            <h1 className="text-4xl font-bold text-foreground">Admin Panel</h1>
+          </div>
+          <p className="text-muted-foreground">
+            Database management and administrative tools
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Seed Paint Database */}
+          <Link href="/admin/seed-paints">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Palette className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Seed Paint Database
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add 235 paints from major miniature paint brands (Citadel, Vallejo, Army Painter, Reaper, P3)
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Seed Paints →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Run Migrations */}
+          <Link href="/admin/migrate">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Database className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Run Migrations
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add social feature fields to existing projects and users (likeCount, commentCount, followerCount, etc.)
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Run Migration →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Info */}
+        <div className="mt-8 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
+          <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-2">
+            Setup Checklist
+          </h3>
+          <ol className="text-sm text-amber-700 dark:text-amber-300 space-y-2 list-decimal list-inside">
+            <li>Seed the paint database (run once)</li>
+            <li>Run migrations to add social fields to existing data (run once)</li>
+            <li>Deploy Firestore security rules: <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">firebase deploy --only firestore:rules</code></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
