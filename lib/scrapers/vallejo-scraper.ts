@@ -61,7 +61,7 @@ export class VallejoScraper extends BasePaintScraper {
           // Try to extract hex from background color or data attribute
           let hexColor = colorSwatch.attr('data-color') ||
                         colorSwatch.attr('data-hex') ||
-                        this.rgbToHex(bgColor);
+                        (bgColor ? this.rgbToHex(bgColor) : undefined);
 
           if (!hexColor || !this.validateHexColor(hexColor)) {
             // Fallback: infer from name
@@ -110,7 +110,7 @@ export class VallejoScraper extends BasePaintScraper {
 
           let hexColor = colorSwatch.attr('data-color') ||
                         colorSwatch.attr('data-hex') ||
-                        this.rgbToHex(bgColor);
+                        (bgColor ? this.rgbToHex(bgColor) : undefined);
 
           if (!hexColor || !this.validateHexColor(hexColor)) {
             hexColor = this.inferColorFromName(name);

@@ -95,8 +95,9 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     setShowPaintSelector(true);
   };
 
-  const handlePaintSelected = (paintId: string) => {
-    if (selectingIngredientIndex !== null) {
+  const handlePaintSelected = (paintIds: string[]) => {
+    if (selectingIngredientIndex !== null && paintIds.length > 0) {
+      const paintId = paintIds[0]; // Take first paint since we're in single-select mode
       const newIngredient = {
         paintId,
         role: 'base' as const,
@@ -146,10 +147,18 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     try {
       setIsSubmitting(true);
 
+      // Normalize data to ensure arrays are never undefined
+      const normalizedData = {
+        ...data,
+        techniques: data.techniques || [],
+        steps: data.steps || [],
+        tags: data.tags || [],
+      };
+
       if (editingRecipe) {
-        await updateRecipe(editingRecipe.recipeId, data);
+        await updateRecipe(editingRecipe.recipeId, normalizedData);
       } else {
-        await createRecipe(userId, data);
+        await createRecipe(userId, normalizedData);
       }
 
       onSuccess?.();
@@ -631,11 +640,12 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
       {/* Paint Selector Modal */}
       {showPaintSelector && (
         <PaintSelectorModal
-          onSelect={handlePaintSelected}
+          onSelectionChange={handlePaintSelected}
           onClose={() => {
             setShowPaintSelector(false);
             setSelectingIngredientIndex(null);
           }}
+          multiSelect={false}
         />
       )}
     </>

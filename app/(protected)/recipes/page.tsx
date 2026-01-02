@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Plus, Loader2, BookMarked } from 'lucide-react';
 
 export default function RecipesPage() {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const [recipes, setRecipes] = useState<PaintRecipe[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<PaintRecipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,19 +19,19 @@ export default function RecipesPage() {
   const [activeTab, setActiveTab] = useState<'my-recipes' | 'saved'>('my-recipes');
 
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       loadRecipes();
     }
-  }, [user]);
+  }, [currentUser]);
 
   const loadRecipes = async () => {
-    if (!user) return;
+    if (!currentUser) return;
 
     try {
       setLoading(true);
       const [myRecipes, saved] = await Promise.all([
-        getUserRecipes(user.uid),
-        getUserSavedRecipes(user.uid),
+        getUserRecipes(currentUser.uid),
+        getUserSavedRecipes(currentUser.uid),
       ]);
       setRecipes(myRecipes);
       setSavedRecipes(saved);
@@ -68,7 +68,7 @@ export default function RecipesPage() {
     loadRecipes();
   };
 
-  if (!user) {
+  if (!currentUser) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-muted-foreground">Please log in to view your recipes.</p>
@@ -162,7 +162,7 @@ export default function RecipesPage() {
                 onEdit={activeTab === 'my-recipes' ? handleEditRecipe : undefined}
                 onDelete={activeTab === 'my-recipes' ? handleDeleteRecipe : undefined}
                 showActions={activeTab === 'my-recipes'}
-                userId={user.uid}
+                userId={currentUser.uid}
               />
             ))}
           </div>
@@ -172,7 +172,7 @@ export default function RecipesPage() {
       {/* Recipe Form Modal */}
       {showForm && (
         <RecipeForm
-          userId={user.uid}
+          userId={currentUser.uid}
           editingRecipe={editingRecipe}
           onClose={() => setShowForm(false)}
           onSuccess={handleFormSuccess}
