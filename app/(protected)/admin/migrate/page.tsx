@@ -23,6 +23,7 @@ export default function MigratePage() {
       const data = await response.json();
 
       if (!response.ok) {
+        setResult(data); // Store the full response including details
         throw new Error(data.error || 'Migration failed');
       }
 
@@ -84,16 +85,23 @@ export default function MigratePage() {
 
             {/* Results */}
             {error && (
-              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex gap-3">
-                <XCircle className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-red-900 dark:text-red-200">
-                    Migration Failed
-                  </p>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                    {error}
-                  </p>
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex gap-3 mb-2">
+                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-red-900 dark:text-red-200">
+                      Migration Failed
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      {error}
+                    </p>
+                  </div>
                 </div>
+                {result?.details && (
+                  <pre className="mt-3 p-3 bg-red-100 dark:bg-red-900/30 rounded text-xs overflow-auto max-h-40">
+                    {result.details}
+                  </pre>
+                )}
               </div>
             )}
 

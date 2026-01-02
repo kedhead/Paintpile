@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/firebase';
 import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 
+// Force Node.js runtime (not Edge) for Firebase compatibility
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * Admin API route for running database migrations
  * GET /api/admin/migrate - Shows status
@@ -32,6 +36,8 @@ export async function POST(request: NextRequest) {
       userStats: await migrateUserSocialStats(),
     };
 
+    console.log('Migrations completed successfully:', results);
+
     return NextResponse.json({
       success: true,
       message: 'All migrations completed successfully',
@@ -39,10 +45,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Migration failed:', error);
+    console.error('Error stack:', error.stack);
     return NextResponse.json(
       {
         success: false,
         error: error.message || 'Migration failed',
+        details: error.stack || 'No stack trace available',
       },
       { status: 500 }
     );
