@@ -9,7 +9,7 @@ interface FollowButtonProps {
   currentUserId: string;
   targetUserId: string;
   onFollowChange?: (isFollowing: boolean) => void;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'default' | 'lg';
   variant?: 'default' | 'outline';
 }
 
@@ -17,7 +17,7 @@ export function FollowButton({
   currentUserId,
   targetUserId,
   onFollowChange,
-  size = 'md',
+  size = 'default',
   variant = 'default',
 }: FollowButtonProps) {
   const [following, setFollowing] = useState(false);
