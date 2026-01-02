@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Photo } from '@/types/photo';
 import { Paint } from '@/types/paint';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -32,6 +32,8 @@ export function PhotoGallery({
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [annotatingPhoto, setAnnotatingPhoto] = useState<Photo | null>(null);
   const [photoPaints, setPhotoPaints] = useState<Record<string, Paint[]>>({});
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const imageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     loadAllPaints();
@@ -48,6 +50,15 @@ export function PhotoGallery({
     }
 
     setPhotoPaints(paintsMap);
+  }
+
+  function updateImageSize() {
+    if (imageRef.current) {
+      setImageSize({
+        width: imageRef.current.clientWidth,
+        height: imageRef.current.clientHeight,
+      });
+    }
   }
 
   if (photos.length === 0) {
@@ -127,11 +138,55 @@ export function PhotoGallery({
           </button>
 
           <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={selectedPhoto.url}
-              alt={selectedPhoto.caption || 'Project photo'}
-              className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
-            />
+            <div className="relative inline-block">
+              <img
+                ref={imageRef}
+                src={selectedPhoto.url}
+                alt={selectedPhoto.caption || 'Project photo'}
+                className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
+                onLoad={updateImageSize}
+              />
+              {/* Annotation Markers */}
+              {selectedPhoto.annotations && selectedPhoto.annotations.length > 0 && imageSize.width > 0 && (
+                <>
+                  {selectedPhoto.annotations.map((annotation) => {
+                    const pixelX = (annotation.x / 100) * imageSize.width;
+                    const pixelY = (annotation.y / 100) * imageSize.height;
+
+                    // Generate consistent color from annotation ID
+                    const hash = annotation.id.split('').reduce((acc, char) => {
+                      return char.charCodeAt(0) + ((acc << 5) - acc);
+                    }, 0);
+                    const hue = Math.abs(hash % 360);
+                    const markerColor = `hsl(${hue}, 70%, 50%)`;
+
+                    return (
+                      <div
+                        key={annotation.id}
+                        className="absolute flex items-center gap-2 pointer-events-none"
+                        style={{
+                          left: `${pixelX}px`,
+                          top: `${pixelY}px`,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        {/* Marker Dot */}
+                        <div
+                          className="w-6 h-6 rounded-full border-2 border-white shadow-lg"
+                          style={{ backgroundColor: markerColor }}
+                        />
+                        {/* Label */}
+                        {annotation.label && (
+                          <div className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-black/70 text-white">
+                            {annotation.label}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
             <div className="bg-white rounded-lg p-4 mt-4 space-y-3">
               {selectedPhoto.caption && (
                 <div>

@@ -26,12 +26,14 @@ export function AnnotationPanel({
   const [paints, setPaints] = useState<Paint[]>([]);
   const [loading, setLoading] = useState(false);
   const [editedLabel, setEditedLabel] = useState('');
+  const [editedNotes, setEditedNotes] = useState('');
   const [showPaintSelector, setShowPaintSelector] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'base' | 'highlight' | 'shadow'>('base');
 
   useEffect(() => {
     if (annotation) {
       setEditedLabel(annotation.label);
+      setEditedNotes(annotation.notes || '');
       loadPaints();
     }
   }, [annotation]);
@@ -60,6 +62,15 @@ export function AnnotationPanel({
     onUpdate({
       ...annotation,
       label: editedLabel.trim(),
+    });
+  }
+
+  function handleNotesChange() {
+    if (!annotation) return;
+
+    onUpdate({
+      ...annotation,
+      notes: editedNotes.trim() || undefined,
     });
   }
 
@@ -154,6 +165,21 @@ export function AnnotationPanel({
             onChange={(e) => setEditedLabel(e.target.value)}
             onBlur={handleLabelChange}
             placeholder="e.g., Hat, Skin, Jacket"
+          />
+        </div>
+
+        {/* Notes Input */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Notes
+          </label>
+          <textarea
+            value={editedNotes}
+            onChange={(e) => setEditedNotes(e.target.value)}
+            onBlur={handleNotesChange}
+            placeholder="Add notes about this area (e.g., techniques used, paint ratios, etc.)"
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
           />
         </div>
 

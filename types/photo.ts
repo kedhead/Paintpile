@@ -19,6 +19,7 @@ export interface PhotoAnnotation {
   x: number;                    // X coordinate (percentage 0-100)
   y: number;                    // Y coordinate (percentage 0-100)
   label: string;                // "Hat", "Skin", "Jacket"
+  notes?: string;               // User notes about this annotation
   recipeId?: string;            // Optional link to saved recipe
   paints: AnnotationPaint[];    // Paints for this area
 }
