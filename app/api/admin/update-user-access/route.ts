@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/firebase';
-import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -94,7 +94,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await updateDoc(userRef, updates);
+    // Use setDoc with merge instead of updateDoc to handle missing fields better
+    const updatedUserData = {
+      ...userData,
+      ...updates,
+    };
+
+    await setDoc(userRef, updatedUserData, { merge: true });
+
+    console.log('[Admin Update] Update successful');
 
     // Fetch updated user data
     const updatedSnap = await getDoc(userRef);
