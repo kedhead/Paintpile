@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
 
 // Admin API route for user search
 
@@ -21,10 +20,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Search for user by email
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', email.toLowerCase()));
-    const snapshot = await getDocs(q);
+    // Search for user by email using Admin SDK
+    const db = getAdminFirestore();
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('email', '==', email.toLowerCase()).get();
 
     if (snapshot.empty) {
       return NextResponse.json(

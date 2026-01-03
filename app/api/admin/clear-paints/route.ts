@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/firebase';
-import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
 
 // Force Node.js runtime (not Edge) for Firebase compatibility
 export const runtime = 'nodejs';
@@ -16,8 +15,9 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Starting paint database clearing...');
 
-    const paintsRef = collection(db, 'paints');
-    const snapshot = await getDocs(paintsRef);
+    const db = getAdminFirestore();
+    const paintsRef = db.collection('paints');
+    const snapshot = await paintsRef.get();
 
     if (snapshot.empty) {
       return NextResponse.json({
@@ -29,19 +29,19 @@ export async function POST(request: NextRequest) {
 
     // Delete in batches (Firestore limit is 500 per batch)
     const batchSize = 500;
-    let batch = writeBatch(db);
+    let batch = db.batch();
     let batchCount = 0;
     let totalDeleted = 0;
 
     for (const paintDoc of snapshot.docs) {
-      batch.delete(doc(db, 'paints', paintDoc.id));
+      batch.delete(paintDoc.ref);
       batchCount++;
       totalDeleted++;
 
       if (batchCount >= batchSize) {
         await batch.commit();
         console.log(`Deleted batch of ${batchCount} paints`);
-        batch = writeBatch(db);
+        batch = db.batch();
         batchCount = 0;
       }
     }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/firebase';
-import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
 
 // Force Node.js runtime (not Edge) for Firebase compatibility
 export const runtime = 'nodejs';
@@ -58,11 +57,12 @@ export async function POST(request: NextRequest) {
 }
 
 async function migrateProjectSocialCounts() {
-  const projectsRef = collection(db, 'projects');
-  const snapshot = await getDocs(projectsRef);
+  const db = getAdminFirestore();
+  const projectsRef = db.collection('projects');
+  const snapshot = await projectsRef.get();
 
   const batchSize = 500;
-  let batch = writeBatch(db);
+  let batch = db.batch();
   let batchCount = 0;
   let migratedCount = 0;
 
@@ -70,8 +70,7 @@ async function migrateProjectSocialCounts() {
     const projectData = projectDoc.data();
 
     if (projectData.likeCount === undefined || projectData.commentCount === undefined) {
-      const projectRef = doc(db, 'projects', projectDoc.id);
-      batch.update(projectRef, {
+      batch.update(projectDoc.ref, {
         likeCount: projectData.likeCount ?? 0,
         commentCount: projectData.commentCount ?? 0,
       });
@@ -81,7 +80,7 @@ async function migrateProjectSocialCounts() {
 
       if (batchCount >= batchSize) {
         await batch.commit();
-        batch = writeBatch(db);
+        batch = db.batch();
         batchCount = 0;
       }
     }
@@ -95,11 +94,12 @@ async function migrateProjectSocialCounts() {
 }
 
 async function migrateUsernameLower() {
-  const usersRef = collection(db, 'users');
-  const snapshot = await getDocs(usersRef);
+  const db = getAdminFirestore();
+  const usersRef = db.collection('users');
+  const snapshot = await usersRef.get();
 
   const batchSize = 500;
-  let batch = writeBatch(db);
+  let batch = db.batch();
   let batchCount = 0;
   let migratedCount = 0;
 
@@ -107,8 +107,7 @@ async function migrateUsernameLower() {
     const userData = userDoc.data();
 
     if (userData.username && userData.usernameLower === undefined) {
-      const userRef = doc(db, 'users', userDoc.id);
-      batch.update(userRef, {
+      batch.update(userDoc.ref, {
         usernameLower: userData.username.toLowerCase(),
       });
 
@@ -117,7 +116,7 @@ async function migrateUsernameLower() {
 
       if (batchCount >= batchSize) {
         await batch.commit();
-        batch = writeBatch(db);
+        batch = db.batch();
         batchCount = 0;
       }
     }
@@ -131,11 +130,12 @@ async function migrateUsernameLower() {
 }
 
 async function migrateUserSocialStats() {
-  const usersRef = collection(db, 'users');
-  const snapshot = await getDocs(usersRef);
+  const db = getAdminFirestore();
+  const usersRef = db.collection('users');
+  const snapshot = await usersRef.get();
 
   const batchSize = 500;
-  let batch = writeBatch(db);
+  let batch = db.batch();
   let batchCount = 0;
   let migratedCount = 0;
 
@@ -146,8 +146,7 @@ async function migrateUserSocialStats() {
       userData.stats?.followerCount === undefined ||
       userData.stats?.followingCount === undefined
     ) {
-      const userRef = doc(db, 'users', userDoc.id);
-      batch.update(userRef, {
+      batch.update(userDoc.ref, {
         'stats.followerCount': userData.stats?.followerCount ?? 0,
         'stats.followingCount': userData.stats?.followingCount ?? 0,
       });
@@ -157,7 +156,7 @@ async function migrateUserSocialStats() {
 
       if (batchCount >= batchSize) {
         await batch.commit();
-        batch = writeBatch(db);
+        batch = db.batch();
         batchCount = 0;
       }
     }

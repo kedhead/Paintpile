@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/firebase';
-import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/Arcturus5404/miniature-paints/main/paints';
 
@@ -37,16 +37,17 @@ export async function POST(request: NextRequest) {
     // Parse markdown table
     const paints = parseMarkdownTable(markdownText, manufacturer);
 
-    // Import to Firestore
-    const paintsRef = collection(db, 'paints');
+    // Import to Firestore using Admin SDK
+    const db = getAdminFirestore();
+    const paintsRef = db.collection('paints');
     let importedCount = 0;
 
     for (const paint of paints) {
-      const paintRef = doc(paintsRef);
-      await setDoc(paintRef, {
+      const paintRef = paintsRef.doc();
+      await paintRef.set({
         ...paint,
         paintId: paintRef.id,
-        createdAt: Timestamp.now(),
+        createdAt: FieldValue.serverTimestamp(),
       });
       importedCount++;
     }
