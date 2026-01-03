@@ -71,7 +71,7 @@ export class ReplicateClient {
       const processingTime = Date.now() - startTime;
 
       // Output is typically a URL string or array with one URL
-      const outputUrl = Array.isArray(output) ? output[0] : output as string;
+      const outputUrl = Array.isArray(output) ? output[0] : (output as unknown as string);
 
       if (!outputUrl || typeof outputUrl !== 'string') {
         throw new Error('Invalid output from background removal model');
@@ -118,7 +118,7 @@ export class ReplicateClient {
       const processingTime = Date.now() - startTime;
 
       // Output is typically a URL string or array
-      const outputUrl = Array.isArray(output) ? output[0] : output as string;
+      const outputUrl = Array.isArray(output) ? output[0] : (output as unknown as string);
 
       if (!outputUrl || typeof outputUrl !== 'string') {
         throw new Error('Invalid output from upscaling model');
