@@ -1,10 +1,54 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Shield, Database, Palette, Users } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Spinner } from '@/components/ui/Spinner';
+import { useAuth } from '@/contexts/AuthContext';
+import { isUserAdmin } from '@/lib/auth/admin-check';
 
 export default function AdminPage() {
+  const { currentUser } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCheckLoading, setAdminCheckLoading] = useState(true);
+
+  // Check admin status when currentUser changes
+  useEffect(() => {
+    async function checkAdmin() {
+      setAdminCheckLoading(true);
+      const adminStatus = await isUserAdmin(currentUser);
+      setIsAdmin(adminStatus);
+      setAdminCheckLoading(false);
+    }
+    checkAdmin();
+  }, [currentUser]);
+
+  // Show loading while checking admin status
+  if (adminCheckLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Show access denied if not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-md w-full p-8 text-center">
+          <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+          <p className="text-muted-foreground">
+            You do not have permission to access this page.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
       <div className="max-w-4xl mx-auto">

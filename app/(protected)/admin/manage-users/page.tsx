@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { isUserAdmin } from '@/lib/auth/admin-check';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -25,11 +26,24 @@ interface UserSearchResult {
 
 export default function ManageUsersPage() {
   const { currentUser } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCheckLoading, setAdminCheckLoading] = useState(true);
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResult, setSearchResult] = useState<UserSearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Check admin status when currentUser changes
+  useEffect(() => {
+    async function checkAdmin() {
+      setAdminCheckLoading(true);
+      const adminStatus = await isUserAdmin(currentUser);
+      setIsAdmin(adminStatus);
+      setAdminCheckLoading(false);
+    }
+    checkAdmin();
+  }, [currentUser]);
 
   async function handleSearch() {
     if (!searchEmail.trim()) {
@@ -100,9 +114,16 @@ export default function ManageUsersPage() {
     }
   }
 
-  // Simple admin check - hardcoded for security
-  const isAdmin = currentUser?.email === 'kendalldavis1@gmail.com';
+  // Show loading while checking admin status
+  if (adminCheckLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
+  // Show access denied if not admin
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
