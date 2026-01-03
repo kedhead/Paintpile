@@ -669,6 +669,11 @@ export default function ProjectDetailPage() {
                       onPhotoUpdate={loadPhotos}
                       canDelete={isOwner}
                       canAnnotate={isOwner}
+                      isPro={
+                        (currentUser?.subscription?.tier === 'pro' &&
+                         currentUser?.subscription?.status === 'active') ||
+                        currentUser?.features?.aiEnabled === true
+                      }
                     />
                   </div>
                 )}
