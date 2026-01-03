@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Exclude firebase-admin from bundling (server-side only)
+  serverExternalPackages: ['firebase-admin'],
+  // Empty turbopack config to acknowledge we're using Turbopack
+  turbopack: {},
 };
 
 export default nextConfig;
