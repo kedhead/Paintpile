@@ -157,12 +157,12 @@ export function PhotoGallery({
         >
           <button
             onClick={() => setSelectedPhoto(null)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300"
+            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
           >
             <X className="h-8 w-8" />
           </button>
 
-          <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="max-w-5xl w-full max-h-[95vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="relative inline-block">
               <img
                 ref={imageRef}

@@ -5,8 +5,8 @@
  * Tracks usage per user, per month, per operation type.
  */
 
-import { db } from '@/lib/firebase/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, Timestamp } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { getUserProfile } from '@/lib/firestore/users';
 
 export type AIOperation = 'backgroundRemoval' | 'upscaling' | 'paintSuggestions' | 'enhancement';
@@ -123,16 +123,17 @@ export async function trackUsage(
   creditsUsed: number
 ): Promise<void> {
   try {
-    const usageRef = doc(db, 'aiUsage', userId);
+    const db = getAdminFirestore();
+    const usageRef = db.collection('aiUsage').doc(userId);
     const currentMonthKey = getCurrentMonthKey();
 
     // Update usage stats
-    await updateDoc(usageRef, {
-      totalCreditsUsed: increment(creditsUsed),
-      [`monthlyUsage.${currentMonthKey}.credits`]: increment(creditsUsed),
-      [`monthlyUsage.${currentMonthKey}.requestCount`]: increment(1),
-      [`monthlyUsage.${currentMonthKey}.${operation}`]: increment(1),
-      lastUpdated: Timestamp.now(),
+    await usageRef.update({
+      totalCreditsUsed: FieldValue.increment(creditsUsed),
+      [`monthlyUsage.${currentMonthKey}.credits`]: FieldValue.increment(creditsUsed),
+      [`monthlyUsage.${currentMonthKey}.requestCount`]: FieldValue.increment(1),
+      [`monthlyUsage.${currentMonthKey}.${operation}`]: FieldValue.increment(1),
+      lastUpdated: FieldValue.serverTimestamp(),
     });
 
     console.log(`[Usage Tracker] User ${userId}: ${operation} = ${creditsUsed} credits`);
@@ -176,21 +177,22 @@ export async function getUserUsage(userId: string): Promise<UsageStats | null> {
  * Get or create AI usage document for user
  */
 async function getOrCreateUsageDoc(userId: string): Promise<any> {
-  const usageRef = doc(db, 'aiUsage', userId);
-  const usageSnap = await getDoc(usageRef);
+  const db = getAdminFirestore();
+  const usageRef = db.collection('aiUsage').doc(userId);
+  const usageSnap = await usageRef.get();
 
-  if (!usageSnap.exists()) {
+  if (!usageSnap.exists) {
     // Create new usage document
     const newUsage = {
       userId,
       totalCreditsUsed: 0,
       quotaLimit: getDefaultQuotaLimit(),
       monthlyUsage: {},
-      createdAt: Timestamp.now(),
-      lastUpdated: Timestamp.now(),
+      createdAt: FieldValue.serverTimestamp(),
+      lastUpdated: FieldValue.serverTimestamp(),
     };
 
-    await setDoc(usageRef, newUsage);
+    await usageRef.set(newUsage);
     return newUsage;
   }
 
@@ -250,12 +252,13 @@ function getNextResetDate(user: any): Date {
  * @param userId - User ID
  */
 export async function resetQuota(userId: string): Promise<void> {
-  const usageRef = doc(db, 'aiUsage', userId);
+  const db = getAdminFirestore();
+  const usageRef = db.collection('aiUsage').doc(userId);
   const currentMonthKey = getCurrentMonthKey();
 
-  await updateDoc(usageRef, {
+  await usageRef.update({
     [`monthlyUsage.${currentMonthKey}`]: getDefaultMonthlyUsage(),
-    lastUpdated: Timestamp.now(),
+    lastUpdated: FieldValue.serverTimestamp(),
   });
 
   console.log(`[Usage Tracker] Reset quota for user ${userId}`);
