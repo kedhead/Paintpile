@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
+// Admin API route for user search
+
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
