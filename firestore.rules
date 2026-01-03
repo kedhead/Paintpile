@@ -17,8 +17,12 @@ service cloud.firestore {
       allow read: if true;
       // Only authenticated users can create their own profile
       allow create: if isAuthenticated() && isOwner(userId);
-      // Only the user can update their own profile
-      allow update: if isOwner(userId);
+      // Only the user can update their own profile (excluding subscription and features fields)
+      // Admin can update subscription and features fields
+      allow update: if isOwner(userId) ||
+                       (isAuthenticated() &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['subscription', 'features', 'stats']));
       // Only the user can delete their own profile
       allow delete: if isOwner(userId);
 

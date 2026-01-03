@@ -29,29 +29,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userData = userSnap.data();
     const updates: any = {};
 
     // Update AI enabled flag
     if (aiEnabled !== undefined) {
-      updates['features.aiEnabled'] = aiEnabled;
+      // Build complete features object to avoid nested update issues
+      updates.features = {
+        ...(userData.features || {}),
+        aiEnabled: aiEnabled,
+      };
     }
 
     // Update Pro tier
     if (proTier !== undefined) {
       if (proTier) {
-        // Grant Pro
-        updates['subscription.tier'] = 'pro';
-        updates['subscription.status'] = 'active';
-        updates['subscription.currentPeriodStart'] = Timestamp.now();
-
-        // Set current period end to 1 month from now
-        const nextMonth = new Date();
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-        updates['subscription.currentPeriodEnd'] = Timestamp.fromDate(nextMonth);
+        // Grant Pro - build complete subscription object
+        updates.subscription = {
+          ...(userData.subscription || {}),
+          tier: 'pro',
+          status: 'active',
+          currentPeriodStart: Timestamp.now(),
+          currentPeriodEnd: Timestamp.fromDate(
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+          ),
+        };
       } else {
         // Remove Pro
-        updates['subscription.tier'] = 'free';
-        updates['subscription.status'] = 'canceled';
+        updates.subscription = {
+          ...(userData.subscription || {}),
+          tier: 'free',
+          status: 'canceled',
+        };
       }
     }
 
