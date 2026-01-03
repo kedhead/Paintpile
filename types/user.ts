@@ -11,6 +11,22 @@ export interface User {
   createdAt: Timestamp;
   settings: UserSettings;
   stats: UserStats;
+  subscription?: UserSubscription;
+  features?: UserFeatures;
+}
+
+export interface UserSubscription {
+  tier: 'free' | 'pro';
+  status: 'active' | 'canceled' | 'past_due';
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  currentPeriodStart?: Timestamp;
+  currentPeriodEnd?: Timestamp;
+  cancelAtPeriodEnd?: boolean;
+}
+
+export interface UserFeatures {
+  aiEnabled?: boolean;  // Admin can manually enable AI for testing
 }
 
 export interface UserSettings {

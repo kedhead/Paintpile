@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { Paint } from './paint';
 
 export interface Photo {
   photoId: string;
@@ -12,6 +13,12 @@ export interface Photo {
   width: number;
   height: number;
   annotations?: PhotoAnnotation[];
+  aiProcessing?: {
+    backgroundRemoval?: AIProcessingResult;
+    upscaling?: AIProcessingResult;
+    enhancement?: AIProcessingResult;
+    paintSuggestions?: PaintSuggestionsResult;
+  };
 }
 
 export interface PhotoAnnotation {
@@ -36,4 +43,29 @@ export interface PhotoUpload {
   preview: string;
   caption?: string;
   paintIds?: string[];
+}
+
+// AI Processing Types
+export interface AIProcessingResult {
+  status: 'processing' | 'completed' | 'failed';
+  processedAt: Timestamp;
+  url?: string;
+  error?: string;
+  costCredits?: number;  // 1 credit = $0.001
+}
+
+export interface PaintSuggestionsResult {
+  status: 'processing' | 'completed' | 'failed';
+  processedAt: Timestamp;
+  suggestions?: ColorSuggestion[];
+  error?: string;
+  costCredits?: number;
+}
+
+export interface ColorSuggestion {
+  hexColor: string;
+  description: string;
+  matchedPaints: Paint[];
+  confidence: number;
+  location?: 'base' | 'highlight' | 'shadow' | 'general';
 }
