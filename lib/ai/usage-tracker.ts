@@ -7,7 +7,7 @@
 
 import { db } from '@/lib/firebase/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, Timestamp } from 'firebase/firestore';
-import { getUser } from '@/lib/firestore/users';
+import { getUserProfile } from '@/lib/firestore/users';
 
 export type AIOperation = 'backgroundRemoval' | 'upscaling' | 'paintSuggestions' | 'enhancement';
 
@@ -48,7 +48,7 @@ export async function checkQuota(
 ): Promise<{ allowed: boolean; reason?: string; stats?: UsageStats }> {
   try {
     // Get user to check subscription status
-    const user = await getUser(userId);
+    const user = await getUserProfile(userId);
 
     if (!user) {
       return { allowed: false, reason: 'User not found' };
@@ -149,7 +149,7 @@ export async function trackUsage(
  */
 export async function getUserUsage(userId: string): Promise<UsageStats | null> {
   try {
-    const user = await getUser(userId);
+    const user = await getUserProfile(userId);
     if (!user) return null;
 
     const usageDoc = await getOrCreateUsageDoc(userId);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReplicateClient } from '@/lib/ai/replicate-client';
 import { checkQuota, trackUsage, OPERATION_COSTS } from '@/lib/ai/usage-tracker';
-import { getUser } from '@/lib/firestore/users';
+import { getUserProfile } from '@/lib/firestore/users';
 import { uploadBytes, ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase/firebase';
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has Pro subscription or AI enabled
-    const user = await getUser(userId);
+    const user = await getUserProfile(userId);
     if (!user) {
       return NextResponse.json(
         {

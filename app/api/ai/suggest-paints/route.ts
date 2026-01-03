@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAnthropicClient } from '@/lib/ai/anthropic-client';
 import { findMatchingPaints } from '@/lib/ai/color-matcher';
 import { checkQuota, trackUsage, OPERATION_COSTS } from '@/lib/ai/usage-tracker';
-import { getUser } from '@/lib/firestore/users';
+import { getUserProfile } from '@/lib/firestore/users';
 import { ColorSuggestion } from '@/types/photo';
 
 export const runtime = 'nodejs';
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has Pro subscription or AI enabled
-    const user = await getUser(userId);
+    const user = await getUserProfile(userId);
     if (!user) {
       return NextResponse.json(
         {
