@@ -14,8 +14,9 @@ const SUPER_ADMINS = ['kendalldavis1@gmail.com'];
 
 export async function POST(request: NextRequest) {
   try {
-    // For initial setup, we'll use a secret key approach
-    // After first admin is set, this can be updated to check custom claims
+    // This endpoint is primarily for local development
+    // In production, use the grant-admin script or Firebase Console
+
     const authHeader = request.headers.get('authorization');
     const body = await request.json();
     const { userId, grant } = body;
@@ -37,17 +38,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Security check: Require secret key for initial setup
-    // OR check if calling user is already an admin
     const setupSecret = process.env.ADMIN_SETUP_SECRET;
 
-    if (authHeader === `Bearer ${setupSecret}`) {
-      // Allow with secret key
-      console.log('[Grant Admin] Authorized via setup secret');
-    } else {
-      // TODO: Add proper admin authentication check here
-      // For now, we'll allow this for initial setup
+    if (!setupSecret) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized - requires admin access or setup secret' },
+        {
+          success: false,
+          error: 'This endpoint is disabled. Use the grant-admin script locally or contact an administrator.'
+        },
+        { status: 503 }
+      );
+    }
+
+    if (authHeader !== `Bearer ${setupSecret}`) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - invalid setup secret' },
         { status: 403 }
       );
     }
