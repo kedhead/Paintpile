@@ -6,9 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProject, deleteProject, updateProject } from '@/lib/firestore/projects';
 import { getProjectPhotos, deletePhotoFromProject } from '@/lib/firestore/photos';
 import { deletePhoto as deletePhotoStorage } from '@/lib/firebase/storage';
+import { getUserProfile } from '@/lib/firestore/users';
 import { Project } from '@/types/project';
 import { Photo } from '@/types/photo';
 import { Paint } from '@/types/paint';
+import { User } from '@/types/user';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -39,6 +41,7 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [error, setError] = useState('');
@@ -82,9 +85,21 @@ export default function ProjectDetailPage() {
       }
     }
 
+    async function loadUserProfile() {
+      if (currentUser?.uid) {
+        try {
+          const profile = await getUserProfile(currentUser.uid);
+          setUserProfile(profile);
+        } catch (err) {
+          console.error('Error loading user profile:', err);
+        }
+      }
+    }
+
     if (currentUser) {
       loadProject();
       loadPhotos();
+      loadUserProfile();
     }
   }, [projectId, currentUser]);
 
@@ -670,9 +685,9 @@ export default function ProjectDetailPage() {
                       canDelete={isOwner}
                       canAnnotate={isOwner}
                       isPro={
-                        (currentUser?.subscription?.tier === 'pro' &&
-                         currentUser?.subscription?.status === 'active') ||
-                        currentUser?.features?.aiEnabled === true
+                        (userProfile?.subscription?.tier === 'pro' &&
+                         userProfile?.subscription?.status === 'active') ||
+                        userProfile?.features?.aiEnabled === true
                       }
                     />
                   </div>
