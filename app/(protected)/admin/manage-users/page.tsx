@@ -98,8 +98,8 @@ export default function ManageUsersPage() {
   }
 
   // Simple admin check - hardcoded for security
-  // TODO: Replace with your actual admin email
-  const isAdmin = currentUser?.email === 'your-admin-email@example.com';
+  // Replace with your actual admin email to enable access
+  const isAdmin = currentUser?.email === 'your-email@example.com';
 
   if (!isAdmin) {
     return (
