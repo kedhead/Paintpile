@@ -1,0 +1,210 @@
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Spinner } from '@/components/ui/Spinner';
+import { ArrowLeft, Download, Check, X, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+
+interface ImportStatus {
+  manufacturer: string;
+  status: 'pending' | 'processing' | 'success' | 'error';
+  count?: number;
+  error?: string;
+}
+
+const MANUFACTURERS = [
+  'AK', 'AKRC', 'Acrilex', 'AppleBarrel', 'Army_Painter', 'Arteza',
+  'Citadel_Colour', 'CoatDArmes', 'Creature', 'Duncan', 'FolkArt',
+  'Foundry', 'Golden', 'GreenStuffWorld', 'Humbrol', 'Italeri',
+  'KimeraKolors', 'Liquitex', 'Mig', 'MissionModels', 'Monument',
+  'MrHobby', 'MrPaint', 'P3', 'Pantone', 'RAL', 'Reaper', 'Revell',
+  'Scale75', 'Tamiya', 'TomColor', 'TurboDork', 'Vallejo', 'Warcolours'
+];
+
+export default function ImportGithubPaintsPage() {
+  const [importing, setImporting] = useState(false);
+  const [statuses, setStatuses] = useState<ImportStatus[]>([]);
+  const [totalImported, setTotalImported] = useState(0);
+
+  async function handleImportAll() {
+    setImporting(true);
+    setStatuses([]);
+    setTotalImported(0);
+
+    // Initialize statuses
+    const initialStatuses: ImportStatus[] = MANUFACTURERS.map(m => ({
+      manufacturer: m.replace('_', ' '),
+      status: 'pending'
+    }));
+    setStatuses(initialStatuses);
+
+    let totalCount = 0;
+
+    // Import each manufacturer sequentially
+    for (let i = 0; i < MANUFACTURERS.length; i++) {
+      const manufacturer = MANUFACTURERS[i];
+
+      // Update status to processing
+      setStatuses(prev => prev.map((s, idx) =>
+        idx === i ? { ...s, status: 'processing' } : s
+      ));
+
+      try {
+        const response = await fetch('/api/admin/import-github-paints', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ manufacturer }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          totalCount += result.count;
+          setTotalImported(totalCount);
+
+          setStatuses(prev => prev.map((s, idx) =>
+            idx === i
+              ? { ...s, status: 'success', count: result.count }
+              : s
+          ));
+        } else {
+          setStatuses(prev => prev.map((s, idx) =>
+            idx === i
+              ? { ...s, status: 'error', error: result.error }
+              : s
+          ));
+        }
+      } catch (error: any) {
+        setStatuses(prev => prev.map((s, idx) =>
+          idx === i
+            ? { ...s, status: 'error', error: error.message }
+            : s
+        ));
+      }
+
+      // Small delay between requests to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    setImporting(false);
+  }
+
+  const successCount = statuses.filter(s => s.status === 'success').length;
+  const errorCount = statuses.filter(s => s.status === 'error').length;
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto">
+        <Link href="/admin">
+          <Button variant="ghost" size="sm" className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Admin
+          </Button>
+        </Link>
+
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Import Paints from GitHub</h1>
+          <p className="text-muted-foreground">
+            Import {MANUFACTURERS.length} paint manufacturers from the miniature-paints repository
+          </p>
+        </div>
+
+        <Card className="p-6 mb-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="p-3 bg-blue-500/10 rounded-lg">
+              <Download className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-2">
+                Import Paint Database
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                This will import paints from the Arcturus5404/miniature-paints GitHub repository.
+                Includes major brands like Citadel, Vallejo, Army Painter, and more.
+              </p>
+
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+                <div className="flex gap-2">
+                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-amber-900 dark:text-amber-200 font-medium">
+                      Warning
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      This will add paints to your database. It won't remove existing paints.
+                      If you want a clean import, use "Clear Paints" first.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleImportAll}
+                disabled={importing}
+                className="w-full"
+              >
+                {importing ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Importing... ({successCount + errorCount}/{MANUFACTURERS.length})
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Import All Manufacturers
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {totalImported > 0 && (
+            <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+              <p className="text-sm text-green-900 dark:text-green-200 font-medium">
+                Total Paints Imported: {totalImported}
+              </p>
+            </div>
+          )}
+        </Card>
+
+        {statuses.length > 0 && (
+          <Card className="p-6">
+            <h3 className="font-semibold mb-4">Import Progress</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {statuses.map((status, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    {status.status === 'pending' && (
+                      <div className="w-5 h-5 rounded-full border-2 border-muted-foreground" />
+                    )}
+                    {status.status === 'processing' && (
+                      <Spinner size="sm" />
+                    )}
+                    {status.status === 'success' && (
+                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    )}
+                    {status.status === 'error' && (
+                      <X className="h-5 w-5 text-destructive" />
+                    )}
+                    <span className="font-medium">{status.manufacturer}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {status.count !== undefined && `${status.count} paints`}
+                    {status.error && (
+                      <span className="text-destructive">{status.error}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

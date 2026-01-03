@@ -63,8 +63,8 @@ export default function AdminPage() {
             </div>
           </Link>
 
-          {/* Import Paints from CSV */}
-          <Link href="/admin/import-paints">
+          {/* Import Paints from GitHub */}
+          <Link href="/admin/import-github-paints">
             <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
@@ -72,13 +72,35 @@ export default function AdminPage() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-foreground mb-2">
+                    Import Paints from GitHub
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Import 34 paint manufacturers (2000+ paints) from the miniature-paints repository
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Import from GitHub →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Import Paints from CSV */}
+          <Link href="/admin/import-paints">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                  <Database className="w-6 h-6 text-purple-600 dark:text-purple-500" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
                     Import Paints from CSV
                   </h2>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload CSV files to add new paints from any manufacturer (includes web scraping support)
+                    Upload CSV files to add custom paints (includes web scraping support)
                   </p>
                   <Button variant="outline" size="sm">
-                    Import Paints →
+                    Import CSV →
                   </Button>
                 </div>
               </div>
