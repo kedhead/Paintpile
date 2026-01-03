@@ -85,12 +85,18 @@ export async function getUserRecipes(userId: string): Promise<PaintRecipe[]> {
   const recipesRef = collection(db, 'paintRecipes');
   const q = query(
     recipesRef,
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
+    where('userId', '==', userId)
   );
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => doc.data() as PaintRecipe);
+  const recipes = querySnapshot.docs.map((doc) => doc.data() as PaintRecipe);
+
+  // Sort client-side to avoid composite index requirement
+  return recipes.sort((a, b) => {
+    const aTime = a.createdAt?.toMillis?.() || 0;
+    const bTime = b.createdAt?.toMillis?.() || 0;
+    return bTime - aTime;
+  });
 }
 
 /**
@@ -304,17 +310,29 @@ export async function getUserSavedRecipes(
   userId: string
 ): Promise<PaintRecipe[]> {
   const savedRecipesRef = collection(db, 'users', userId, 'savedRecipes');
-  const q = query(savedRecipesRef, orderBy('savedAt', 'desc'));
-  const querySnapshot = await getDocs(q);
+  const querySnapshot = await getDocs(savedRecipesRef);
+
+  // Get saved recipes with their save time
+  const savedData = querySnapshot.docs.map((doc) => doc.data() as SavedRecipe);
 
   // Get full recipe data for each saved recipe
-  const recipePromises = querySnapshot.docs.map(async (doc) => {
-    const savedRecipe = doc.data() as SavedRecipe;
-    return getRecipe(savedRecipe.recipeId);
+  const recipePromises = savedData.map(async (savedRecipe) => {
+    const recipe = await getRecipe(savedRecipe.recipeId);
+    return { recipe, savedAt: savedRecipe.savedAt };
   });
 
-  const recipes = await Promise.all(recipePromises);
-  return recipes.filter((r) => r !== null) as PaintRecipe[];
+  const results = await Promise.all(recipePromises);
+
+  // Filter out null recipes and sort by savedAt client-side
+  const validRecipes = results
+    .filter((r) => r.recipe !== null)
+    .sort((a, b) => {
+      const aTime = a.savedAt?.toMillis?.() || 0;
+      const bTime = b.savedAt?.toMillis?.() || 0;
+      return bTime - aTime;
+    });
+
+  return validRecipes.map((r) => r.recipe!);
 }
 
 // =============================================================================
@@ -387,8 +405,7 @@ export async function getProjectRecipes(
   projectId: string
 ): Promise<{ usage: ProjectRecipeUsage; recipe: PaintRecipe | null }[]> {
   const usagesRef = collection(db, 'projects', projectId, 'recipeUsages');
-  const q = query(usagesRef, orderBy('addedAt', 'desc'));
-  const querySnapshot = await getDocs(q);
+  const querySnapshot = await getDocs(usagesRef);
 
   const usages = querySnapshot.docs.map((doc) => doc.data() as ProjectRecipeUsage);
 
@@ -400,7 +417,12 @@ export async function getProjectRecipes(
     }))
   );
 
-  return results;
+  // Sort by addedAt client-side
+  return results.sort((a, b) => {
+    const aTime = a.usage.addedAt?.toMillis?.() || 0;
+    const bTime = b.usage.addedAt?.toMillis?.() || 0;
+    return bTime - aTime;
+  });
 }
 
 /**
