@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase/firebase';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    // Use Admin SDK to bypass security rules
+    const db = getAdminFirestore();
+    const userRef = db.collection('users').doc(userId);
+    const userSnap = await userRef.get();
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       console.log('[Admin Update] User not found:', userId);
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -59,14 +61,14 @@ export async function POST(request: NextRequest) {
       console.log('[Admin Update] Setting proTier to:', proTier);
       if (proTier) {
         // Grant Pro - build complete subscription object
-        const now = Timestamp.now();
+        const now = FieldValue.serverTimestamp();
         const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
         updates.subscription = {
           tier: 'pro',
           status: 'active',
           currentPeriodStart: now,
-          currentPeriodEnd: Timestamp.fromDate(endDate),
+          currentPeriodEnd: endDate,
         };
         // Preserve other subscription fields if they exist
         if (userData.subscription && typeof userData.subscription === 'object') {
@@ -94,24 +96,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use setDoc with merge instead of updateDoc to handle missing fields better
+    // Use Admin SDK set with merge to handle missing fields better
     const updatedUserData = {
       ...userData,
       ...updates,
     };
 
-    await setDoc(userRef, updatedUserData, { merge: true });
+    await userRef.set(updatedUserData, { merge: true });
 
     console.log('[Admin Update] Update successful');
 
     // Fetch updated user data
-    const updatedSnap = await getDoc(userRef);
+    const updatedSnap = await userRef.get();
     const updatedData = updatedSnap.data();
 
     return NextResponse.json({
       success: true,
       data: {
-        userId: updatedSnap.id,
+        userId: userId,
         email: updatedData?.email,
         displayName: updatedData?.displayName,
         username: updatedData?.username,
