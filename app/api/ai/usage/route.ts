@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserUsageStats } from '@/lib/ai/usage-tracker';
+import { getUserUsage } from '@/lib/ai/usage-tracker';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get usage statistics
-    const stats = await getUserUsageStats(userId);
+    const stats = await getUserUsage(userId);
 
     return NextResponse.json({
       success: true,
