@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Shield, Database, Palette } from 'lucide-react';
+import { Shield, Database, Palette, Users } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export default function AdminPage() {
@@ -19,6 +19,28 @@ export default function AdminPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
+          {/* Manage Users */}
+          <Link href="/admin/manage-users">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Users className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Manage Users
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Grant Pro subscriptions and AI feature access to users
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Manage Users →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
           {/* Manage Paint Database */}
           <Link href="/admin/manage-paints">
             <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
