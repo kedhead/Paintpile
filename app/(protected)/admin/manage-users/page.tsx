@@ -83,7 +83,10 @@ export default function ManageUsersPage() {
       const result = await response.json();
 
       if (!result.success) {
-        setError(result.error || 'Failed to update user');
+        const errorMsg = result.error || 'Failed to update user';
+        const detailsMsg = result.details ? `\n\nDetails: ${result.details}` : '';
+        setError(errorMsg + detailsMsg);
+        console.error('API Error:', result);
         return;
       }
 
@@ -91,7 +94,7 @@ export default function ManageUsersPage() {
       setSearchResult(result.data);
     } catch (err: any) {
       console.error('Update error:', err);
-      setError('Failed to update user');
+      setError(`Failed to update user: ${err.message}`);
     } finally {
       setLoading(false);
     }
