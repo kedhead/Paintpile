@@ -1,0 +1,229 @@
+'use client';
+
+import { useState } from 'react';
+import { Photo, ColorSuggestion } from '@/types/photo';
+import { AIProcessingButton } from './AIProcessingButton';
+import { PaintSuggestionsPanel } from './PaintSuggestionsPanel';
+import { Button } from '@/components/ui/Button';
+import { Sparkles, Eraser, ArrowUpCircle, Download, ExternalLink, Lock } from 'lucide-react';
+import { OPERATION_COSTS } from '@/lib/ai/usage-tracker';
+import { useRouter } from 'next/navigation';
+
+interface AIProcessingPanelProps {
+  photo: Photo;
+  projectId: string;
+  userId: string;
+  onUpdate?: () => void;
+  isPro?: boolean;
+}
+
+/**
+ * Main AI processing panel integrated into photo lightbox
+ * Shows AI action buttons and results
+ */
+export function AIProcessingPanel({
+  photo,
+  projectId,
+  userId,
+  onUpdate,
+  isPro = false,
+}: AIProcessingPanelProps) {
+  const router = useRouter();
+  const [paintSuggestions, setPaintSuggestions] = useState<ColorSuggestion[] | null>(null);
+  const [suggestionsConfidence, setSuggestionsConfidence] = useState(0);
+  const [backgroundRemovedUrl, setBackgroundRemovedUrl] = useState<string | null>(
+    photo.aiProcessing?.backgroundRemoval?.url || null
+  );
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Check if user has Pro access
+  if (!isPro) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-6 mt-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Lock className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground mb-1">
+              AI Features - Pro Only
+            </h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Unlock AI-powered paint suggestions, background removal, and image upscaling
+            </p>
+            <Button
+              size="sm"
+              onClick={() => router.push('/settings/subscription')}
+            >
+              Upgrade to Pro
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle paint suggestions
+  const handleSuggestPaints = async () => {
+    const response = await fetch('/api/ai/suggest-paints', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        photoId: photo.photoId,
+        projectId,
+        userId,
+        imageUrl: photo.url,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to generate paint suggestions');
+    }
+
+    setPaintSuggestions(result.data.suggestions);
+    setSuggestionsConfidence(result.data.confidence);
+    setShowSuggestions(true);
+
+    // Call onUpdate to refresh photo data
+    onUpdate?.();
+  };
+
+  // Handle background removal
+  const handleRemoveBackground = async () => {
+    const response = await fetch('/api/ai/remove-background', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        photoId: photo.photoId,
+        projectId,
+        userId,
+        sourceUrl: photo.url,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to remove background');
+    }
+
+    setBackgroundRemovedUrl(result.data.processedUrl);
+
+    // Call onUpdate to refresh photo data
+    onUpdate?.();
+  };
+
+  return (
+    <div className="bg-card rounded-xl border border-border p-4 mt-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 pb-2 border-b border-border">
+        <Sparkles className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold text-foreground">AI Tools</h3>
+      </div>
+
+      {/* Action buttons */}
+      <div className="space-y-2">
+        <AIProcessingButton
+          label="Suggest Paints"
+          icon={<Sparkles className="h-4 w-4" />}
+          estimatedCost={OPERATION_COSTS.paintSuggestions}
+          onClick={handleSuggestPaints}
+        />
+
+        <AIProcessingButton
+          label="Remove Background"
+          icon={<Eraser className="h-4 w-4" />}
+          estimatedCost={OPERATION_COSTS.backgroundRemoval}
+          onClick={handleRemoveBackground}
+        />
+
+        <AIProcessingButton
+          label="Upscale 2x"
+          icon={<ArrowUpCircle className="h-4 w-4" />}
+          estimatedCost={OPERATION_COSTS.upscaling}
+          onClick={async () => {
+            // TODO: Implement upscaling
+            throw new Error('Upscaling coming soon!');
+          }}
+          disabled
+        />
+      </div>
+
+      {/* Results section */}
+      {(paintSuggestions || backgroundRemovedUrl) && (
+        <div className="pt-4 border-t border-border space-y-4">
+          <h4 className="font-medium text-foreground text-sm">Results</h4>
+
+          {/* Paint suggestions */}
+          {paintSuggestions && showSuggestions && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Paint Suggestions ({paintSuggestions.length})
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowSuggestions(!showSuggestions)}
+                >
+                  {showSuggestions ? 'Hide' : 'Show'}
+                </Button>
+              </div>
+
+              {showSuggestions && (
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <PaintSuggestionsPanel
+                    suggestions={paintSuggestions}
+                    confidence={suggestionsConfidence}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Background removed */}
+          {backgroundRemovedUrl && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Eraser className="h-4 w-4" />
+                  Background Removed
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    asChild
+                  >
+                    <a href={backgroundRemovedUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    asChild
+                  >
+                    <a href={backgroundRemovedUrl} download>
+                      <Download className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative aspect-square w-full max-w-xs mx-auto bg-muted/30 rounded-lg overflow-hidden">
+                <img
+                  src={backgroundRemovedUrl}
+                  alt="Background removed"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
 import { PhotoAnnotator } from '@/components/annotations/PhotoAnnotator';
+import { AIProcessingPanel } from '@/components/ai/AIProcessingPanel';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -18,6 +19,7 @@ interface PhotoGalleryProps {
   onPhotoUpdate?: () => void;
   canDelete?: boolean;
   canAnnotate?: boolean;
+  isPro?: boolean;
 }
 
 export function PhotoGallery({
@@ -28,6 +30,7 @@ export function PhotoGallery({
   onPhotoUpdate,
   canDelete = false,
   canAnnotate = false,
+  isPro = false,
 }: PhotoGalleryProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [annotatingPhoto, setAnnotatingPhoto] = useState<Photo | null>(null);
@@ -294,6 +297,17 @@ export function PhotoGallery({
                   </Button>
                 )}
               </div>
+
+              {/* AI Processing Panel */}
+              {projectId && userId && (
+                <AIProcessingPanel
+                  photo={selectedPhoto}
+                  projectId={projectId}
+                  userId={userId}
+                  onUpdate={onPhotoUpdate}
+                  isPro={isPro}
+                />
+              )}
 
               <p className="text-sm text-gray-500">
                 Uploaded {formatRelativeTime(selectedPhoto.createdAt)}
