@@ -38,7 +38,7 @@ export async function findMatchingPaints(
 
   // Calculate Delta E for each paint
   const matches: PaintMatch[] = allPaints.map(paint => {
-    const paintLab = hexToLab(paint.hex);
+    const paintLab = hexToLab(paint.hexColor);
     const deltaE = calculateDeltaE(targetLab, paintLab);
     const similarity = deltaEToSimilarity(deltaE);
 
