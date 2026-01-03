@@ -11,18 +11,19 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.token.email == 'kendalldavis1@gmail.com';
+    }
+
     // Users collection
     match /users/{userId} {
       // Anyone can read public profiles
       allow read: if true;
       // Only authenticated users can create their own profile
       allow create: if isAuthenticated() && isOwner(userId);
-      // Only the user can update their own profile (excluding subscription and features fields)
-      // Admin can update subscription and features fields
-      allow update: if isOwner(userId) ||
-                       (isAuthenticated() &&
-                        request.resource.data.diff(resource.data).affectedKeys()
-                        .hasOnly(['subscription', 'features', 'stats']));
+      // User can update their own profile, OR admin can update anyone
+      allow update: if isOwner(userId) || isAdmin();
       // Only the user can delete their own profile
       allow delete: if isOwner(userId);
 
