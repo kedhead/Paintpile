@@ -101,40 +101,37 @@ export async function getPublicRecipes(
   limitCount: number = 50
 ): Promise<PaintRecipe[]> {
   const recipesRef = collection(db, 'paintRecipes');
-  let constraints: any[] = [where('isPublic', '==', true)];
 
-  // Add filters
-  if (searchParams?.category) {
-    constraints.push(where('category', '==', searchParams.category));
-  }
-  if (searchParams?.difficulty) {
-    constraints.push(where('difficulty', '==', searchParams.difficulty));
-  }
-  if (searchParams?.surfaceType) {
-    constraints.push(where('surfaceType', '==', searchParams.surfaceType));
-  }
-  if (searchParams?.userId) {
-    constraints.push(where('userId', '==', searchParams.userId));
-  }
-
-  // Add sorting
-  const sortBy = searchParams?.sortBy || 'recent';
-  if (sortBy === 'recent') {
-    constraints.push(orderBy('createdAt', 'desc'));
-  } else if (sortBy === 'popular') {
-    constraints.push(orderBy('likes', 'desc'));
-  } else if (sortBy === 'saves') {
-    constraints.push(orderBy('saves', 'desc'));
-  }
-
-  constraints.push(limit(limitCount));
+  // Simplified query to avoid composite index requirements
+  // Only use where + orderBy on createdAt (most common)
+  let constraints: any[] = [
+    where('isPublic', '==', true),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount * 3) // Fetch more for client-side filtering
+  ];
 
   const q = query(recipesRef, ...constraints);
   const querySnapshot = await getDocs(q);
 
   let recipes = querySnapshot.docs.map((doc) => doc.data() as PaintRecipe);
 
-  // Client-side filtering for more complex queries
+  // Client-side filtering for all parameters
+  if (searchParams?.category) {
+    recipes = recipes.filter((r) => r.category === searchParams.category);
+  }
+
+  if (searchParams?.difficulty) {
+    recipes = recipes.filter((r) => r.difficulty === searchParams.difficulty);
+  }
+
+  if (searchParams?.surfaceType) {
+    recipes = recipes.filter((r) => r.surfaceType === searchParams.surfaceType);
+  }
+
+  if (searchParams?.userId) {
+    recipes = recipes.filter((r) => r.userId === searchParams.userId);
+  }
+
   if (searchParams?.query) {
     const searchLower = searchParams.query.toLowerCase();
     recipes = recipes.filter(
@@ -157,7 +154,17 @@ export async function getPublicRecipes(
     );
   }
 
-  return recipes;
+  // Client-side sorting
+  const sortBy = searchParams?.sortBy || 'recent';
+  if (sortBy === 'popular') {
+    recipes.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+  } else if (sortBy === 'saves') {
+    recipes.sort((a, b) => (b.saves || 0) - (a.saves || 0));
+  }
+  // 'recent' is already sorted by createdAt from query
+
+  // Limit results after filtering
+  return recipes.slice(0, limitCount);
 }
 
 /**
