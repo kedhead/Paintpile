@@ -143,11 +143,14 @@ export class ReplicateClient {
         outputUrl = output[0];
       } else if (typeof output === 'string') {
         outputUrl = output;
+      } else if (output && typeof output === 'object') {
+        // Handle object-based outputs (common in some model versions)
+        outputUrl = (output as any).url || (output as any).output || (output as any).image;
       }
 
       if (!outputUrl || typeof outputUrl !== 'string') {
         console.error('[Replicate] Invalid output structure:', output);
-        throw new Error(`Invalid output from recolor model.`);
+        throw new Error(`Invalid output structure from recolor model: ${JSON.stringify(output)}`);
       }
 
       console.log(`[Replicate] Image recolor completed in ${processingTime}ms`);
