@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { grantAdminAccess, revokeAdminAccess, getUserCustomClaims } from '@/lib/firebase/admin';
 
+export const runtime = 'nodejs';
+
 // Hardcoded list of super admins who can grant admin access
 // These are checked by email from the Authorization header
 const SUPER_ADMINS = ['kendalldavis1@gmail.com'];

@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
 
+export const runtime = 'nodejs';
+
 // Admin API route for user search
 
 export async function POST(request: NextRequest) {

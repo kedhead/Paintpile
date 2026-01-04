@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
+export const runtime = 'nodejs';
+
 const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/Arcturus5404/miniature-paints/main/paints';
 
 export async function POST(request: NextRequest) {
