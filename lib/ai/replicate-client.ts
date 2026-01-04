@@ -11,7 +11,8 @@ import Replicate from 'replicate';
 export type ReplicateOperation = 'backgroundRemoval' | 'upscaling';
 
 export interface BackgroundRemovalResult {
-  outputUrl: string;
+  outputUrl?: string;
+  imageBuffer?: Buffer;
   processingTime: number;
 }
 
@@ -72,27 +73,47 @@ export class ReplicateClient {
       console.log('[Replicate] Is array:', Array.isArray(output));
       console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
 
-      // Handle ReadableStream - need to collect all chunks
+      // Handle ReadableStream - Replicate streams the actual image data
       if (output instanceof ReadableStream) {
-        console.log('[Replicate] Reading stream...');
+        console.log('[Replicate] Reading image data stream...');
         const reader = output.getReader();
-        const chunks: any[] = [];
+        const chunks: Uint8Array[] = [];
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          chunks.push(value);
+          if (value) {
+            chunks.push(value);
+          }
         }
 
-        // Stream should contain URLs - last chunk is typically the final result
-        output = chunks.length > 0 ? chunks[chunks.length - 1] : null;
         console.log('[Replicate] Stream chunks count:', chunks.length);
-        console.log('[Replicate] Final chunk:', output);
+
+        // Concatenate all chunks into a single buffer
+        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const imageData = new Uint8Array(totalLength);
+        let offset = 0;
+
+        for (const chunk of chunks) {
+          imageData.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        const imageBuffer = Buffer.from(imageData);
+        const processingTime = Date.now() - startTime;
+
+        console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
+        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
+
+        return {
+          imageBuffer,
+          processingTime,
+        };
       }
 
       const processingTime = Date.now() - startTime;
 
-      // Output is typically a URL string or array with one URL
+      // Fallback: Output is a URL string or array with one URL
       let outputUrl: string | null = null;
 
       if (Array.isArray(output)) {

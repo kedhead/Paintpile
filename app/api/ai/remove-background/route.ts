@@ -98,8 +98,17 @@ export async function POST(request: NextRequest) {
     const replicateClient = getReplicateClient();
     const result = await replicateClient.removeBackground(sourceUrl);
 
-    // Download the processed image
-    const imageBuffer = await replicateClient.downloadImage(result.outputUrl);
+    // Get the processed image buffer
+    let imageBuffer: Buffer;
+    if (result.imageBuffer) {
+      // Stream returned image data directly
+      imageBuffer = result.imageBuffer;
+    } else if (result.outputUrl) {
+      // URL returned, need to download
+      imageBuffer = await replicateClient.downloadImage(result.outputUrl);
+    } else {
+      throw new Error('No image data or URL returned from Replicate');
+    }
 
     // Upload to Firebase Storage in ai/ folder
     const storagePath = `users/${userId}/projects/${projectId}/photos/${photoId}/ai/${photoId}_bg_removed.png`;
