@@ -172,24 +172,31 @@ export class ReplicateClient {
     try {
       console.log('[Replicate] Starting AI cleanup with prompt...');
       console.log('[Replicate] Prompt:', prompt);
+      console.log('[Replicate] Image URL:', imageUrl);
 
-      let output = await this.client.run(
-        this.aiCleanupModel as any,
-        {
-          input: {
-            prompt,
-            image: imageUrl,
-            strength: 0.6,
-            num_inference_steps: 4,
-            guidance_scale: 1,
-            negative_prompt: 'blurry, low quality, distorted, bad anatomy',
-          },
-        }
-      );
+      // Create prediction and wait for completion
+      const prediction = await this.client.predictions.create({
+        version: '5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f',
+        input: {
+          prompt,
+          image: imageUrl,
+          strength: 0.6,
+          num_inference_steps: 4,
+          guidance_scale: 1,
+          negative_prompt: 'blurry, low quality, distorted, bad anatomy',
+        },
+      });
+
+      console.log('[Replicate] Prediction created:', prediction.id);
+      console.log('[Replicate] Initial status:', prediction.status);
+
+      // Wait for prediction to complete
+      let output = await this.waitForPrediction(prediction.id, 120000); // 2 min timeout
 
       console.log('[Replicate] Raw output type:', typeof output);
       console.log('[Replicate] Is array:', Array.isArray(output));
       console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
+      console.log('[Replicate] Output value:', JSON.stringify(output).substring(0, 200));
 
       // Handle ReadableStream
       if (output instanceof ReadableStream) {
