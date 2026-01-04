@@ -89,6 +89,8 @@ export class ReplicateClient {
             num_outputs: 1,
             image_guidance_scale: 1.5, // Balance between original image and prompt
             guidance_scale: 7.5,
+            resolution: 512,           // Cap resolution to avoid OOM
+            num_inference_steps: 20,   // Reasonable performance/quality tradeoff
           },
         }
       );
