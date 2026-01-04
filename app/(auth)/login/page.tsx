@@ -58,7 +58,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center space-y-4">
-          <div className="relative w-64 h-24">
+          <div className="relative w-96 h-32">
             <Image
               src="/paintpile-logo.png"
               alt="PaintPile Logo"
