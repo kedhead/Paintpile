@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getReplicateClient } from '@/lib/ai/replicate-client';
 import { trackUsage, checkQuota } from '@/lib/ai/usage-tracker';
 import { OPERATION_COSTS } from '@/lib/ai/constants';
+import { getAdminStorage } from '@/lib/firebase/admin';
 import sharp from 'sharp';
 
 // Force dynamic to avoid static generation
@@ -66,17 +67,42 @@ export async function POST(req: NextRequest) {
         const replicate = getReplicateClient();
         const result = await replicate.recolorImage(processedImage, prompt);
 
-        if (!result.outputUrl) {
-            throw new Error('Failed to generate image');
+        // 4. Get the processed image buffer (it might be a buffer already if it was a stream)
+        let imageBuffer: Buffer;
+        if (result.imageBuffer) {
+            imageBuffer = result.imageBuffer;
+        } else if (result.outputUrl) {
+            imageBuffer = await replicate.downloadImage(result.outputUrl);
+        } else {
+            throw new Error('No image data or URL returned from Replicate');
         }
 
-        // 4. Track usage (credits deducted)
+        // 5. Upload processed image to Firebase Storage
+        const storage = getAdminStorage();
+        const bucket = storage.bucket();
+        const storagePath = `users/${userId}/projects/${projectId}/photos/${photoId}/ai/${photoId}_recolored_${Date.now()}.jpg`;
+        const file = bucket.file(storagePath);
+
+        await file.save(imageBuffer, {
+            contentType: 'image/jpeg',
+            metadata: {
+                contentType: 'image/jpeg',
+            },
+        });
+
+        // Make the file publicly readable
+        await file.makePublic();
+
+        // Get public URL
+        const processedUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+
+        // 6. Track usage (credits deducted)
         await trackUsage(userId, 'recolor', OPERATION_COSTS.recolor);
 
         return NextResponse.json({
             success: true,
             data: {
-                processedUrl: result.outputUrl,
+                processedUrl: processedUrl,
             },
         });
 

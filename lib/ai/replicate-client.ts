@@ -95,9 +95,48 @@ export class ReplicateClient {
         }
       );
 
+      console.log('[Replicate] Raw output type:', typeof output);
+      console.log('[Replicate] Is array:', Array.isArray(output));
+      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
+
+      // Handle ReadableStream - Replicate streams the actual image data
+      if (output instanceof ReadableStream) {
+        console.log('[Replicate] Reading image data stream...');
+        const reader = output.getReader();
+        const chunks: Uint8Array[] = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+          }
+        }
+
+        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const imageData = new Uint8Array(totalLength);
+        let offset = 0;
+
+        for (const chunk of chunks) {
+          imageData.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        const imageBuffer = Buffer.from(imageData);
+        const processingTime = Date.now() - startTime;
+
+        console.log(`[Replicate] Image recolor completed in ${processingTime}ms`);
+        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
+
+        return {
+          imageBuffer,
+          processingTime,
+        };
+      }
+
       const processingTime = Date.now() - startTime;
 
-      // Handle common output formats
+      // Fallback: Output is a URL string or array with one URL
       let outputUrl: string | null = null;
 
       if (Array.isArray(output)) {
