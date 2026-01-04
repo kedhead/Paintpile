@@ -98,13 +98,24 @@ export class ReplicateClient {
 
       const processingTime = Date.now() - startTime;
 
-      // Nano-banana usually returns a string URL or an array with one URL
+      // Nano-banana usually returns a string URL, an array with one URL,
+      // or a FileOutput object (which has a .url() method).
       let outputUrl: string | null = null;
 
       if (typeof output === 'string') {
         outputUrl = output;
-      } else if (Array.isArray(output) && typeof output[0] === 'string') {
-        outputUrl = output[0];
+      } else if (typeof (output as any)?.url === 'function') {
+        // High priority: handled Replicate FileOutput object
+        outputUrl = (output as any).url();
+      } else if (Array.isArray(output)) {
+        const first = output[0];
+        if (typeof first === 'string') {
+          outputUrl = first;
+        } else if (typeof (first as any)?.url === 'function') {
+          outputUrl = (first as any).url();
+        } else if (first && typeof first === 'object') {
+          outputUrl = (first as any).image || (first as any).url || (first as any).output;
+        }
       } else if (output && typeof output === 'object') {
         // Fallback for unexpected object structures
         outputUrl = (output as any).url || (output as any).image || (output as any).output;
