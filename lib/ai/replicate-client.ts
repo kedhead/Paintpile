@@ -61,9 +61,9 @@ export class ReplicateClient {
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
       'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
 
-    // InstructPix2Pix for image editing/recoloring
+    // Using daanelson's version which is very stable for image-to-image editing
     this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL ||
-      'timbrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f';
+      'daanelson/instruct-pix2pix:1ced03953530c30a8459424e6ca6f5348937eb7b9b21f37b605eb2c921319c5c';
   }
 
   /**
@@ -79,21 +79,31 @@ export class ReplicateClient {
       console.log('[Replicate] Starting image recolor...');
       console.log(`[Replicate] Prompt: "${prompt}"`);
 
-      // InstructPix2Pix
+      // InstructPix2Pix via daanelson
       let output = await this.client.run(
         this.recolorModel as any,
         {
           input: {
+            // Provide both possible keys for compatibility
             image: image,
+            input_image: image,
             prompt: prompt,
             num_outputs: 1,
-            image_guidance_scale: 1.5, // Balance between original image and prompt
+            image_guidance_scale: 1.5,
             guidance_scale: 7.5,
-            resolution: 768,           // Safe resolution for processed images
-            num_inference_steps: 25,   // Slightly more steps for better quality
+            resolution: 768,
+            num_inference_steps: 25,
           },
         }
       );
+
+      // If the model returns a prediction ID (async), wait for it to complete
+      if (typeof output === 'object' && output !== null && 'id' in output) {
+        console.log('[Replicate] Received async prediction ID, waiting...');
+        const predictionId = (output as any).id;
+        output = await this.waitForPrediction(predictionId, 120000); // wait up to 2 minutes
+        console.log('[Replicate] Async prediction completed.');
+      }
 
       console.log('[Replicate] Raw output type:', typeof output);
       console.log('[Replicate] Is array:', Array.isArray(output));
@@ -140,11 +150,15 @@ export class ReplicateClient {
       let outputUrl: string | null = null;
 
       if (Array.isArray(output)) {
-        outputUrl = output[0];
+        const first = output[0];
+        if (typeof first === 'string') {
+          outputUrl = first;
+        } else if (typeof first === 'object' && first !== null) {
+          outputUrl = (first as any).url || (first as any).output || (first as any).image;
+        }
       } else if (typeof output === 'string') {
         outputUrl = output;
       } else if (output && typeof output === 'object') {
-        // Handle object-based outputs (common in some model versions)
         outputUrl = (output as any).url || (output as any).output || (output as any).image;
       }
 

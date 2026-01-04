@@ -84,6 +84,9 @@ export async function POST(req: NextRequest) {
             const replicate = getReplicateClient();
             const result = await replicate.recolorImage(tempUrl, prompt);
 
+            // Log raw output for debugging
+            console.log('[Recolor API] Raw result:', JSON.stringify(result));
+
             // 5. Get the processed image buffer
             if (result.imageBuffer) {
                 imageBuffer = result.imageBuffer;

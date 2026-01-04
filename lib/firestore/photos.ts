@@ -66,7 +66,7 @@ export async function addPhotoToProject(
   await createTimelineEvent(projectId, userId, 'photo_added', {
     photoId,
     photoUrl: photoData.thumbnailUrl,
-    photoCaption: photoData.caption,
+    photoCaption: photoData.caption || '',
   });
 
   return photoId;
