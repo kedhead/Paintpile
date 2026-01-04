@@ -103,8 +103,8 @@ export function AIUsageMeter({ userId }: AIUsageMeterProps) {
             <span className="font-medium">{stats.currentMonth.paintSuggestions}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Background Removal:</span>
-            <span className="font-medium">{stats.currentMonth.backgroundRemoval}</span>
+            <span className="text-muted-foreground">Image Enhancement:</span>
+            <span className="font-medium">{stats.currentMonth.enhancement}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Upscaling:</span>

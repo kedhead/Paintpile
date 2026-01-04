@@ -18,10 +18,9 @@ export type { AIOperation, UsageStats } from './constants';
 export interface MonthlyUsage {
   credits: number;
   requestCount: number;
-  backgroundRemoval: number;
+  enhancement: number;
   upscaling: number;
   paintSuggestions: number;
-  enhancement: number;
 }
 
 /**
@@ -204,10 +203,9 @@ function getDefaultMonthlyUsage(): MonthlyUsage {
   return {
     credits: 0,
     requestCount: 0,
-    backgroundRemoval: 0,
+    enhancement: 0,
     upscaling: 0,
     paintSuggestions: 0,
-    enhancement: 0,
   };
 }
 

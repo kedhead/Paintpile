@@ -2,15 +2,15 @@
  * Replicate API Client
  *
  * Integrates with Replicate for image processing:
- * - Background removal (rembg with U2-Net): ~$0.0002 per image
+ * - Image enhancement (Clarity AI): cleanup, better lighting, detail enhancement
  * - Upscaling (Real-ESRGAN): ~$0.001 per image
  */
 
 import Replicate from 'replicate';
 
-export type ReplicateOperation = 'backgroundRemoval' | 'upscaling';
+export type ReplicateOperation = 'enhancement' | 'upscaling';
 
-export interface BackgroundRemovalResult {
+export interface EnhancementResult {
   outputUrl?: string;
   imageBuffer?: Buffer;
   processingTime: number;
@@ -27,7 +27,7 @@ export interface UpscalingResult {
  */
 export class ReplicateClient {
   private client: Replicate;
-  private bgRemovalModel: string;
+  private enhancementModel: string;
   private upscaleModel: string;
 
   constructor() {
@@ -42,30 +42,41 @@ export class ReplicateClient {
     });
 
     // Model versions from environment or defaults
-    // Using BiRefNet for superior background removal quality
-    this.bgRemovalModel = process.env.REPLICATE_BG_REMOVAL_MODEL ||
-      'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
+    // Using Clarity Upscaler for image enhancement, cleanup, and better lighting
+    this.enhancementModel = process.env.REPLICATE_ENHANCEMENT_MODEL ||
+      'philz1337x/clarity-upscaler:dfad41707589d68ecdccd1dfa600d55a208f9310748e44bfe35b4a6291453d5e';
 
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
   }
 
   /**
-   * Remove background from an image
+   * Enhance image with better clarity, lighting, and background cleanup
    * @param imageUrl - URL of the image to process
-   * @returns Result with URL of processed image
+   * @returns Result with enhanced image
    */
-  async removeBackground(imageUrl: string): Promise<BackgroundRemovalResult> {
+  async enhanceImage(imageUrl: string): Promise<EnhancementResult> {
     const startTime = Date.now();
 
     try {
-      console.log('[Replicate] Starting background removal...');
+      console.log('[Replicate] Starting image enhancement...');
 
       let output = await this.client.run(
-        this.bgRemovalModel as any,
+        this.enhancementModel as any,
         {
           input: {
             image: imageUrl,
+            scale_factor: 2,
+            dynamic: 6,
+            creativity: 0.35,
+            resemblance: 0.6,
+            tiling_width: 112,
+            tiling_height: 144,
+            sd_model: 'juggernaut_reborn.safetensors [338b85bc4f]',
+            scheduler: 'DPM++ 3M SDE Karras',
+            num_inference_steps: 18,
+            sharpen: 0,
+            output_format: 'png',
           },
         }
       );
@@ -103,7 +114,7 @@ export class ReplicateClient {
         const imageBuffer = Buffer.from(imageData);
         const processingTime = Date.now() - startTime;
 
-        console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
+        console.log(`[Replicate] Image enhancement completed in ${processingTime}ms`);
         console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
 
         return {
@@ -128,10 +139,10 @@ export class ReplicateClient {
 
       if (!outputUrl || typeof outputUrl !== 'string') {
         console.error('[Replicate] Invalid output structure:', output);
-        throw new Error(`Invalid output from background removal model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
+        throw new Error(`Invalid output from enhancement model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
       }
 
-      console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
+      console.log(`[Replicate] Image enhancement completed in ${processingTime}ms`);
       console.log(`[Replicate] Output URL: ${outputUrl}`);
 
       return {
@@ -139,8 +150,8 @@ export class ReplicateClient {
         processingTime,
       };
     } catch (error: any) {
-      console.error('[Replicate] Background removal failed:', error);
-      throw new Error(`Background removal failed: ${error.message}`);
+      console.error('[Replicate] Image enhancement failed:', error);
+      throw new Error(`Image enhancement failed: ${error.message}`);
     }
   }
 
@@ -235,11 +246,11 @@ export class ReplicateClient {
   }
 
   /**
-   * Estimate cost for background removal (in credits)
+   * Estimate cost for image enhancement (in credits)
    */
-  estimateBackgroundRemovalCost(): number {
-    // ~$0.0002 per image = 0.2 credits
-    return 2; // 0.2 cents = 2 credits
+  estimateEnhancementCost(): number {
+    // Clarity Upscaler: ~$0.005 per image
+    return 5; // 0.5 cents = 5 credits
   }
 
   /**

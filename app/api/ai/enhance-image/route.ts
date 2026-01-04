@@ -7,7 +7,7 @@ import { getAdminStorage } from '@/lib/firebase/admin';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-interface RemoveBackgroundRequest {
+interface EnhanceImageRequest {
   photoId: string;
   projectId: string;
   userId: string;
@@ -15,19 +15,20 @@ interface RemoveBackgroundRequest {
 }
 
 /**
- * POST /api/ai/remove-background
+ * POST /api/ai/enhance-image
  *
- * Remove background from a miniature photo using Replicate RMBG-1.4 model.
+ * Enhance miniature photo with better clarity, lighting, and background cleanup.
+ * Uses Clarity Upscaler for professional display-ready images.
  * Uploads the processed image to Firebase Storage.
  *
- * Cost: ~2 credits ($0.002) per request
+ * Cost: ~5 credits ($0.005) per request
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
     // Parse request body
-    const body: RemoveBackgroundRequest = await request.json();
+    const body: EnhanceImageRequest = await request.json();
     const { photoId, projectId, userId, sourceUrl } = body;
 
     // Validate required fields
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check quota
-    const estimatedCost = OPERATION_COSTS.backgroundRemoval;
+    const estimatedCost = OPERATION_COSTS.enhancement;
     const quotaCheck = await checkQuota(userId, estimatedCost);
 
     if (!quotaCheck.allowed) {
@@ -93,9 +94,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Remove background using Replicate
+    // Enhance image using Replicate
     const replicateClient = getReplicateClient();
-    const result = await replicateClient.removeBackground(sourceUrl);
+    const result = await replicateClient.enhanceImage(sourceUrl);
 
     // Get the processed image buffer
     let imageBuffer: Buffer;
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     // Upload to Firebase Storage using Admin SDK
     const storage = getAdminStorage();
     const bucket = storage.bucket();
-    const storagePath = `users/${userId}/projects/${projectId}/photos/${photoId}/ai/${photoId}_bg_removed.png`;
+    const storagePath = `users/${userId}/projects/${projectId}/photos/${photoId}/ai/${photoId}_enhanced.png`;
     const file = bucket.file(storagePath);
 
     await file.save(imageBuffer, {
@@ -130,14 +131,14 @@ export async function POST(request: NextRequest) {
 
     // Track usage
     const actualCost = estimatedCost;
-    await trackUsage(userId, 'backgroundRemoval', actualCost);
+    await trackUsage(userId, 'enhancement', actualCost);
 
     const totalProcessingTime = Date.now() - startTime;
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Background removed successfully',
+        message: 'Image enhanced successfully',
         data: {
           processedUrl,
           creditsUsed: actualCost,
@@ -148,13 +149,13 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('[AI] Background removal failed:', error);
+    console.error('[AI] Image enhancement failed:', error);
     console.error('Error stack:', error.stack);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to remove background',
+        error: error.message || 'Failed to enhance image',
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
       { status: 500 }

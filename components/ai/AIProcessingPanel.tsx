@@ -5,7 +5,7 @@ import { Photo, ColorSuggestion } from '@/types/photo';
 import { AIProcessingButton } from './AIProcessingButton';
 import { PaintSuggestionsPanel } from './PaintSuggestionsPanel';
 import { Button } from '@/components/ui/Button';
-import { Sparkles, Eraser, ArrowUpCircle, Download, ExternalLink, Lock } from 'lucide-react';
+import { Sparkles, Wand2, ArrowUpCircle, Download, ExternalLink, Lock } from 'lucide-react';
 import { OPERATION_COSTS } from '@/lib/ai/constants';
 import { useRouter } from 'next/navigation';
 
@@ -50,7 +50,7 @@ export function AIProcessingPanel({
               AI Features - Pro Only
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Unlock AI-powered paint suggestions, background removal, and image upscaling
+              Unlock AI-powered paint suggestions, image enhancement, and upscaling
             </p>
             <Button
               size="sm"
@@ -92,9 +92,9 @@ export function AIProcessingPanel({
     onUpdate?.();
   };
 
-  // Handle background removal
-  const handleRemoveBackground = async () => {
-    const response = await fetch('/api/ai/remove-background', {
+  // Handle image enhancement
+  const handleEnhanceImage = async () => {
+    const response = await fetch('/api/ai/enhance-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -108,7 +108,7 @@ export function AIProcessingPanel({
     const result = await response.json();
 
     if (!result.success) {
-      throw new Error(result.error || 'Failed to remove background');
+      throw new Error(result.error || 'Failed to enhance image');
     }
 
     setBackgroundRemovedUrl(result.data.processedUrl);
@@ -152,10 +152,10 @@ export function AIProcessingPanel({
         />
 
         <AIProcessingButton
-          label="Remove Background"
-          icon={<Eraser className="h-4 w-4" />}
-          estimatedCost={OPERATION_COSTS.backgroundRemoval}
-          onClick={handleRemoveBackground}
+          label="Enhance & Cleanup"
+          icon={<Wand2 className="h-4 w-4" />}
+          estimatedCost={OPERATION_COSTS.enhancement}
+          onClick={handleEnhanceImage}
         />
 
         <AIProcessingButton
@@ -202,13 +202,13 @@ export function AIProcessingPanel({
             </div>
           )}
 
-          {/* Background removed */}
+          {/* Enhanced image */}
           {backgroundRemovedUrl && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Eraser className="h-4 w-4" />
-                  Background Removed
+                  <Wand2 className="h-4 w-4" />
+                  Enhanced Image
                 </span>
                 <div className="flex gap-1">
                   <Button
