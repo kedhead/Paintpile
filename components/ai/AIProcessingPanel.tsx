@@ -36,7 +36,7 @@ export function AIProcessingPanel({
   );
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [paintVision, setPaintVision] = useState('');
-  const [cleanupPrompt, setCleanupPrompt] = useState('professional product photo on clean white background with studio lighting, sharp focus');
+  const [cleanupPrompt, setCleanupPrompt] = useState('clean white background');
   const [aiCleanedUrl, setAiCleanedUrl] = useState<string | null>(null);
 
   // Check if user has Pro access
@@ -186,25 +186,8 @@ export function AIProcessingPanel({
           onClick={handleEnhanceImage}
         />
 
-        {/* AI Cleanup with prompt */}
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground block">
-            AI Cleanup Prompt
-          </label>
-          <textarea
-            value={cleanupPrompt}
-            onChange={(e) => setCleanupPrompt(e.target.value)}
-            placeholder="e.g., 'professional product photo on white background' or 'clean display photo with great lighting'"
-            className="w-full min-h-[60px] px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            maxLength={300}
-          />
-          <p className="text-xs text-muted-foreground">
-            Describe how you want the final image to look
-          </p>
-        </div>
-
         <AIProcessingButton
-          label="AI Cleanup (Gemini-style)"
+          label="Product Photo (removes bg, adds shadow)"
           icon={<Sparkle className="h-4 w-4" />}
           estimatedCost={OPERATION_COSTS.aiCleanup}
           onClick={handleAICleanup}

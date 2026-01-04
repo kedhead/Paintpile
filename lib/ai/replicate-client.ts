@@ -56,9 +56,9 @@ export class ReplicateClient {
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
 
-    // Using Stable Diffusion XL with img2img for intelligent cleanup
+    // Using InstantID + ControlNet for professional product photos with background replacement and shadows
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
-      'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b';
+      'fofr/product-photo:57292cb5564c15b2c1d9c991c6a9b9c2f00ad15ccfc73080bdf1d782b5fcf157';
   }
 
   /**
@@ -176,17 +176,14 @@ export class ReplicateClient {
 
       // Create prediction and wait for completion
       const prediction = await this.client.predictions.create({
-        version: '39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
+        version: '57292cb5564c15b2c1d9c991c6a9b9c2f00ad15ccfc73080bdf1d782b5fcf157',
         input: {
-          prompt,
-          image: imageUrl,
-          prompt_strength: 0.35,  // Low strength to preserve original subject (0 = identical, 1 = completely new)
-          num_inference_steps: 30,
+          product_image: imageUrl,
+          prompt: 'professional product photo on clean white background with soft shadows and studio lighting',
+          negative_prompt: 'blurry, low quality, pixelated, distorted, deformed',
+          num_inference_steps: 20,
+          controlnet_conditioning_scale: 0.8,
           guidance_scale: 7.5,
-          scheduler: 'K_EULER',
-          refine: 'expert_ensemble_refiner',
-          high_noise_frac: 0.8,
-          negative_prompt: 'blurry, low quality, distorted, deformed, bad anatomy, extra limbs',
         },
       });
 
