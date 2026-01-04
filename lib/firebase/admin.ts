@@ -12,6 +12,7 @@
 import { initializeApp, cert, getApps, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 let adminApp: App | undefined;
 
@@ -38,6 +39,7 @@ export function getAdminApp(): App {
       const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS);
       adminApp = initializeApp({
         credential: cert(serviceAccount),
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
       console.log('✅ Firebase Admin SDK initialized from environment variables');
       return adminApp;
@@ -56,6 +58,7 @@ export function getAdminApp(): App {
           const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
           adminApp = initializeApp({
             credential: cert(serviceAccount),
+            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
           });
           console.log('✅ Firebase Admin SDK initialized from serviceAccountKey.json');
           return adminApp;
@@ -89,6 +92,14 @@ export function getAdminAuth() {
 export function getAdminFirestore() {
   const app = getAdminApp();
   return getFirestore(app);
+}
+
+/**
+ * Get Firebase Admin Storage instance
+ */
+export function getAdminStorage() {
+  const app = getAdminApp();
+  return getStorage(app);
 }
 
 /**

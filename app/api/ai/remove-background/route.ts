@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getReplicateClient } from '@/lib/ai/replicate-client';
 import { checkQuota, trackUsage, OPERATION_COSTS } from '@/lib/ai/usage-tracker';
 import { getUserProfile } from '@/lib/firestore/users';
-import { uploadBytes, ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase/firebase';
+import { getAdminStorage } from '@/lib/firebase/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -110,16 +109,24 @@ export async function POST(request: NextRequest) {
       throw new Error('No image data or URL returned from Replicate');
     }
 
-    // Upload to Firebase Storage in ai/ folder
+    // Upload to Firebase Storage using Admin SDK
+    const storage = getAdminStorage();
+    const bucket = storage.bucket();
     const storagePath = `users/${userId}/projects/${projectId}/photos/${photoId}/ai/${photoId}_bg_removed.png`;
-    const storageRef = ref(storage, storagePath);
+    const file = bucket.file(storagePath);
 
-    await uploadBytes(storageRef, imageBuffer, {
+    await file.save(imageBuffer, {
       contentType: 'image/png',
+      metadata: {
+        contentType: 'image/png',
+      },
     });
 
+    // Make the file publicly readable
+    await file.makePublic();
+
     // Get download URL
-    const processedUrl = await getDownloadURL(storageRef);
+    const processedUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
 
     // Track usage
     const actualCost = estimatedCost;
