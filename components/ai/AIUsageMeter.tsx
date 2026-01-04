@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { UsageStats, creditsToDollars } from '@/lib/ai/usage-tracker';
+import { UsageStats, creditsToDollars } from '@/lib/ai/constants';
 import { Sparkles, TrendingUp } from 'lucide-react';
 
 interface AIUsageMeterProps {

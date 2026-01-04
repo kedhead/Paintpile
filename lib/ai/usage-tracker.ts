@@ -8,27 +8,11 @@
 import { getAdminFirestore } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getUserProfile } from '@/lib/firestore/users';
-import { OPERATION_COSTS, creditsToDollars, dollarsToCredits } from './constants';
+import { OPERATION_COSTS, creditsToDollars, dollarsToCredits, UsageStats } from './constants';
 
 // Re-export from constants for backwards compatibility
 export { OPERATION_COSTS, creditsToDollars, dollarsToCredits };
-export type { AIOperation } from './constants';
-
-export interface UsageStats {
-  totalCreditsUsed: number;
-  currentMonth: {
-    credits: number;
-    requestCount: number;
-    backgroundRemoval: number;
-    upscaling: number;
-    paintSuggestions: number;
-    enhancement: number;
-  };
-  quotaLimit: number;
-  remainingCredits: number;
-  percentageUsed: number;
-  resetDate: Date;
-}
+export type { AIOperation, UsageStats } from './constants';
 
 export interface MonthlyUsage {
   credits: number;

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Loader2 } from 'lucide-react';
-import { creditsToDollars } from '@/lib/ai/usage-tracker';
+import { creditsToDollars } from '@/lib/ai/constants';
 
 interface AIProcessingButtonProps {
   label: string;

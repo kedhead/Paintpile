@@ -6,6 +6,22 @@
 
 export type AIOperation = 'backgroundRemoval' | 'upscaling' | 'paintSuggestions' | 'enhancement';
 
+export interface UsageStats {
+  totalCreditsUsed: number;
+  currentMonth: {
+    credits: number;
+    requestCount: number;
+    backgroundRemoval: number;
+    upscaling: number;
+    paintSuggestions: number;
+    enhancement: number;
+  };
+  quotaLimit: number;
+  remainingCredits: number;
+  percentageUsed: number;
+  resetDate: Date;
+}
+
 /**
  * Get cost estimates for different operations
  * 1 credit = $0.001
