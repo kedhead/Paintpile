@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const imageMetadata = await sharp(sourceBuffer).metadata();
     console.log(`[Enhance] Source dimensions: ${imageMetadata.width}x${imageMetadata.height}`);
 
-    let processedBuffer = sourceBuffer;
+    let processedBuffer: Buffer = sourceBuffer;
     const maxDimension = 1024; // Max size to fit in GPU memory
 
     if (imageMetadata.width && imageMetadata.height) {
@@ -116,12 +116,14 @@ export async function POST(request: NextRequest) {
 
       if (maxCurrentDimension > maxDimension) {
         console.log(`[Enhance] Resizing image to fit ${maxDimension}px max...`);
-        processedBuffer = await sharp(sourceBuffer)
+        const resizedBuffer = await sharp(sourceBuffer)
           .resize(maxDimension, maxDimension, {
             fit: 'inside',
             withoutEnlargement: true,
           })
           .toBuffer();
+
+        processedBuffer = Buffer.from(resizedBuffer);
 
         const resizedMetadata = await sharp(processedBuffer).metadata();
         console.log(`[Enhance] Resized to: ${resizedMetadata.width}x${resizedMetadata.height}`);
