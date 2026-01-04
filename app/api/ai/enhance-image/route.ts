@@ -3,6 +3,7 @@ import { getReplicateClient } from '@/lib/ai/replicate-client';
 import { checkQuota, trackUsage, OPERATION_COSTS } from '@/lib/ai/usage-tracker';
 import { getUserProfile } from '@/lib/firestore/users';
 import { getAdminStorage } from '@/lib/firebase/admin';
+import sharp from 'sharp';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -94,9 +95,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Download and resize image if needed (max 1024px to fit in GPU memory)
+    console.log('[Enhance] Downloading source image...');
+    const sourceResponse = await fetch(sourceUrl);
+    if (!sourceResponse.ok) {
+      throw new Error(`Failed to download source image: ${sourceResponse.status}`);
+    }
+
+    const sourceBuffer = Buffer.from(await sourceResponse.arrayBuffer());
+
+    // Check dimensions and resize if needed
+    const imageMetadata = await sharp(sourceBuffer).metadata();
+    console.log(`[Enhance] Source dimensions: ${imageMetadata.width}x${imageMetadata.height}`);
+
+    let processedBuffer = sourceBuffer;
+    const maxDimension = 1024; // Max size to fit in GPU memory
+
+    if (imageMetadata.width && imageMetadata.height) {
+      const maxCurrentDimension = Math.max(imageMetadata.width, imageMetadata.height);
+
+      if (maxCurrentDimension > maxDimension) {
+        console.log(`[Enhance] Resizing image to fit ${maxDimension}px max...`);
+        processedBuffer = await sharp(sourceBuffer)
+          .resize(maxDimension, maxDimension, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .toBuffer();
+
+        const resizedMetadata = await sharp(processedBuffer).metadata();
+        console.log(`[Enhance] Resized to: ${resizedMetadata.width}x${resizedMetadata.height}`);
+      }
+    }
+
+    // Upload resized image temporarily for Replicate to process
+    const storage = getAdminStorage();
+    const bucket = storage.bucket();
+    const tempPath = `users/${userId}/temp/${photoId}_temp.png`;
+    const tempFile = bucket.file(tempPath);
+
+    await tempFile.save(processedBuffer, {
+      contentType: 'image/png',
+      metadata: { contentType: 'image/png' },
+    });
+    await tempFile.makePublic();
+
+    const tempUrl = `https://storage.googleapis.com/${bucket.name}/${tempPath}`;
+    console.log(`[Enhance] Temp URL: ${tempUrl}`);
+
     // Enhance image using Replicate
     const replicateClient = getReplicateClient();
-    const result = await replicateClient.enhanceImage(sourceUrl);
+    const result = await replicateClient.enhanceImage(tempUrl);
+
+    // Clean up temp file
+    try {
+      await tempFile.delete();
+    } catch (error) {
+      console.warn('[Enhance] Failed to delete temp file:', error);
+    }
 
     // Get the processed image buffer
     let imageBuffer: Buffer;
@@ -110,9 +166,7 @@ export async function POST(request: NextRequest) {
       throw new Error('No image data or URL returned from Replicate');
     }
 
-    // Upload to Firebase Storage using Admin SDK
-    const storage = getAdminStorage();
-    const bucket = storage.bucket();
+    // Upload enhanced image to Firebase Storage
     const storagePath = `users/${userId}/projects/${projectId}/photos/${photoId}/ai/${photoId}_enhanced.png`;
     const file = bucket.file(storagePath);
 
