@@ -8,9 +8,15 @@
 
 import Replicate from 'replicate';
 
-export type ReplicateOperation = 'enhancement' | 'upscaling';
+export type ReplicateOperation = 'enhancement' | 'upscaling' | 'aiCleanup';
 
 export interface EnhancementResult {
+  outputUrl?: string;
+  imageBuffer?: Buffer;
+  processingTime: number;
+}
+
+export interface AICleanupResult {
   outputUrl?: string;
   imageBuffer?: Buffer;
   processingTime: number;
@@ -29,6 +35,7 @@ export class ReplicateClient {
   private client: Replicate;
   private enhancementModel: string;
   private upscaleModel: string;
+  private aiCleanupModel: string;
 
   constructor() {
     const apiKey = process.env.REPLICATE_API_KEY;
@@ -48,6 +55,10 @@ export class ReplicateClient {
 
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
+
+    // Using Flux Dev for AI-powered cleanup with prompts
+    this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
+      'black-forest-labs/flux-dev';
   }
 
   /**
@@ -143,6 +154,108 @@ export class ReplicateClient {
     } catch (error: any) {
       console.error('[Replicate] Image enhancement failed:', error);
       throw new Error(`Image enhancement failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * AI-powered cleanup with prompt (like Gemini)
+   * @param imageUrl - URL of the image to process
+   * @param prompt - Description of desired result
+   * @returns Result with AI-cleaned image
+   */
+  async aiCleanup(
+    imageUrl: string,
+    prompt: string
+  ): Promise<AICleanupResult> {
+    const startTime = Date.now();
+
+    try {
+      console.log('[Replicate] Starting AI cleanup with prompt...');
+      console.log('[Replicate] Prompt:', prompt);
+
+      let output = await this.client.run(
+        this.aiCleanupModel as any,
+        {
+          input: {
+            prompt,
+            image: imageUrl,
+            guidance: 3.5,
+            num_inference_steps: 28,
+            output_format: 'png',
+            output_quality: 100,
+          },
+        }
+      );
+
+      console.log('[Replicate] Raw output type:', typeof output);
+      console.log('[Replicate] Is array:', Array.isArray(output));
+      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
+
+      // Handle ReadableStream
+      if (output instanceof ReadableStream) {
+        console.log('[Replicate] Reading image data stream...');
+        const reader = output.getReader();
+        const chunks: Uint8Array[] = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+          }
+        }
+
+        console.log('[Replicate] Stream chunks count:', chunks.length);
+
+        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const imageData = new Uint8Array(totalLength);
+        let offset = 0;
+
+        for (const chunk of chunks) {
+          imageData.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        const imageBuffer = Buffer.from(imageData);
+        const processingTime = Date.now() - startTime;
+
+        console.log(`[Replicate] AI cleanup completed in ${processingTime}ms`);
+        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
+
+        return {
+          imageBuffer,
+          processingTime,
+        };
+      }
+
+      const processingTime = Date.now() - startTime;
+
+      // Fallback: Output is a URL string or array with one URL
+      let outputUrl: string | null = null;
+
+      if (Array.isArray(output)) {
+        outputUrl = output[0];
+      } else if (typeof output === 'string') {
+        outputUrl = output;
+      } else if (output && typeof output === 'object') {
+        outputUrl = (output as any).url || (output as any).output || (output as any).image;
+      }
+
+      if (!outputUrl || typeof outputUrl !== 'string') {
+        console.error('[Replicate] Invalid output structure:', output);
+        throw new Error(`Invalid output from AI cleanup model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
+      }
+
+      console.log(`[Replicate] AI cleanup completed in ${processingTime}ms`);
+      console.log(`[Replicate] Output URL: ${outputUrl}`);
+
+      return {
+        outputUrl,
+        processingTime,
+      };
+    } catch (error: any) {
+      console.error('[Replicate] AI cleanup failed:', error);
+      throw new Error(`AI cleanup failed: ${error.message}`);
     }
   }
 

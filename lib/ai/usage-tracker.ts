@@ -21,6 +21,7 @@ export interface MonthlyUsage {
   enhancement: number;
   upscaling: number;
   paintSuggestions: number;
+  aiCleanup: number;
 }
 
 /**
@@ -206,6 +207,7 @@ function getDefaultMonthlyUsage(): MonthlyUsage {
     enhancement: 0,
     upscaling: 0,
     paintSuggestions: 0,
+    aiCleanup: 0,
   };
 }
 
