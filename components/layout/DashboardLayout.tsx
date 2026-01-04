@@ -18,7 +18,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar onNewProject={handleNewProject} />
+      <Sidebar
+        onNewProject={handleNewProject}
+        isOpen={false}
+        onClose={() => { }}
+      />
       <main className="pl-64">
         <div className="min-h-screen">{children}</div>
       </main>
