@@ -60,17 +60,18 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+      <div className="relative w-full max-w-4xl h-64 mb-8">
+        <Image
+          src="/paintpile-logo.png"
+          alt="PaintPile Logo"
+          fill
+          className="object-contain"
+          priority
+        />
+      </div>
+
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center space-y-4">
-          <div className="relative w-96 h-32">
-            <Image
-              src="/paintpile-logo.png"
-              alt="PaintPile Logo"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
           <h2 className="text-xl font-display text-muted-foreground">
             Join the community
           </h2>
