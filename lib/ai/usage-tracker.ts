@@ -9,6 +9,7 @@ import { getAdminFirestore } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getUserProfile } from '@/lib/firestore/users';
 import { OPERATION_COSTS, creditsToDollars, dollarsToCredits, UsageStats } from './constants';
+import type { AIOperation } from './constants';
 
 // Re-export from constants for backwards compatibility
 export { OPERATION_COSTS, creditsToDollars, dollarsToCredits };
