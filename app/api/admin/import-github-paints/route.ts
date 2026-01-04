@@ -99,6 +99,19 @@ function parseMarkdownTable(markdown: string, manufacturerFile: string): any[] {
     return paints;
   }
 
+  // Parse header to detect format
+  const headerLine = lines[tableStartIndex];
+  const headers = headerLine
+    .split('|')
+    .map(h => h.trim().toLowerCase())
+    .filter(h => h.length > 0);
+
+  // Detect if there's a "Code" column
+  const hasCodeColumn = headers.includes('code');
+
+  console.log(`[Import] ${manufacturerFile} - Headers:`, headers);
+  console.log(`[Import] ${manufacturerFile} - Has Code column:`, hasCodeColumn);
+
   // Skip header and separator line
   const dataStartIndex = tableStartIndex + 2;
 
@@ -117,20 +130,55 @@ function parseMarkdownTable(markdown: string, manufacturerFile: string): any[] {
       .map(cell => cell.trim())
       .filter(cell => cell.length > 0);
 
-    if (cells.length < 6) {
-      continue; // Skip invalid rows
+    // Determine minimum required columns based on format
+    const minColumns = hasCodeColumn ? 7 : 6;
+    if (cells.length < minColumns) {
+      console.warn(`[Import] Skipping row with ${cells.length} columns (expected ${minColumns}):`, line);
+      continue;
     }
 
-    const [name, set, r, g, b, hex] = cells;
+    let name, code, set, r, g, b, hex;
 
-    // Clean hex color (remove color swatch markdown)
+    if (hasCodeColumn) {
+      // Format: |Name|Code|Set|R|G|B|Hex|
+      [name, code, set, r, g, b, hex] = cells;
+    } else {
+      // Format: |Name|Set|R|G|B|Hex|
+      [name, set, r, g, b, hex] = cells;
+      code = null;
+    }
+
+    // Clean and validate hex color
+    let hexColor = null;
+
+    // Try to extract hex from the hex column (might have color swatch markdown)
     const hexMatch = hex.match(/#[0-9A-Fa-f]{6}/);
-    const hexColor = hexMatch ? hexMatch[0] : hex;
+    if (hexMatch) {
+      hexColor = hexMatch[0];
+    } else if (hex.startsWith('#') && hex.length === 7) {
+      hexColor = hex;
+    } else if (r && g && b) {
+      // If hex is missing but we have RGB, convert it
+      const rVal = parseInt(r);
+      const gVal = parseInt(g);
+      const bVal = parseInt(b);
+
+      if (!isNaN(rVal) && !isNaN(gVal) && !isNaN(bVal)) {
+        hexColor = rgbToHex(rVal, gVal, bVal);
+        console.log(`[Import] Converted RGB(${r},${g},${b}) to ${hexColor} for ${name}`);
+      }
+    }
+
+    if (!hexColor) {
+      console.warn(`[Import] Skipping ${name} - no valid hex color found`);
+      continue;
+    }
 
     // Create paint object
     const paint = {
       brand,
       name,
+      code: code || undefined,
       hexColor,
       type: determineType(set),
       category: set || 'Standard',
@@ -142,7 +190,19 @@ function parseMarkdownTable(markdown: string, manufacturerFile: string): any[] {
     paints.push(paint);
   }
 
+  console.log(`[Import] ${manufacturerFile} - Successfully parsed ${paints.length} paints`);
   return paints;
+}
+
+/**
+ * Convert RGB to hex color
+ */
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (n: number) => {
+    const hex = Math.max(0, Math.min(255, n)).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 /**
