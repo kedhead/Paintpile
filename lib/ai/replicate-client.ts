@@ -56,9 +56,9 @@ export class ReplicateClient {
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
 
-    // Using InstantID + ControlNet for professional product photos with background replacement and shadows
+    // Using rembg for clean, reliable background removal
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
-      'fofr/product-photo:57292cb5564c15b2c1d9c991c6a9b9c2f00ad15ccfc73080bdf1d782b5fcf157';
+      'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
   }
 
   /**
@@ -158,47 +158,32 @@ export class ReplicateClient {
   }
 
   /**
-   * AI-powered cleanup with prompt (like Gemini)
+   * AI-powered cleanup - removes background cleanly
    * @param imageUrl - URL of the image to process
-   * @param prompt - Description of desired result
-   * @returns Result with AI-cleaned image
+   * @returns Result with background-removed image
    */
-  async aiCleanup(
-    imageUrl: string,
-    prompt: string
-  ): Promise<AICleanupResult> {
+  async aiCleanup(imageUrl: string): Promise<AICleanupResult> {
     const startTime = Date.now();
 
     try {
-      console.log('[Replicate] Starting AI cleanup with prompt...');
-      console.log('[Replicate] Prompt:', prompt);
+      console.log('[Replicate] Starting background removal...');
       console.log('[Replicate] Image URL:', imageUrl);
 
-      // Create prediction and wait for completion
-      const prediction = await this.client.predictions.create({
-        version: '57292cb5564c15b2c1d9c991c6a9b9c2f00ad15ccfc73080bdf1d782b5fcf157',
-        input: {
-          product_image: imageUrl,
-          prompt: 'professional product photo on clean white background with soft shadows and studio lighting',
-          negative_prompt: 'blurry, low quality, pixelated, distorted, deformed',
-          num_inference_steps: 20,
-          controlnet_conditioning_scale: 0.8,
-          guidance_scale: 7.5,
-        },
-      });
-
-      console.log('[Replicate] Prediction created:', prediction.id);
-      console.log('[Replicate] Initial status:', prediction.status);
-
-      // Wait for prediction to complete
-      let output = await this.waitForPrediction(prediction.id, 120000); // 2 min timeout
+      // Use rembg for clean background removal
+      let output = await this.client.run(
+        this.aiCleanupModel as any,
+        {
+          input: {
+            image: imageUrl,
+          },
+        }
+      );
 
       console.log('[Replicate] Raw output type:', typeof output);
       console.log('[Replicate] Is array:', Array.isArray(output));
       console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
-      console.log('[Replicate] Output value:', JSON.stringify(output).substring(0, 200));
 
-      // Handle ReadableStream
+      // Handle ReadableStream - Replicate streams the actual image data
       if (output instanceof ReadableStream) {
         console.log('[Replicate] Reading image data stream...');
         const reader = output.getReader();
@@ -226,7 +211,7 @@ export class ReplicateClient {
         const imageBuffer = Buffer.from(imageData);
         const processingTime = Date.now() - startTime;
 
-        console.log(`[Replicate] AI cleanup completed in ${processingTime}ms`);
+        console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
         console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
 
         return {
@@ -250,10 +235,10 @@ export class ReplicateClient {
 
       if (!outputUrl || typeof outputUrl !== 'string') {
         console.error('[Replicate] Invalid output structure:', output);
-        throw new Error(`Invalid output from AI cleanup model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
+        throw new Error(`Invalid output from background removal model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
       }
 
-      console.log(`[Replicate] AI cleanup completed in ${processingTime}ms`);
+      console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
       console.log(`[Replicate] Output URL: ${outputUrl}`);
 
       return {
@@ -261,8 +246,8 @@ export class ReplicateClient {
         processingTime,
       };
     } catch (error: any) {
-      console.error('[Replicate] AI cleanup failed:', error);
-      throw new Error(`AI cleanup failed: ${error.message}`);
+      console.error('[Replicate] Background removal failed:', error);
+      throw new Error(`Background removal failed: ${error.message}`);
     }
   }
 

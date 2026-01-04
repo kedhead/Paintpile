@@ -36,7 +36,6 @@ export function AIProcessingPanel({
   );
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [paintVision, setPaintVision] = useState('');
-  const [cleanupPrompt, setCleanupPrompt] = useState('clean white background');
   const [aiCleanedUrl, setAiCleanedUrl] = useState<string | null>(null);
 
   // Check if user has Pro access
@@ -129,7 +128,6 @@ export function AIProcessingPanel({
         projectId,
         userId,
         sourceUrl: photo.url,
-        prompt: cleanupPrompt,
       }),
     });
 
@@ -187,7 +185,7 @@ export function AIProcessingPanel({
         />
 
         <AIProcessingButton
-          label="Product Photo (removes bg, adds shadow)"
+          label="Remove Background"
           icon={<Sparkle className="h-4 w-4" />}
           estimatedCost={OPERATION_COSTS.aiCleanup}
           onClick={handleAICleanup}
@@ -277,13 +275,13 @@ export function AIProcessingPanel({
             </div>
           )}
 
-          {/* AI Cleaned image */}
+          {/* Background Removed image */}
           {aiCleanedUrl && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground flex items-center gap-2">
                   <Sparkle className="h-4 w-4" />
-                  AI Cleaned
+                  Background Removed
                 </span>
                 <div className="flex gap-1">
                   <Button
@@ -310,7 +308,7 @@ export function AIProcessingPanel({
               <div className="relative aspect-square w-full max-w-xs mx-auto bg-muted/30 rounded-lg overflow-hidden">
                 <img
                   src={aiCleanedUrl}
-                  alt="AI cleaned"
+                  alt="Background removed"
                   className="w-full h-full object-contain"
                 />
               </div>

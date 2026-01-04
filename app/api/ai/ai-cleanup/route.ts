@@ -13,14 +13,13 @@ interface AICleanupRequest {
   projectId: string;
   userId: string;
   sourceUrl: string;
-  prompt: string;
 }
 
 /**
  * POST /api/ai/ai-cleanup
  *
- * AI-powered cleanup with natural language prompts (like Gemini).
- * Uses Flux Dev for intelligent background removal and enhancement.
+ * AI-powered background removal using rembg.
+ * Cleanly removes background from miniature photos.
  * Uploads the processed image to Firebase Storage.
  *
  * Cost: ~25 credits ($0.025) per request
@@ -31,14 +30,14 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body: AICleanupRequest = await request.json();
-    const { photoId, projectId, userId, sourceUrl, prompt } = body;
+    const { photoId, projectId, userId, sourceUrl } = body;
 
     // Validate required fields
-    if (!photoId || !projectId || !userId || !sourceUrl || !prompt) {
+    if (!photoId || !projectId || !userId || !sourceUrl) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: photoId, projectId, userId, sourceUrl, prompt',
+          error: 'Missing required fields: photoId, projectId, userId, sourceUrl',
         },
         { status: 400 }
       );
@@ -99,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // AI cleanup using Replicate
     const replicateClient = getReplicateClient();
-    const result = await replicateClient.aiCleanup(sourceUrl, prompt);
+    const result = await replicateClient.aiCleanup(sourceUrl);
 
     // Get the processed image buffer
     let imageBuffer: Buffer;
