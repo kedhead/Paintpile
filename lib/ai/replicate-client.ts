@@ -70,14 +70,29 @@ export class ReplicateClient {
 
       const processingTime = Date.now() - startTime;
 
+      console.log('[Replicate] Raw output:', JSON.stringify(output));
+      console.log('[Replicate] Output type:', typeof output);
+      console.log('[Replicate] Is array:', Array.isArray(output));
+
       // Output is typically a URL string or array with one URL
-      const outputUrl = Array.isArray(output) ? output[0] : (output as unknown as string);
+      let outputUrl: string | null = null;
+
+      if (Array.isArray(output)) {
+        outputUrl = output[0];
+      } else if (typeof output === 'string') {
+        outputUrl = output;
+      } else if (output && typeof output === 'object') {
+        // Sometimes Replicate returns an object with a URL
+        outputUrl = (output as any).url || (output as any).output || (output as any).image;
+      }
 
       if (!outputUrl || typeof outputUrl !== 'string') {
-        throw new Error('Invalid output from background removal model');
+        console.error('[Replicate] Invalid output structure:', output);
+        throw new Error(`Invalid output from background removal model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
       }
 
       console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
+      console.log(`[Replicate] Output URL: ${outputUrl}`);
 
       return {
         outputUrl,
