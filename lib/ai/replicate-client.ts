@@ -63,7 +63,7 @@ export class ReplicateClient {
 
     // InstructPix2Pix for image editing/recoloring
     this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL ||
-      'timbrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f';
+      'timothybrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f';
   }
 
   /**
@@ -86,6 +86,9 @@ export class ReplicateClient {
           input: {
             image: image,
             prompt: prompt,
+            num_inference_steps: 50,    // Good balance of quality and speed
+            guidance_scale: 7.5,        // Text adherence
+            image_guidance_scale: 1.5,  // Image adherence
           },
         }
       );
