@@ -17,11 +17,11 @@ interface EnhanceImageRequest {
 /**
  * POST /api/ai/enhance-image
  *
- * Enhance miniature photo with better clarity, lighting, and background cleanup.
- * Uses Clarity Upscaler for professional display-ready images.
+ * Enhance miniature photo with better clarity and detail (2x upscale).
+ * Uses Real-ESRGAN for professional display-ready images.
  * Uploads the processed image to Firebase Storage.
  *
- * Cost: ~5 credits ($0.005) per request
+ * Cost: ~10 credits ($0.01) per request
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();

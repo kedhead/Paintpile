@@ -26,8 +26,8 @@ export interface UsageStats {
  * 1 credit = $0.001
  */
 export const OPERATION_COSTS = {
-  enhancement: 5,          // 0.5 cents = 5 credits - Image cleanup & better lighting
-  upscaling: 10,           // 1.0 cent = 10 credits
+  enhancement: 10,         // 1.0 cent = 10 credits - 2x upscale with detail enhancement
+  upscaling: 10,           // 1.0 cent = 10 credits - 4x upscale
   paintSuggestions: 8,     // 0.8 cents = 8 credits
 } as const;
 

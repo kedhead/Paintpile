@@ -2,8 +2,8 @@
  * Replicate API Client
  *
  * Integrates with Replicate for image processing:
- * - Image enhancement (Clarity AI): cleanup, better lighting, detail enhancement
- * - Upscaling (Real-ESRGAN): ~$0.001 per image
+ * - Image enhancement (Real-ESRGAN 2x): better clarity and detail
+ * - Upscaling (Real-ESRGAN 4x): high-resolution upscaling
  */
 
 import Replicate from 'replicate';
@@ -42,16 +42,16 @@ export class ReplicateClient {
     });
 
     // Model versions from environment or defaults
-    // Using Clarity Upscaler for image enhancement, cleanup, and better lighting
+    // Using Real-ESRGAN for both enhancement and upscaling (2x)
     this.enhancementModel = process.env.REPLICATE_ENHANCEMENT_MODEL ||
-      'philz1337x/clarity-upscaler:dfad41707589d68ecdccd1dfa600d55a208f9310748e44bfe35b4a6291453d5e';
+      'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
 
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
   }
 
   /**
-   * Enhance image with better clarity, lighting, and background cleanup
+   * Enhance image with better clarity and detail (2x upscale)
    * @param imageUrl - URL of the image to process
    * @returns Result with enhanced image
    */
@@ -59,24 +59,15 @@ export class ReplicateClient {
     const startTime = Date.now();
 
     try {
-      console.log('[Replicate] Starting image enhancement...');
+      console.log('[Replicate] Starting image enhancement (2x upscale)...');
 
       let output = await this.client.run(
         this.enhancementModel as any,
         {
           input: {
             image: imageUrl,
-            scale_factor: 2,
-            dynamic: 6,
-            creativity: 0.35,
-            resemblance: 0.6,
-            tiling_width: 112,
-            tiling_height: 144,
-            sd_model: 'juggernaut_reborn.safetensors [338b85bc4f]',
-            scheduler: 'DPM++ 3M SDE Karras',
-            num_inference_steps: 18,
-            sharpen: 0,
-            output_format: 'png',
+            scale: 2,
+            face_enhance: false,  // Don't enhance faces (for miniatures)
           },
         }
       );
@@ -249,8 +240,8 @@ export class ReplicateClient {
    * Estimate cost for image enhancement (in credits)
    */
   estimateEnhancementCost(): number {
-    // Clarity Upscaler: ~$0.005 per image
-    return 5; // 0.5 cents = 5 credits
+    // Real-ESRGAN: ~$0.001 per image
+    return 10; // 1.0 cent = 10 credits
   }
 
   /**
