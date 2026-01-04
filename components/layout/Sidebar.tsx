@@ -77,7 +77,7 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       {/* Sidebar Drawer */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-in-out
-          lg:translate-x-0 lg:static lg:z-auto
+          lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >

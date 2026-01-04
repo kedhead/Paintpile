@@ -10,11 +10,11 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ onOpen }: MobileHeaderProps) {
     return (
-        <div className="lg:hidden flex items-center justify-between px-4 h-16 border-b border-border bg-card">
+        <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-16 border-b border-border bg-card">
             <div className="flex items-center gap-3">
                 <button
                     onClick={onOpen}
-                    className="p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50"
+                    className="p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 z-50"
                     aria-label="Open menu"
                 >
                     <Menu className="w-6 h-6" />
