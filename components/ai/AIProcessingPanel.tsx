@@ -6,7 +6,7 @@ import { AIProcessingButton } from './AIProcessingButton';
 import { PaintSuggestionsPanel } from './PaintSuggestionsPanel';
 import { Button } from '@/components/ui/Button';
 import { Sparkles, Eraser, ArrowUpCircle, Download, ExternalLink, Lock } from 'lucide-react';
-import { OPERATION_COSTS } from '@/lib/ai/usage-tracker';
+import { OPERATION_COSTS } from '@/lib/ai/constants';
 import { useRouter } from 'next/navigation';
 
 interface AIProcessingPanelProps {

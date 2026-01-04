@@ -8,8 +8,11 @@
 import { getAdminFirestore } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getUserProfile } from '@/lib/firestore/users';
+import { OPERATION_COSTS, creditsToDollars, dollarsToCredits } from './constants';
 
-export type AIOperation = 'backgroundRemoval' | 'upscaling' | 'paintSuggestions' | 'enhancement';
+// Re-export from constants for backwards compatibility
+export { OPERATION_COSTS, creditsToDollars, dollarsToCredits };
+export type { AIOperation } from './constants';
 
 export interface UsageStats {
   totalCreditsUsed: number;
@@ -262,28 +265,4 @@ export async function resetQuota(userId: string): Promise<void> {
   });
 
   console.log(`[Usage Tracker] Reset quota for user ${userId}`);
-}
-
-/**
- * Get cost estimates for different operations
- */
-export const OPERATION_COSTS = {
-  backgroundRemoval: 2,    // 0.2 cents = 2 credits
-  upscaling: 10,           // 1.0 cent = 10 credits
-  paintSuggestions: 8,     // 0.8 cents = 8 credits
-  enhancement: 5,          // 0.5 cents = 5 credits
-} as const;
-
-/**
- * Convert credits to dollars
- */
-export function creditsToDollars(credits: number): string {
-  return `$${(credits / 1000).toFixed(2)}`;
-}
-
-/**
- * Convert dollars to credits
- */
-export function dollarsToCredits(dollars: number): number {
-  return Math.round(dollars * 1000);
 }

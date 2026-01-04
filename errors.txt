@@ -1,0 +1,414 @@
+16:00:56.648 Running build in Washington, D.C., USA (East) – iad1
+16:00:56.649 Build machine configuration: 2 cores, 8 GB
+16:00:56.782 Cloning github.com/kedhead/Paintpile (Branch: main, Commit: bfd3cb3)
+16:00:57.911 Cloning completed: 1.129s
+16:00:58.128 Restored build cache from previous deployment (CFWtjfJhzMA8zcKf3XQsSD6Sp7NM)
+16:00:59.046 Running "vercel build"
+16:00:59.461 Vercel CLI 50.1.3
+16:00:59.566 Detected OpenTelemetry dependency: @opentelemetry/api@1.9.0, which meets the minimum version requirement of 1.7.0
+16:00:59.797 Installing dependencies...
+16:01:01.171 
+16:01:01.172 up to date in 1s
+16:01:01.172 
+16:01:01.172 184 packages are looking for funding
+16:01:01.172   run `npm fund` for details
+16:01:01.201 Detected Next.js version: 16.1.1
+16:01:01.207 Running "npm run build"
+16:01:01.299 
+16:01:01.300 > paintpile@1.0.0 build
+16:01:01.300 > next build
+16:01:01.300 
+16:01:02.230 ▲ Next.js 16.1.1 (Turbopack)
+16:01:02.231 
+16:01:02.268   Creating an optimized production build ...
+16:01:30.866 
+16:01:30.867 > Build error occurred
+16:01:30.871 Error: Turbopack build failed with 13 errors:
+16:01:30.871 ./node_modules/google-auth-library/build/src/auth/googleauth.js:29:25
+16:01:30.872 Module not found: Can't resolve 'child_process'
+16:01:30.872 [0m [90m 27 |[39m [33mObject[39m[33m.[39mdefineProperty(exports[33m,[39m [32m"__esModule"[39m[33m,[39m { value[33m:[39m [36mtrue[39m })[33m;[39m
+16:01:30.873  [90m 28 |[39m exports[33m.[39m[33mGoogleAuth[39m [33m=[39m exports[33m.[39m[33mGoogleAuthExceptionMessages[39m [33m=[39m exports[33m.[39m[33mCLOUD_SDK_CLIENT_ID[39m [33m=[39m [36mvoid[39m [35m0[39m[33m;[39m
+16:01:30.873 [31m[1m>[22m[39m[90m 29 |[39m [36mconst[39m child_process_1 [33m=[39m require([32m"child_process"[39m)[33m;[39m
+16:01:30.874  [90m    |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.875  [90m 30 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.875  [90m 31 |[39m [36mconst[39m gcpMetadata [33m=[39m require([32m"gcp-metadata"[39m)[33m;[39m
+16:01:30.876  [90m 32 |[39m [36mconst[39m os [33m=[39m require([32m"os"[39m)[33m;[39m[0m
+16:01:30.876 
+16:01:30.876 
+16:01:30.876 
+16:01:30.877 Import trace:
+16:01:30.877   Client Component Browser:
+16:01:30.877     ./node_modules/google-auth-library/build/src/auth/googleauth.js [Client Component Browser]
+16:01:30.878     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.878     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.878     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.879     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.879     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.879     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.879     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.879     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.879     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.879     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.879 
+16:01:30.879 https://nextjs.org/docs/messages/module-not-found
+16:01:30.879 
+16:01:30.879 
+16:01:30.879 ./node_modules/google-auth-library/build/src/auth/pluggable-auth-handler.js:19:22
+16:01:30.879 Module not found: Can't resolve 'child_process'
+16:01:30.880 [0m [90m 17 |[39m [36mconst[39m pluggable_auth_client_1 [33m=[39m require([32m"./pluggable-auth-client"[39m)[33m;[39m
+16:01:30.880  [90m 18 |[39m [36mconst[39m executable_response_1 [33m=[39m require([32m"./executable-response"[39m)[33m;[39m
+16:01:30.880 [31m[1m>[22m[39m[90m 19 |[39m [36mconst[39m childProcess [33m=[39m require([32m"child_process"[39m)[33m;[39m
+16:01:30.880  [90m    |[39m                      [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.881  [90m 20 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.883  [90m 21 |[39m [90m/**[39m
+16:01:30.883  [90m 22 |[39m [90m * A handler used to retrieve 3rd party token responses from user defined[39m[0m
+16:01:30.883 
+16:01:30.883 
+16:01:30.883 
+16:01:30.883 Import trace:
+16:01:30.883   Client Component Browser:
+16:01:30.883     ./node_modules/google-auth-library/build/src/auth/pluggable-auth-handler.js [Client Component Browser]
+16:01:30.883     ./node_modules/google-auth-library/build/src/auth/pluggable-auth-client.js [Client Component Browser]
+16:01:30.883     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.883     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.883     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.883     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.883     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.883     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.884     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.884     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.884     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.884     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.884 
+16:01:30.884 https://nextjs.org/docs/messages/module-not-found
+16:01:30.884 
+16:01:30.884 
+16:01:30.884 ./node_modules/firebase-admin/lib/app/credential-internal.js:23:12
+16:01:30.884 Module not found: Can't resolve 'fs'
+16:01:30.884 [0m [90m 21 |[39m exports[33m.[39misApplicationDefault [33m=[39m isApplicationDefault[33m;[39m
+16:01:30.884  [90m 22 |[39m exports[33m.[39mgetApplicationDefault [33m=[39m getApplicationDefault[33m;[39m
+16:01:30.884 [31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.884  [90m    |[39m            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.884  [90m 24 |[39m [36mconst[39m google_auth_library_1 [33m=[39m require([32m"google-auth-library"[39m)[33m;[39m
+16:01:30.884  [90m 25 |[39m [36mconst[39m error_1 [33m=[39m require([32m"../utils/error"[39m)[33m;[39m
+16:01:30.884  [90m 26 |[39m [36mconst[39m util [33m=[39m require([32m"../utils/validator"[39m)[33m;[39m[0m
+16:01:30.890 
+16:01:30.890 
+16:01:30.890 
+16:01:30.890 Import trace:
+16:01:30.890   Client Component Browser:
+16:01:30.891     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.891     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.891     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.891     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.891     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.891     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.892     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.892     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.892     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.892 
+16:01:30.892 https://nextjs.org/docs/messages/module-not-found
+16:01:30.893 
+16:01:30.893 
+16:01:30.893 ./node_modules/firebase-admin/lib/app/lifecycle.js:25:12
+16:01:30.893 Module not found: Can't resolve 'fs'
+16:01:30.894 [0m [90m 23 |[39m exports[33m.[39mgetApps [33m=[39m getApps[33m;[39m
+16:01:30.894  [90m 24 |[39m exports[33m.[39mdeleteApp [33m=[39m deleteApp[33m;[39m
+16:01:30.894 [31m[1m>[22m[39m[90m 25 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.895  [90m    |[39m            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.895  [90m 26 |[39m [36mconst[39m validator [33m=[39m require([32m"../utils/validator"[39m)[33m;[39m
+16:01:30.895  [90m 27 |[39m [36mconst[39m error_1 [33m=[39m require([32m"../utils/error"[39m)[33m;[39m
+16:01:30.895  [90m 28 |[39m [36mconst[39m credential_internal_1 [33m=[39m require([32m"./credential-internal"[39m)[33m;[39m[0m
+16:01:30.896 
+16:01:30.896 
+16:01:30.896 
+16:01:30.897 Import trace:
+16:01:30.897   Client Component Browser:
+16:01:30.897     ./node_modules/firebase-admin/lib/app/lifecycle.js [Client Component Browser]
+16:01:30.897     ./node_modules/firebase-admin/lib/app/index.js [Client Component Browser]
+16:01:30.897     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.898     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.898     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.898     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.898     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.898     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.899     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.899 
+16:01:30.899 https://nextjs.org/docs/messages/module-not-found
+16:01:30.900 
+16:01:30.900 
+16:01:30.900 ./node_modules/gcp-metadata/build/src/gcp-residency.js:24:14
+16:01:30.900 Module not found: Can't resolve 'fs'
+16:01:30.901 [0m [90m 22 |[39m exports[33m.[39misGoogleComputeEngine [33m=[39m isGoogleComputeEngine[33m;[39m
+16:01:30.901  [90m 23 |[39m exports[33m.[39mdetectGCPResidency [33m=[39m detectGCPResidency[33m;[39m
+16:01:30.901 [31m[1m>[22m[39m[90m 24 |[39m [36mconst[39m fs_1 [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.901  [90m    |[39m              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.901  [90m 25 |[39m [36mconst[39m os_1 [33m=[39m require([32m"os"[39m)[33m;[39m
+16:01:30.902  [90m 26 |[39m [90m/**[39m
+16:01:30.902  [90m 27 |[39m [90m * Known paths unique to Google Compute Engine Linux instances[39m[0m
+16:01:30.902 
+16:01:30.902 
+16:01:30.903 
+16:01:30.903 Import trace:
+16:01:30.903   Client Component Browser:
+16:01:30.903     ./node_modules/gcp-metadata/build/src/gcp-residency.js [Client Component Browser]
+16:01:30.903     ./node_modules/gcp-metadata/build/src/index.js [Client Component Browser]
+16:01:30.904     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.904     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.904     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.904     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.904     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.905     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.905     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.905     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.905     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.906     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.906 
+16:01:30.906 https://nextjs.org/docs/messages/module-not-found
+16:01:30.906 
+16:01:30.906 
+16:01:30.907 ./node_modules/google-auth-library/build/src/auth/filesubjecttokensupplier.js:19:12
+16:01:30.907 Module not found: Can't resolve 'fs'
+16:01:30.907 [0m [90m 17 |[39m exports[33m.[39m[33mFileSubjectTokenSupplier[39m [33m=[39m [36mvoid[39m [35m0[39m[33m;[39m
+16:01:30.907  [90m 18 |[39m [36mconst[39m util_1 [33m=[39m require([32m"util"[39m)[33m;[39m
+16:01:30.907 [31m[1m>[22m[39m[90m 19 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.908  [90m    |[39m            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.908  [90m 20 |[39m [90m// fs.readfile is undefined in browser karma tests causing[39m
+16:01:30.908  [90m 21 |[39m [90m// `npm run browser-test` to fail as test.oauth2.ts imports this file via[39m
+16:01:30.908  [90m 22 |[39m [90m// src/index.ts.[39m[0m
+16:01:30.909 
+16:01:30.909 
+16:01:30.909 
+16:01:30.909 Import trace:
+16:01:30.909   Client Component Browser:
+16:01:30.910     ./node_modules/google-auth-library/build/src/auth/filesubjecttokensupplier.js [Client Component Browser]
+16:01:30.910     ./node_modules/google-auth-library/build/src/auth/identitypoolclient.js [Client Component Browser]
+16:01:30.910     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.910     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.911     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.911     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.911     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.911     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.911     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.912     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.912     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.912     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.912 
+16:01:30.913 https://nextjs.org/docs/messages/module-not-found
+16:01:30.913 
+16:01:30.913 
+16:01:30.913 ./node_modules/google-auth-library/build/src/auth/googleauth.js:30:12
+16:01:30.913 Module not found: Can't resolve 'fs'
+16:01:30.914 [0m [90m 28 |[39m exports[33m.[39m[33mGoogleAuth[39m [33m=[39m exports[33m.[39m[33mGoogleAuthExceptionMessages[39m [33m=[39m exports[33m.[39m[33mCLOUD_SDK_CLIENT_ID[39m [33m=[39m [36mvoid[39m [35m0[39m[33m;[39m
+16:01:30.914  [90m 29 |[39m [36mconst[39m child_process_1 [33m=[39m require([32m"child_process"[39m)[33m;[39m
+16:01:30.914 [31m[1m>[22m[39m[90m 30 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.914  [90m    |[39m            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.915  [90m 31 |[39m [36mconst[39m gcpMetadata [33m=[39m require([32m"gcp-metadata"[39m)[33m;[39m
+16:01:30.915  [90m 32 |[39m [36mconst[39m os [33m=[39m require([32m"os"[39m)[33m;[39m
+16:01:30.915  [90m 33 |[39m [36mconst[39m path [33m=[39m require([32m"path"[39m)[33m;[39m[0m
+16:01:30.915 
+16:01:30.915 
+16:01:30.916 
+16:01:30.916 Import trace:
+16:01:30.916   Client Component Browser:
+16:01:30.916     ./node_modules/google-auth-library/build/src/auth/googleauth.js [Client Component Browser]
+16:01:30.916     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.917     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.917     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.917     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.917     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.917     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.918     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.918     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.918     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.918     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.918 
+16:01:30.919 https://nextjs.org/docs/messages/module-not-found
+16:01:30.919 
+16:01:30.919 
+16:01:30.919 ./node_modules/google-auth-library/build/src/auth/pluggable-auth-handler.js:20:12
+16:01:30.919 Module not found: Can't resolve 'fs'
+16:01:30.920 [0m [90m 18 |[39m [36mconst[39m executable_response_1 [33m=[39m require([32m"./executable-response"[39m)[33m;[39m
+16:01:30.920  [90m 19 |[39m [36mconst[39m childProcess [33m=[39m require([32m"child_process"[39m)[33m;[39m
+16:01:30.920 [31m[1m>[22m[39m[90m 20 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.920  [90m    |[39m            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.920  [90m 21 |[39m [90m/**[39m
+16:01:30.921  [90m 22 |[39m [90m * A handler used to retrieve 3rd party token responses from user defined[39m
+16:01:30.921  [90m 23 |[39m [90m * executables and cached file output for the PluggableAuthClient class.[39m[0m
+16:01:30.921 
+16:01:30.921 
+16:01:30.921 
+16:01:30.922 Import trace:
+16:01:30.922   Client Component Browser:
+16:01:30.922     ./node_modules/google-auth-library/build/src/auth/pluggable-auth-handler.js [Client Component Browser]
+16:01:30.922     ./node_modules/google-auth-library/build/src/auth/pluggable-auth-client.js [Client Component Browser]
+16:01:30.922     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.923     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.923     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.923     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.923     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.923     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.924     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.924     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.924     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.924     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.925 
+16:01:30.925 https://nextjs.org/docs/messages/module-not-found
+16:01:30.925 
+16:01:30.925 
+16:01:30.925 ./node_modules/gtoken/build/src/index.js:22:12
+16:01:30.926 Module not found: Can't resolve 'fs'
+16:01:30.926 [0m [90m 20 |[39m [33mObject[39m[33m.[39mdefineProperty(exports[33m,[39m [32m"__esModule"[39m[33m,[39m { value[33m:[39m [36mtrue[39m })[33m;[39m
+16:01:30.926  [90m 21 |[39m exports[33m.[39m[33mGoogleToken[39m [33m=[39m [36mvoid[39m [35m0[39m[33m;[39m
+16:01:30.926 [31m[1m>[22m[39m[90m 22 |[39m [36mconst[39m fs [33m=[39m require([32m"fs"[39m)[33m;[39m
+16:01:30.926  [90m    |[39m            [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.927  [90m 23 |[39m [36mconst[39m gaxios_1 [33m=[39m require([32m"gaxios"[39m)[33m;[39m
+16:01:30.927  [90m 24 |[39m [36mconst[39m jws [33m=[39m require([32m"jws"[39m)[33m;[39m
+16:01:30.927  [90m 25 |[39m [36mconst[39m path [33m=[39m require([32m"path"[39m)[33m;[39m[0m
+16:01:30.927 
+16:01:30.927 
+16:01:30.928 
+16:01:30.928 Import trace:
+16:01:30.928   Client Component Browser:
+16:01:30.928     ./node_modules/gtoken/build/src/index.js [Client Component Browser]
+16:01:30.928     ./node_modules/google-auth-library/build/src/auth/jwtclient.js [Client Component Browser]
+16:01:30.929     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.929     ./node_modules/firebase-admin/lib/app/credential-internal.js [Client Component Browser]
+16:01:30.929     ./node_modules/firebase-admin/lib/firestore/firestore-internal.js [Client Component Browser]
+16:01:30.929     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.930     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.931     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.931     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.931     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.931     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.932     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.932 
+16:01:30.932 https://nextjs.org/docs/messages/module-not-found
+16:01:30.932 
+16:01:30.932 
+16:01:30.933 ./node_modules/firebase-admin/lib/utils/api-request.js:27:15
+16:01:30.933 Module not found: Can't resolve 'http2'
+16:01:30.933 [0m [90m 25 |[39m [36mconst[39m http [33m=[39m require([32m"http"[39m)[33m;[39m
+16:01:30.933  [90m 26 |[39m [36mconst[39m https [33m=[39m require([32m"https"[39m)[33m;[39m
+16:01:30.933 [31m[1m>[22m[39m[90m 27 |[39m [36mconst[39m http2 [33m=[39m require([32m"http2"[39m)[33m;[39m
+16:01:30.934  [90m    |[39m               [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.934  [90m 28 |[39m [36mconst[39m url [33m=[39m require([32m"url"[39m)[33m;[39m
+16:01:30.934  [90m 29 |[39m [36mconst[39m events_1 [33m=[39m require([32m"events"[39m)[33m;[39m
+16:01:30.934  [90m 30 |[39m [36mconst[39m credential_internal_1 [33m=[39m require([32m"../app/credential-internal"[39m)[33m;[39m[0m
+16:01:30.935 
+16:01:30.935 
+16:01:30.935 
+16:01:30.935 Import trace:
+16:01:30.935   Client Component Browser:
+16:01:30.936     ./node_modules/firebase-admin/lib/utils/api-request.js [Client Component Browser]
+16:01:30.936     ./node_modules/firebase-admin/lib/auth/auth-api-request.js [Client Component Browser]
+16:01:30.936     ./node_modules/firebase-admin/lib/auth/project-config-manager.js [Client Component Browser]
+16:01:30.936     ./node_modules/firebase-admin/lib/auth/index.js [Client Component Browser]
+16:01:30.936     ./node_modules/firebase-admin/lib/esm/auth/index.js [Client Component Browser]
+16:01:30.937     ./lib/firebase/admin.ts [Client Component Browser]
+16:01:30.937     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.937     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.937     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.938     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.938     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.938 
+16:01:30.938 https://nextjs.org/docs/messages/module-not-found
+16:01:30.938 
+16:01:30.939 
+16:01:30.939 ./node_modules/agent-base/dist/index.js:30:26
+16:01:30.939 Module not found: Can't resolve 'net'
+16:01:30.939 [0m [90m 28 |[39m [33mObject[39m[33m.[39mdefineProperty(exports[33m,[39m [32m"__esModule"[39m[33m,[39m { value[33m:[39m [36mtrue[39m })[33m;[39m
+16:01:30.939  [90m 29 |[39m exports[33m.[39m[33mAgent[39m [33m=[39m [36mvoid[39m [35m0[39m[33m;[39m
+16:01:30.939 [31m[1m>[22m[39m[90m 30 |[39m [36mconst[39m net [33m=[39m __importStar(require([32m"net"[39m))[33m;[39m
+16:01:30.940  [90m    |[39m                          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.940  [90m 31 |[39m [36mconst[39m http [33m=[39m __importStar(require([32m"http"[39m))[33m;[39m
+16:01:30.940  [90m 32 |[39m [36mconst[39m https_1 [33m=[39m require([32m"https"[39m)[33m;[39m
+16:01:30.940  [90m 33 |[39m __exportStar(require([32m"./helpers"[39m)[33m,[39m exports)[33m;[39m[0m
+16:01:30.940 
+16:01:30.940 
+16:01:30.940 
+16:01:30.940 Import trace:
+16:01:30.941   Client Component Browser:
+16:01:30.941     ./node_modules/agent-base/dist/index.js [Client Component Browser]
+16:01:30.941     ./node_modules/https-proxy-agent/dist/index.js [Client Component Browser]
+16:01:30.941     ./node_modules/gaxios/build/src/gaxios.js [Client Component Browser]
+16:01:30.941     ./node_modules/gaxios/build/src/index.js [Client Component Browser]
+16:01:30.941     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.941     ./node_modules/google-gax/build/src/fallback.js [Client Component Browser]
+16:01:30.941     ./node_modules/@google-cloud/firestore/build/src/index.js [Client Component Browser]
+16:01:30.942     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.942     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.942     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.942     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.942     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.942     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.942     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.942 
+16:01:30.943 https://nextjs.org/docs/messages/module-not-found
+16:01:30.943 
+16:01:30.943 
+16:01:30.943 ./node_modules/https-proxy-agent/dist/index.js:30:26
+16:01:30.943 Module not found: Can't resolve 'net'
+16:01:30.943 [0m [90m 28 |[39m [33mObject[39m[33m.[39mdefineProperty(exports[33m,[39m [32m"__esModule"[39m[33m,[39m { value[33m:[39m [36mtrue[39m })[33m;[39m
+16:01:30.943  [90m 29 |[39m exports[33m.[39m[33mHttpsProxyAgent[39m [33m=[39m [36mvoid[39m [35m0[39m[33m;[39m
+16:01:30.943 [31m[1m>[22m[39m[90m 30 |[39m [36mconst[39m net [33m=[39m __importStar(require([32m"net"[39m))[33m;[39m
+16:01:30.944  [90m    |[39m                          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.944  [90m 31 |[39m [36mconst[39m tls [33m=[39m __importStar(require([32m"tls"[39m))[33m;[39m
+16:01:30.944  [90m 32 |[39m [36mconst[39m assert_1 [33m=[39m __importDefault(require([32m"assert"[39m))[33m;[39m
+16:01:30.944  [90m 33 |[39m [36mconst[39m debug_1 [33m=[39m __importDefault(require([32m"debug"[39m))[33m;[39m[0m
+16:01:30.944 
+16:01:30.944 
+16:01:30.944 
+16:01:30.945 Import trace:
+16:01:30.945   Client Component Browser:
+16:01:30.945     ./node_modules/https-proxy-agent/dist/index.js [Client Component Browser]
+16:01:30.945     ./node_modules/gaxios/build/src/gaxios.js [Client Component Browser]
+16:01:30.945     ./node_modules/gaxios/build/src/index.js [Client Component Browser]
+16:01:30.945     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.946     ./node_modules/google-gax/build/src/fallback.js [Client Component Browser]
+16:01:30.946     ./node_modules/@google-cloud/firestore/build/src/index.js [Client Component Browser]
+16:01:30.946     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.946     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.947     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.947     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.947     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.947     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.947     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.948 
+16:01:30.948 https://nextjs.org/docs/messages/module-not-found
+16:01:30.948 
+16:01:30.948 
+16:01:30.949 ./node_modules/https-proxy-agent/dist/index.js:31:26
+16:01:30.949 Module not found: Can't resolve 'tls'
+16:01:30.949 [0m [90m 29 |[39m exports[33m.[39m[33mHttpsProxyAgent[39m [33m=[39m [36mvoid[39m [35m0[39m[33m;[39m
+16:01:30.949  [90m 30 |[39m [36mconst[39m net [33m=[39m __importStar(require([32m"net"[39m))[33m;[39m
+16:01:30.949 [31m[1m>[22m[39m[90m 31 |[39m [36mconst[39m tls [33m=[39m __importStar(require([32m"tls"[39m))[33m;[39m
+16:01:30.950  [90m    |[39m                          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+16:01:30.950  [90m 32 |[39m [36mconst[39m assert_1 [33m=[39m __importDefault(require([32m"assert"[39m))[33m;[39m
+16:01:30.950  [90m 33 |[39m [36mconst[39m debug_1 [33m=[39m __importDefault(require([32m"debug"[39m))[33m;[39m
+16:01:30.950  [90m 34 |[39m [36mconst[39m agent_base_1 [33m=[39m require([32m"agent-base"[39m)[33m;[39m[0m
+16:01:30.951 
+16:01:30.951 
+16:01:30.951 
+16:01:30.951 Import trace:
+16:01:30.951   Client Component Browser:
+16:01:30.952     ./node_modules/https-proxy-agent/dist/index.js [Client Component Browser]
+16:01:30.952     ./node_modules/gaxios/build/src/gaxios.js [Client Component Browser]
+16:01:30.952     ./node_modules/gaxios/build/src/index.js [Client Component Browser]
+16:01:30.952     ./node_modules/google-auth-library/build/src/index.js [Client Component Browser]
+16:01:30.953     ./node_modules/google-gax/build/src/fallback.js [Client Component Browser]
+16:01:30.953     ./node_modules/@google-cloud/firestore/build/src/index.js [Client Component Browser]
+16:01:30.953     ./node_modules/firebase-admin/lib/firestore/index.js [Client Component Browser]
+16:01:30.953     ./node_modules/firebase-admin/lib/esm/firestore/index.js [Client Component Browser]
+16:01:30.953     ./lib/ai/usage-tracker.ts [Client Component Browser]
+16:01:30.954     ./components/ai/AIProcessingPanel.tsx [Client Component Browser]
+16:01:30.954     ./components/photos/PhotoGallery.tsx [Client Component Browser]
+16:01:30.954     ./app/(protected)/projects/[id]/page.tsx [Client Component Browser]
+16:01:30.954     ./app/(protected)/projects/[id]/page.tsx [Server Component]
+16:01:30.955 
+16:01:30.955 https://nextjs.org/docs/messages/module-not-found
+16:01:30.955 
+16:01:30.955 
+16:01:30.955     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+16:01:30.956     ... collapsed 12 duplicate lines matching above 1 lines 12 times...
+16:01:31.008 Error: Command "npm run build" exited with 1
