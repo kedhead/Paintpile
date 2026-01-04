@@ -59,7 +59,7 @@ export class ReplicateClient {
     try {
       console.log('[Replicate] Starting background removal...');
 
-      const output = await this.client.run(
+      let output = await this.client.run(
         this.bgRemovalModel as any,
         {
           input: {
@@ -68,11 +68,29 @@ export class ReplicateClient {
         }
       );
 
-      const processingTime = Date.now() - startTime;
-
-      console.log('[Replicate] Raw output:', JSON.stringify(output));
-      console.log('[Replicate] Output type:', typeof output);
+      console.log('[Replicate] Raw output type:', typeof output);
       console.log('[Replicate] Is array:', Array.isArray(output));
+      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
+
+      // Handle ReadableStream - need to collect all chunks
+      if (output instanceof ReadableStream) {
+        console.log('[Replicate] Reading stream...');
+        const reader = output.getReader();
+        const chunks: any[] = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+
+        // Stream should contain URLs - last chunk is typically the final result
+        output = chunks.length > 0 ? chunks[chunks.length - 1] : null;
+        console.log('[Replicate] Stream chunks count:', chunks.length);
+        console.log('[Replicate] Final chunk:', output);
+      }
+
+      const processingTime = Date.now() - startTime;
 
       // Output is typically a URL string or array with one URL
       let outputUrl: string | null = null;
