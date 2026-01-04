@@ -86,24 +86,14 @@ export class ReplicateClient {
           input: {
             image: image,
             prompt: prompt,
-            num_inference_steps: 20,
-            image_guidance_scale: 1.5,
-            guidance_scale: 7.5,
           },
         }
       );
 
-      // If the model returns a prediction ID (async), wait for it to complete
-      if (typeof output === 'object' && output !== null && 'id' in output) {
-        console.log('[Replicate] Received async prediction ID, waiting...');
-        const predictionId = (output as any).id;
-        output = await this.waitForPrediction(predictionId, 120000); // wait up to 2 minutes
-        console.log('[Replicate] Async prediction completed.');
-      }
-
       console.log('[Replicate] Raw output type:', typeof output);
       console.log('[Replicate] Is array:', Array.isArray(output));
       console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
+      console.log('[Replicate] Raw output:', JSON.stringify(output));
 
       // Handle ReadableStream - Replicate streams the actual image data
       if (output instanceof ReadableStream) {
