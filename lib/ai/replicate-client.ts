@@ -2,7 +2,7 @@
  * Replicate API Client
  *
  * Integrates with Replicate for image processing:
- * - Background removal (RMBG-1.4): ~$0.0002 per image
+ * - Background removal (rembg with U2-Net): ~$0.0002 per image
  * - Upscaling (Real-ESRGAN): ~$0.001 per image
  */
 
@@ -42,8 +42,9 @@ export class ReplicateClient {
     });
 
     // Model versions from environment or defaults
+    // Using BiRefNet for superior background removal quality
     this.bgRemovalModel = process.env.REPLICATE_BG_REMOVAL_MODEL ||
-      'lucataco/remove-bg:95fcc2a26d3899cd6c2691c900465aaeff466285a65c14638cc5f36f34befaf1';
+      'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
 
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';

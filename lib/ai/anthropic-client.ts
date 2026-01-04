@@ -108,9 +108,45 @@ export class AnthropicClient {
    * Build the analysis prompt for Claude
    */
   private buildAnalysisPrompt(context?: string): string {
-    const contextStr = context ? `\nContext: This is a ${context} miniature.` : '';
+    if (context && context.trim()) {
+      // User provided a vision/description - suggest paints to achieve that look
+      return `I want to paint this miniature with the following vision: "${context}"
 
-    return `Analyze this miniature painting photo and identify 5-8 distinct paint colors visible on the model.${contextStr}
+Looking at this miniature photo, suggest 5-8 specific paint colors that would help me achieve this look.
+
+For each color, provide:
+1. Hex color code (e.g., #FF5733)
+2. Descriptive name (e.g., "Deep Blood Red", "Metallic Gold", "Bone White")
+3. Location/usage: where to apply this color
+   - "base" for base coat colors
+   - "highlight" for highlighted areas
+   - "shadow" for shaded/shadow areas
+   - "general" for other colors
+4. Brief notes about why this color fits the vision and how to apply it
+
+Return your response as a JSON object with this exact structure:
+{
+  "colors": [
+    {
+      "hex": "#FF5733",
+      "name": "Deep Blood Red",
+      "location": "shadow",
+      "notes": "Use in recessed areas to create depth"
+    }
+  ],
+  "confidence": 0.85
+}
+
+Important:
+- Suggest colors that will achieve the described vision
+- Consider the miniature's shape and details visible in the photo
+- Provide accurate hex codes
+- Be specific with color names and application tips
+- confidence should be 0-1 (your confidence these colors will achieve the vision)
+- Return ONLY the JSON object, no additional text`;
+    } else {
+      // No context - identify existing colors in the image
+      return `Analyze this miniature painting photo and identify 5-8 distinct paint colors visible on the model.
 
 For each color, provide:
 1. Hex color code (e.g., #FF5733)
@@ -142,6 +178,7 @@ Important:
 - Consider the painting technique and color placement
 - confidence should be 0-1 (your confidence in the color detection)
 - Return ONLY the JSON object, no additional text`;
+    }
   }
 
   /**

@@ -35,6 +35,7 @@ export function AIProcessingPanel({
     photo.aiProcessing?.backgroundRemoval?.url || null
   );
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [paintVision, setPaintVision] = useState('');
 
   // Check if user has Pro access
   if (!isPro) {
@@ -73,6 +74,7 @@ export function AIProcessingPanel({
         projectId,
         userId,
         imageUrl: photo.url,
+        context: paintVision || undefined,
       }),
     });
 
@@ -124,7 +126,24 @@ export function AIProcessingPanel({
       </div>
 
       {/* Action buttons */}
-      <div className="space-y-2">
+      <div className="space-y-3">
+        {/* Paint vision input */}
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground block">
+            Paint Vision (optional)
+          </label>
+          <textarea
+            value={paintVision}
+            onChange={(e) => setPaintVision(e.target.value)}
+            placeholder="e.g., 'I want dark blue armor with gold trim' or 'zombie skin tones' or 'weathered rusty metal'"
+            className="w-full min-h-[60px] px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            maxLength={200}
+          />
+          <p className="text-xs text-muted-foreground">
+            Describe how you want to paint this miniature
+          </p>
+        </div>
+
         <AIProcessingButton
           label="Suggest Paints"
           icon={<Sparkles className="h-4 w-4" />}
