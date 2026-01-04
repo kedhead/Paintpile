@@ -61,9 +61,8 @@ export class ReplicateClient {
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
       'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
 
-    // InstructPix2Pix for image editing/recoloring
-    this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL ||
-      'timothybrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f';
+    // Google Nano-Banana (Gemini 2.5 Flash Image) for advanced image editing
+    this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL || 'google/nano-banana';
   }
 
   /**
@@ -76,84 +75,44 @@ export class ReplicateClient {
     const startTime = Date.now();
 
     try {
-      console.log('[Replicate] Starting image recolor...');
+      console.log('[Replicate] Starting image recolor with google/nano-banana...');
       console.log(`[Replicate] Prompt: "${prompt}"`);
 
-      // InstructPix2Pix
-      let output = await this.client.run(
+      // google/nano-banana uses image_input as an array and prompt as a string
+      // It returns a single URL string directly.
+      const output = await this.client.run(
         this.recolorModel as any,
         {
           input: {
-            image: image,
             prompt: prompt,
-            num_inference_steps: 50,    // Good balance of quality and speed
-            guidance_scale: 7.5,        // Text adherence
-            image_guidance_scale: 1.5,  // Image adherence
+            image_input: [image],
+            aspect_ratio: "match_input_image",
+            output_format: "jpg"
           },
         }
       );
 
       console.log('[Replicate] Raw output type:', typeof output);
       console.log('[Replicate] Is array:', Array.isArray(output));
-      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
       console.log('[Replicate] Raw output:', JSON.stringify(output));
-
-      // Handle ReadableStream - Replicate streams the actual image data
-      if (output instanceof ReadableStream) {
-        console.log('[Replicate] Reading image data stream...');
-        const reader = output.getReader();
-        const chunks: Uint8Array[] = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) {
-            chunks.push(value);
-          }
-        }
-
-        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-        const imageData = new Uint8Array(totalLength);
-        let offset = 0;
-
-        for (const chunk of chunks) {
-          imageData.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        const imageBuffer = Buffer.from(imageData);
-        const processingTime = Date.now() - startTime;
-
-        console.log(`[Replicate] Image recolor completed in ${processingTime}ms`);
-        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
-
-        return {
-          imageBuffer,
-          processingTime,
-        };
-      }
 
       const processingTime = Date.now() - startTime;
 
-      // Fallback: Output is a URL string or array with one URL
+      // Nano-banana usually returns a string URL or an array with one URL
       let outputUrl: string | null = null;
 
-      if (Array.isArray(output)) {
-        const first = output[0];
-        if (typeof first === 'string') {
-          outputUrl = first;
-        } else if (first && typeof first === 'object') {
-          outputUrl = (first as any).image || (first as any).url || (first as any).output;
-        }
-      } else if (typeof output === 'string') {
+      if (typeof output === 'string') {
         outputUrl = output;
+      } else if (Array.isArray(output) && typeof output[0] === 'string') {
+        outputUrl = output[0];
       } else if (output && typeof output === 'object') {
-        outputUrl = (output as any).image || (output as any).url || (output as any).output;
+        // Fallback for unexpected object structures
+        outputUrl = (output as any).url || (output as any).image || (output as any).output;
       }
 
       if (!outputUrl || typeof outputUrl !== 'string') {
         console.error('[Replicate] Invalid output structure:', output);
-        throw new Error(`Invalid output structure from recolor model: ${JSON.stringify(output)}`);
+        throw new Error(`Invalid output from nano-banana: ${JSON.stringify(output)}`);
       }
 
       console.log(`[Replicate] Image recolor completed in ${processingTime}ms`);
