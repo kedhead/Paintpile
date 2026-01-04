@@ -91,7 +91,13 @@ export function getAdminAuth() {
  */
 export function getAdminFirestore() {
   const app = getAdminApp();
-  return getFirestore(app);
+  const firestore = getFirestore(app);
+  try {
+    firestore.settings({ ignoreUndefinedProperties: true });
+  } catch (error) {
+    // Settings might have been already set, ignore error
+  }
+  return firestore;
 }
 
 /**

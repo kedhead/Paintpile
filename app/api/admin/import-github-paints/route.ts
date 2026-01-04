@@ -44,14 +44,29 @@ export async function POST(request: NextRequest) {
     const paintsRef = db.collection('paints');
     let importedCount = 0;
 
-    for (const paint of paints) {
-      const paintRef = paintsRef.doc();
-      await paintRef.set({
-        ...paint,
-        paintId: paintRef.id,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      importedCount++;
+    // Process in batches of 500 (Firestore limit)
+    const BATCH_SIZE = 500;
+    const chunks = [];
+
+    for (let i = 0; i < paints.length; i += BATCH_SIZE) {
+      chunks.push(paints.slice(i, i + BATCH_SIZE));
+    }
+
+    for (const chunk of chunks) {
+      const batch = db.batch();
+
+      for (const paint of chunk) {
+        const paintRef = paintsRef.doc();
+        batch.set(paintRef, {
+          ...paint,
+          paintId: paintRef.id,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      importedCount += chunk.length;
+      console.log(`[Import] ${manufacturer}: Committed batch of ${chunk.length} paints`);
     }
 
     console.log(`[Import] ${manufacturer}: Imported ${importedCount} paints`);
@@ -178,7 +193,7 @@ function parseMarkdownTable(markdown: string, manufacturerFile: string): any[] {
     const paint = {
       brand,
       name,
-      code: code || undefined,
+      code: code || null,
       hexColor,
       type: determineType(set),
       category: set || 'Standard',
