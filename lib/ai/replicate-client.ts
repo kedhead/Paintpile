@@ -56,9 +56,9 @@ export class ReplicateClient {
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
 
-    // Using SDXL-Lightning for fast, high-quality img2img cleanup
+    // Using Stable Diffusion XL with img2img for intelligent cleanup
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
-      'bytedance/sdxl-lightning-4step:5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f';
+      'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b';
   }
 
   /**
@@ -176,14 +176,17 @@ export class ReplicateClient {
 
       // Create prediction and wait for completion
       const prediction = await this.client.predictions.create({
-        version: '5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f',
+        version: '39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
         input: {
           prompt,
           image: imageUrl,
-          strength: 0.6,
-          num_inference_steps: 4,
-          guidance_scale: 1,
-          negative_prompt: 'blurry, low quality, distorted, bad anatomy',
+          prompt_strength: 0.35,  // Low strength to preserve original subject (0 = identical, 1 = completely new)
+          num_inference_steps: 30,
+          guidance_scale: 7.5,
+          scheduler: 'K_EULER',
+          refine: 'expert_ensemble_refiner',
+          high_noise_frac: 0.8,
+          negative_prompt: 'blurry, low quality, distorted, deformed, bad anatomy, extra limbs',
         },
       });
 

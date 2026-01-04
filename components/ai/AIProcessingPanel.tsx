@@ -36,7 +36,7 @@ export function AIProcessingPanel({
   );
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [paintVision, setPaintVision] = useState('');
-  const [cleanupPrompt, setCleanupPrompt] = useState('professional product photo of warhammer miniature on clean white background, great lighting');
+  const [cleanupPrompt, setCleanupPrompt] = useState('professional product photo on clean white background with studio lighting, sharp focus');
   const [aiCleanedUrl, setAiCleanedUrl] = useState<string | null>(null);
 
   // Check if user has Pro access
