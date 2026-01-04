@@ -56,9 +56,9 @@ export class ReplicateClient {
     this.upscaleModel = process.env.REPLICATE_UPSCALE_MODEL ||
       'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa';
 
-    // Using Flux Dev for AI-powered cleanup with prompts
+    // Using SDXL-Lightning for fast, high-quality img2img cleanup
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
-      'black-forest-labs/flux-dev';
+      'bytedance/sdxl-lightning-4step:5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f';
   }
 
   /**
@@ -179,10 +179,10 @@ export class ReplicateClient {
           input: {
             prompt,
             image: imageUrl,
-            guidance: 3.5,
-            num_inference_steps: 28,
-            output_format: 'png',
-            output_quality: 100,
+            strength: 0.6,
+            num_inference_steps: 4,
+            guidance_scale: 1,
+            negative_prompt: 'blurry, low quality, distorted, bad anatomy',
           },
         }
       );

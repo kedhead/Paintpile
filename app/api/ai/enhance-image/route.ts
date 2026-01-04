@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Download and resize image if needed (max 1024px to fit in GPU memory)
+    // Download and resize image if needed (max 900px to safely fit in GPU memory)
     console.log('[Enhance] Downloading source image...');
     const sourceResponse = await fetch(sourceUrl);
     if (!sourceResponse.ok) {
@@ -105,29 +105,42 @@ export async function POST(request: NextRequest) {
     const sourceBuffer = Buffer.from(await sourceResponse.arrayBuffer());
 
     // Check dimensions and resize if needed
-    const imageMetadata = await sharp(sourceBuffer).metadata();
-    console.log(`[Enhance] Source dimensions: ${imageMetadata.width}x${imageMetadata.height}`);
-
     let processedBuffer: Buffer = sourceBuffer;
-    const maxDimension = 1024; // Max size to fit in GPU memory
+    const maxDimension = 900; // Conservative max size to fit in GPU memory (2M pixel limit)
 
-    if (imageMetadata.width && imageMetadata.height) {
-      const maxCurrentDimension = Math.max(imageMetadata.width, imageMetadata.height);
+    try {
+      const imageMetadata = await sharp(sourceBuffer).metadata();
+      console.log(`[Enhance] Source dimensions: ${imageMetadata.width}x${imageMetadata.height}`);
 
-      if (maxCurrentDimension > maxDimension) {
-        console.log(`[Enhance] Resizing image to fit ${maxDimension}px max...`);
-        const resizedBuffer = await sharp(sourceBuffer)
-          .resize(maxDimension, maxDimension, {
-            fit: 'inside',
-            withoutEnlargement: true,
-          })
-          .toBuffer();
+      if (imageMetadata.width && imageMetadata.height) {
+        const totalPixels = imageMetadata.width * imageMetadata.height;
+        const maxCurrentDimension = Math.max(imageMetadata.width, imageMetadata.height);
 
-        processedBuffer = Buffer.from(resizedBuffer);
+        console.log(`[Enhance] Total pixels: ${totalPixels}`);
 
-        const resizedMetadata = await sharp(processedBuffer).metadata();
-        console.log(`[Enhance] Resized to: ${resizedMetadata.width}x${resizedMetadata.height}`);
+        // Always resize if larger than maxDimension OR if total pixels > 810,000 (900x900)
+        if (maxCurrentDimension > maxDimension || totalPixels > 810000) {
+          console.log(`[Enhance] Resizing image to fit ${maxDimension}px max...`);
+          const resizedBuffer = await sharp(sourceBuffer)
+            .resize(maxDimension, maxDimension, {
+              fit: 'inside',
+              withoutEnlargement: true,
+            })
+            .png()
+            .toBuffer();
+
+          processedBuffer = Buffer.from(resizedBuffer);
+
+          const resizedMetadata = await sharp(processedBuffer).metadata();
+          const resizedPixels = (resizedMetadata.width || 0) * (resizedMetadata.height || 0);
+          console.log(`[Enhance] Resized to: ${resizedMetadata.width}x${resizedMetadata.height} (${resizedPixels} pixels)`);
+        } else {
+          console.log('[Enhance] Image size OK, no resize needed');
+        }
       }
+    } catch (error: any) {
+      console.error('[Enhance] Error processing image dimensions:', error);
+      throw new Error(`Failed to process image: ${error.message}`);
     }
 
     // Upload resized image temporarily for Replicate to process
