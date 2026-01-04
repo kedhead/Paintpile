@@ -68,11 +68,11 @@ export class ReplicateClient {
 
   /**
    * Recolor/Edit image based on text prompt using InstructPix2Pix
-   * @param imageUrl - URL of the image to process
+   * @param image - URL or Buffer of the image to process
    * @param prompt - Text instruction (e.g., "make the armor red")
    * @returns Result with processed image
    */
-  async recolorImage(imageUrl: string, prompt: string): Promise<EnhancementResult> {
+  async recolorImage(image: string | Buffer, prompt: string): Promise<EnhancementResult> {
     const startTime = Date.now();
 
     try {
@@ -84,13 +84,13 @@ export class ReplicateClient {
         this.recolorModel as any,
         {
           input: {
-            image: imageUrl,
+            image: image,
             prompt: prompt,
             num_outputs: 1,
             image_guidance_scale: 1.5, // Balance between original image and prompt
             guidance_scale: 7.5,
-            resolution: 512,           // Cap resolution to avoid OOM
-            num_inference_steps: 20,   // Reasonable performance/quality tradeoff
+            resolution: 768,           // Safe resolution for processed images
+            num_inference_steps: 25,   // Slightly more steps for better quality
           },
         }
       );
