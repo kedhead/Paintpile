@@ -43,7 +43,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         onNewProject={() => router.push('/projects/new')}
       />
 
-      <main className="flex-1 lg:pl-64 transition-all duration-300">
+      <main className="flex-1 lg:pl-64 pt-16 lg:pt-0 transition-all duration-300">
         {children}
       </main>
     </div>

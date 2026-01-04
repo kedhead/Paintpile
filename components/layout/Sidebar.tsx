@@ -69,14 +69,14 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-in-out
+        className={`fixed inset-y-0 left-0 z-[60] w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
@@ -87,7 +87,7 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 flex items-center justify-center">
                 <img
-                  src="/images/logo.png"
+                  src="/paintpile-logo.png"
                   alt="PaintPile Logo"
                   className="w-full h-full object-contain"
                 />
