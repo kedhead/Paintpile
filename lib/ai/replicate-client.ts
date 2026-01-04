@@ -61,9 +61,9 @@ export class ReplicateClient {
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
       'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
 
-    // Using daanelson's version which is very stable for image-to-image editing
+    // InstructPix2Pix for image editing/recoloring
     this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL ||
-      'daanelson/instruct-pix2pix:1ced03953530c30a8459424e6ca6f5348937eb7b9b21f37b605eb2c921319c5c';
+      'timbrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f';
   }
 
   /**
@@ -79,20 +79,16 @@ export class ReplicateClient {
       console.log('[Replicate] Starting image recolor...');
       console.log(`[Replicate] Prompt: "${prompt}"`);
 
-      // InstructPix2Pix via daanelson
+      // InstructPix2Pix
       let output = await this.client.run(
         this.recolorModel as any,
         {
           input: {
-            // Provide both possible keys for compatibility
             image: image,
-            input_image: image,
             prompt: prompt,
-            num_outputs: 1,
+            num_inference_steps: 20,
             image_guidance_scale: 1.5,
             guidance_scale: 7.5,
-            resolution: 768,
-            num_inference_steps: 25,
           },
         }
       );
@@ -153,13 +149,13 @@ export class ReplicateClient {
         const first = output[0];
         if (typeof first === 'string') {
           outputUrl = first;
-        } else if (typeof first === 'object' && first !== null) {
-          outputUrl = (first as any).url || (first as any).output || (first as any).image;
+        } else if (first && typeof first === 'object') {
+          outputUrl = (first as any).image || (first as any).url || (first as any).output;
         }
       } else if (typeof output === 'string') {
         outputUrl = output;
       } else if (output && typeof output === 'object') {
-        outputUrl = (output as any).url || (output as any).output || (output as any).image;
+        outputUrl = (output as any).image || (output as any).url || (output as any).output;
       }
 
       if (!outputUrl || typeof outputUrl !== 'string') {

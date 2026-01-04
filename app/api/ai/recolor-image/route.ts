@@ -66,12 +66,12 @@ export async function POST(req: NextRequest) {
         // 3. Upload resized image temporarily for Replicate to process (more stable than Buffer)
         const storage = getAdminStorage();
         const bucket = storage.bucket();
-        const tempPath = `users/${userId}/temp/${photoId}_recolor_temp.jpg`;
+        const tempPath = `users/${userId}/temp/${photoId}_recolor_temp.png`;
         const tempFile = bucket.file(tempPath);
 
         await tempFile.save(processedImage, {
-            contentType: 'image/jpeg',
-            metadata: { contentType: 'image/jpeg' },
+            contentType: 'image/png',
+            metadata: { contentType: 'image/png' },
         });
         await tempFile.makePublic();
 
