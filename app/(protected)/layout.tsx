@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileHeader } from '@/components/layout/MobileHeader';
@@ -11,6 +11,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const { currentUser, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Stable handlers to prevent infinite effect loops in children
+  const handleSidebarOpen = useCallback(() => setSidebarOpen(true), []);
+  const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
 
   useEffect(() => {
     // Redirect unauthenticated users to login
@@ -35,11 +39,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-background flex flex-col lg:block">
-      <MobileHeader onOpen={() => setSidebarOpen(true)} />
+      <MobileHeader onOpen={handleSidebarOpen} />
 
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={handleSidebarClose}
         onNewProject={() => router.push('/projects/new')}
       />
 
