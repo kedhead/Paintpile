@@ -4,7 +4,7 @@
  * Shared constants that can be used by both client and server code
  */
 
-export type AIOperation = 'enhancement' | 'upscaling' | 'paintSuggestions' | 'aiCleanup';
+export type AIOperation = 'enhancement' | 'upscaling' | 'paintSuggestions' | 'aiCleanup' | 'recolor';
 
 export interface UsageStats {
   totalCreditsUsed: number;
@@ -15,6 +15,7 @@ export interface UsageStats {
     upscaling: number;
     paintSuggestions: number;
     aiCleanup: number;
+    recolor: number;
   };
   quotaLimit: number;
   remainingCredits: number;
@@ -31,6 +32,7 @@ export const OPERATION_COSTS = {
   upscaling: 10,           // 1.0 cent = 10 credits - 4x upscale
   paintSuggestions: 8,     // 0.8 cents = 8 credits
   aiCleanup: 25,          // 2.5 cents = 25 credits - AI-powered cleanup with prompts
+  recolor: 20,            // 2.0 cents = 20 credits - InstructPix2Pix
 } as const;
 
 /**

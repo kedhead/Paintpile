@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Loader2 } from 'lucide-react';
 import { creditsToDollars } from '@/lib/ai/constants';
+import { cn } from '@/lib/utils/cn';
 
 interface AIProcessingButtonProps {
   label: string;
@@ -12,6 +13,7 @@ interface AIProcessingButtonProps {
   onClick: () => Promise<void>;
   disabled?: boolean;
   variant?: 'default' | 'outline' | 'ghost';
+  className?: string;
 }
 
 /**
@@ -25,6 +27,7 @@ export function AIProcessingButton({
   onClick,
   disabled = false,
   variant = 'outline',
+  className,
 }: AIProcessingButtonProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +55,7 @@ export function AIProcessingButton({
         size="sm"
         onClick={handleClick}
         disabled={disabled || isProcessing}
-        className="w-full justify-between"
+        className={cn("w-full justify-between", className)}
       >
         <span className="flex items-center gap-2">
           {isProcessing ? (

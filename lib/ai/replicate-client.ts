@@ -36,6 +36,7 @@ export class ReplicateClient {
   private enhancementModel: string;
   private upscaleModel: string;
   private aiCleanupModel: string;
+  private recolorModel: string;
 
   constructor() {
     const apiKey = process.env.REPLICATE_API_KEY;
@@ -59,6 +60,66 @@ export class ReplicateClient {
     // Using rembg for clean, reliable background removal
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
       'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
+
+    // InstructPix2Pix for image editing/recoloring
+    this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL ||
+      'timbrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f';
+  }
+
+  /**
+   * Recolor/Edit image based on text prompt using InstructPix2Pix
+   * @param imageUrl - URL of the image to process
+   * @param prompt - Text instruction (e.g., "make the armor red")
+   * @returns Result with processed image
+   */
+  async recolorImage(imageUrl: string, prompt: string): Promise<EnhancementResult> {
+    const startTime = Date.now();
+
+    try {
+      console.log('[Replicate] Starting image recolor...');
+      console.log(`[Replicate] Prompt: "${prompt}"`);
+
+      // InstructPix2Pix
+      let output = await this.client.run(
+        this.recolorModel as any,
+        {
+          input: {
+            image: imageUrl,
+            prompt: prompt,
+            num_outputs: 1,
+            image_guidance_scale: 1.5, // Balance between original image and prompt
+            guidance_scale: 7.5,
+          },
+        }
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      // Handle common output formats
+      let outputUrl: string | null = null;
+
+      if (Array.isArray(output)) {
+        outputUrl = output[0];
+      } else if (typeof output === 'string') {
+        outputUrl = output;
+      }
+
+      if (!outputUrl || typeof outputUrl !== 'string') {
+        console.error('[Replicate] Invalid output structure:', output);
+        throw new Error(`Invalid output from recolor model.`);
+      }
+
+      console.log(`[Replicate] Image recolor completed in ${processingTime}ms`);
+      console.log(`[Replicate] Output URL: ${outputUrl}`);
+
+      return {
+        outputUrl,
+        processingTime,
+      };
+    } catch (error: any) {
+      console.error('[Replicate] Image recolor failed:', error);
+      throw new Error(`Image recolor failed: ${error.message}`);
+    }
   }
 
   /**
@@ -356,6 +417,14 @@ export class ReplicateClient {
     // ~$0.001 per image = 1 credit
     // 4x scale might cost slightly more
     return scale === 4 ? 15 : 10; // 1.0-1.5 cents = 10-15 credits
+  }
+
+  /**
+   * Estimate cost for recoloring (in credits)
+   */
+  estimateRecolorCost(): number {
+    // InstructPix2Pix run
+    return 20; // ~2.0 cents = 20 credits
   }
 
   /**

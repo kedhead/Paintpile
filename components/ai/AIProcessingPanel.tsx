@@ -5,7 +5,7 @@ import { Photo, ColorSuggestion } from '@/types/photo';
 import { AIProcessingButton } from './AIProcessingButton';
 import { PaintSuggestionsPanel } from './PaintSuggestionsPanel';
 import { Button } from '@/components/ui/Button';
-import { Sparkles, Wand2, Sparkle, ArrowUpCircle, Download, ExternalLink, Lock } from 'lucide-react';
+import { Sparkles, Wand2, Sparkle, ArrowUpCircle, Download, ExternalLink, Lock, Palette } from 'lucide-react';
 import { OPERATION_COSTS } from '@/lib/ai/constants';
 import { useRouter } from 'next/navigation';
 
@@ -37,6 +37,7 @@ export function AIProcessingPanel({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [paintVision, setPaintVision] = useState('');
   const [aiCleanedUrl, setAiCleanedUrl] = useState<string | null>(null);
+  const [recolorUrl, setRecolorUrl] = useState<string | null>(null);
 
   // Check if user has Pro access
   if (!isPro) {
@@ -88,6 +89,37 @@ export function AIProcessingPanel({
     setPaintSuggestions(result.data.suggestions);
     setSuggestionsConfidence(result.data.confidence);
     setShowSuggestions(true);
+
+    // Call onUpdate to refresh photo data
+    onUpdate?.();
+  };
+
+  // Handle AI recolor
+  const handleRecolor = async () => {
+    if (!paintVision) {
+      alert('Please enter a Paint Vision description first (e.g., "blue armor, gold trim")');
+      return;
+    }
+
+    const response = await fetch('/api/ai/recolor-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        photoId: photo.photoId,
+        projectId,
+        userId,
+        imageUrl: photo.url,
+        prompt: paintVision,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to generate visualization');
+    }
+
+    setRecolorUrl(result.data.processedUrl);
 
     // Call onUpdate to refresh photo data
     onUpdate?.();
@@ -170,12 +202,24 @@ export function AIProcessingPanel({
           </p>
         </div>
 
-        <AIProcessingButton
-          label="Suggest Paints"
-          icon={<Sparkles className="h-4 w-4" />}
-          estimatedCost={OPERATION_COSTS.paintSuggestions}
-          onClick={handleSuggestPaints}
-        />
+        <div className="grid grid-cols-2 gap-2">
+          <AIProcessingButton
+            label="Suggest Paints"
+            icon={<Sparkles className="h-4 w-4" />}
+            estimatedCost={OPERATION_COSTS.paintSuggestions}
+            onClick={handleSuggestPaints}
+            className="w-full"
+          />
+
+          <AIProcessingButton
+            label="Visualize Scheme"
+            icon={<Palette className="h-4 w-4" />}
+            estimatedCost={OPERATION_COSTS.recolor}
+            onClick={handleRecolor}
+            className="w-full"
+            disabled={!paintVision}
+          />
+        </div>
 
         <AIProcessingButton
           label="Enhance & Cleanup"
@@ -204,7 +248,7 @@ export function AIProcessingPanel({
       </div>
 
       {/* Results section */}
-      {(paintSuggestions || backgroundRemovedUrl || aiCleanedUrl) && (
+      {(paintSuggestions || backgroundRemovedUrl || aiCleanedUrl || recolorUrl) && (
         <div className="pt-4 border-t border-border space-y-4">
           <h4 className="font-medium text-foreground text-sm">Results</h4>
 
@@ -232,6 +276,52 @@ export function AIProcessingPanel({
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Recolor Result */}
+          {recolorUrl && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Visualized Scheme
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    asChild
+                  >
+                    <a href={recolorUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    asChild
+                  >
+                    <a href={recolorUrl} download>
+                      <Download className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative aspect-square w-full max-w-xs mx-auto bg-muted/30 rounded-lg overflow-hidden border border-primary/20">
+                <img
+                  src={recolorUrl}
+                  alt="Visualized scheme"
+                  className="w-full h-full object-contain"
+                />
+                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+                  AI Generated
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground text-center italic">
+                "{paintVision}"
+              </p>
             </div>
           )}
 
