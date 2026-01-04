@@ -63,23 +63,45 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 3. Call Replicate with the resized Buffer
-        const replicate = getReplicateClient();
-        const result = await replicate.recolorImage(processedImage, prompt);
-
-        // 4. Get the processed image buffer (it might be a buffer already if it was a stream)
-        let imageBuffer: Buffer;
-        if (result.imageBuffer) {
-            imageBuffer = result.imageBuffer;
-        } else if (result.outputUrl) {
-            imageBuffer = await replicate.downloadImage(result.outputUrl);
-        } else {
-            throw new Error('No image data or URL returned from Replicate');
-        }
-
-        // 5. Upload processed image to Firebase Storage
+        // 3. Upload resized image temporarily for Replicate to process (more stable than Buffer)
         const storage = getAdminStorage();
         const bucket = storage.bucket();
+        const tempPath = `users/${userId}/temp/${photoId}_recolor_temp.jpg`;
+        const tempFile = bucket.file(tempPath);
+
+        await tempFile.save(processedImage, {
+            contentType: 'image/jpeg',
+            metadata: { contentType: 'image/jpeg' },
+        });
+        await tempFile.makePublic();
+
+        const tempUrl = `https://storage.googleapis.com/${bucket.name}/${tempPath}`;
+        console.log(`[Recolor API] Temp URL created: ${tempUrl}`);
+
+        let imageBuffer: Buffer;
+        try {
+            // 4. Call Replicate with the stable URL
+            const replicate = getReplicateClient();
+            const result = await replicate.recolorImage(tempUrl, prompt);
+
+            // 5. Get the processed image buffer
+            if (result.imageBuffer) {
+                imageBuffer = result.imageBuffer;
+            } else if (result.outputUrl) {
+                imageBuffer = await replicate.downloadImage(result.outputUrl);
+            } else {
+                throw new Error('No image data or URL returned from Replicate');
+            }
+        } finally {
+            // 6. Clean up temp file
+            try {
+                await tempFile.delete();
+            } catch (error) {
+                console.warn('[Recolor API] Failed to delete temp file:', error);
+            }
+        }
+
+        // 7. Upload final processed image to permanent storage
         const storagePath = `users/${userId}/projects/${projectId}/photos/${photoId}/ai/${photoId}_recolored_${Date.now()}.jpg`;
         const file = bucket.file(storagePath);
 
@@ -96,7 +118,7 @@ export async function POST(req: NextRequest) {
         // Get public URL
         const processedUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
 
-        // 6. Track usage (credits deducted)
+        // 8. Track usage (credits deducted)
         await trackUsage(userId, 'recolor', OPERATION_COSTS.recolor);
 
         return NextResponse.json({
