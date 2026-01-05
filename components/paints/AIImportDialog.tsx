@@ -14,6 +14,7 @@ interface AIImportDialogProps {
 
 export function AIImportDialog({ userId, onImportComplete }: AIImportDialogProps) {
     const [open, setOpen] = useState(false);
+    const [selectedBrand, setSelectedBrand] = useState('auto');
     const [description, setDescription] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [matchedPaints, setMatchedPaints] = useState<Paint[] | null>(null);
@@ -33,7 +34,10 @@ export function AIImportDialog({ userId, onImportComplete }: AIImportDialogProps
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ description }),
+                body: JSON.stringify({
+                    description,
+                    brand: selectedBrand === 'auto' ? undefined : selectedBrand
+                }),
             });
 
             const data = await response.json();
@@ -106,8 +110,29 @@ export function AIImportDialog({ userId, onImportComplete }: AIImportDialogProps
                                         Describe the paints you own (e.g., "I have the Army Painter Speedpaint 2.0 Mega Set and Vallejo Game Color Starter Set").
                                         AI will identify and list them for you.
                                     </p>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Filter by Brand (Optional - Helps AI Accuracy)</label>
+                                        <select
+                                            value={selectedBrand}
+                                            onChange={(e) => setSelectedBrand(e.target.value)}
+                                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        >
+                                            <option value="auto">Auto-detect (All Brands)</option>
+                                            <option value="Army Painter">Army Painter</option>
+                                            <option value="Citadel">Citadel / Games Workshop</option>
+                                            <option value="Vallejo">Vallejo</option>
+                                            <option value="Scale75">Scale75</option>
+                                            <option value="ProAcryl">Pro Acryl</option>
+                                            <option value="Reaper">Reaper</option>
+                                            <option value="AK Interactive">AK Interactive</option>
+                                            <option value="Green Stuff World">Green Stuff World</option>
+                                            <option value="Two Thin Coats">Two Thin Coats</option>
+                                        </select>
+                                    </div>
+
                                     <textarea
-                                        placeholder="e.g. I have the Citadel Base Paint Set and Agrax Earthshade..."
+                                        placeholder="e.g. I have the Speedpaint 2.0 Mega Set..."
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         rows={5}

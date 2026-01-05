@@ -10,6 +10,7 @@ export const maxDuration = 60; // Increased timeout for larger context
 
 interface ImportRequest {
     description: string;
+    brand?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -53,12 +54,18 @@ export async function POST(request: NextRequest) {
 
         if (mentionedBrands.length > 0) {
             console.log("Detected brands:", mentionedBrands);
-            // Include paints from mentioned brands
             targetPaints = allPaints.filter(p => mentionedBrands.includes(p.brand));
         } else {
             // Fallback: Use popular brands if none detected
-            const defaultBrands = ['Citadel', 'Army Painter Fanatic', 'Vallejo Game Color', 'Vallejo Model Color'];
+            const defaultBrands = ['Citadel', 'Army Painter', 'Vallejo'];
             targetPaints = allPaints.filter(p => defaultBrands.some(db => p.brand.includes(db)));
+        }
+
+        // STRICT OVERRIDE: If user manually selected a brand, enforce it
+        if (body.brand) {
+            console.log(`[AI Import] Applying strict brand filter: ${body.brand}`);
+            // Use loose check to allow "Army Painter" to match "Army Painter Fanatic" etc
+            targetPaints = allPaints.filter(p => p.brand.toLowerCase().includes(body.brand.toLowerCase()));
         }
 
         // Create a compact list of valid paints for the prompt
