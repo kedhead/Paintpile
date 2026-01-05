@@ -62,11 +62,30 @@ export async function POST(request: NextRequest) {
         }
 
         // Create a compact list of valid paints for the prompt
+        // Smart/Relevance Sorting before slicing
+        const keywords = description.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+
+        targetPaints.sort((a, b) => {
+            let scoreA = 0;
+            let scoreB = 0;
+
+            const aStr = `${a.name} ${(a as any).category || ''} ${a.type}`.toLowerCase();
+            const bStr = `${b.name} ${(b as any).category || ''} ${b.type}`.toLowerCase();
+
+            // Boost score if paint string contains user keywords
+            keywords.forEach(kw => {
+                if (aStr.includes(kw)) scoreA += 1;
+                if (bStr.includes(kw)) scoreB += 1;
+            });
+
+            return scoreB - scoreA; // Descending order
+        });
+
         // Format: "Brand: Paint Name"
-        // Limit to 500 paints to keep prompt size safe (~20k chars)
+        // Limit to 600 paints to keep prompt size safe (increased slightly)
         const validPaintList = targetPaints
             .map(p => `"${p.brand}": "${p.name}"`)
-            .slice(0, 500)
+            .slice(0, 600)
             .join('\n');
 
         // 1. Construct prompt for Llama 3
