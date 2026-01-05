@@ -37,6 +37,7 @@ export class ReplicateClient {
   private upscaleModel: string;
   private aiCleanupModel: string;
   private recolorModel: string;
+  private textGenerationModel: string;
 
   constructor() {
     const apiKey = process.env.REPLICATE_API_KEY;
@@ -61,8 +62,101 @@ export class ReplicateClient {
     this.aiCleanupModel = process.env.REPLICATE_AI_CLEANUP_MODEL ||
       'cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003';
 
-    // Google Nano-Banana (Gemini 2.5 Flash Image) for advanced image editing
-    this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL || 'google/nano-banana';
+    // Google Nano-Banana (Gemini 2.5 Flash Image) for advanced image editing & enhancement
+    const nanoBanana = 'google/nano-banana';
+    this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL || nanoBanana;
+    this.enhancementModel = process.env.REPLICATE_ENHANCEMENT_MODEL || nanoBanana;
+
+    // Meta Llama 3 8B Instruct for text generation / parsing
+    this.textGenerationModel = 'meta/meta-llama-3-8b-instruct';
+  }
+
+  /**
+   * Unified handler for Replicate outputs (Streams, ArrayBuffers, URLs, etc.)
+   */
+  private async _handleReplicateOutput(output: any, startTime: number): Promise<{ imageBuffer?: Buffer; outputUrl?: string; processingTime: number }> {
+    const processingTime = Date.now() - startTime;
+    const rawOutput: any = output;
+
+    console.log('[Replicate] Raw output type:', typeof output);
+    console.log('[Replicate] Is array:', Array.isArray(output));
+    console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
+
+    // 1. Handle ReadableStream directly
+    if (rawOutput instanceof ReadableStream) {
+      console.log('[Replicate] Reading image data from stream...');
+      const reader = rawOutput.getReader();
+      const chunks: Uint8Array[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) chunks.push(value);
+      }
+
+      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+      const imageData = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        imageData.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      const imageBuffer = Buffer.from(imageData);
+      console.log(`[Replicate] Stream processing completed in ${processingTime}ms. Size: ${imageBuffer.length} bytes`);
+      return { imageBuffer, processingTime };
+    }
+
+    // 2. Handle objects with arrayBuffer method (Replicate FileOutput)
+    if (rawOutput && typeof rawOutput.arrayBuffer === 'function') {
+      console.log('[Replicate] Extracting image data via arrayBuffer()...');
+      const ab = await rawOutput.arrayBuffer();
+      const imageBuffer = Buffer.from(ab);
+      console.log(`[Replicate] ArrayBuffer extraction completed in ${processingTime}ms`);
+      return { imageBuffer, processingTime };
+    }
+
+    // 3. Extract URL from various formats
+    let outputUrl: string | null = null;
+
+    // Check for specific URL method
+    if (rawOutput && typeof rawOutput.url === 'function') {
+      outputUrl = rawOutput.url();
+    }
+    // Check if it's a direct string
+    else if (typeof rawOutput === 'string' && rawOutput.startsWith('http')) {
+      outputUrl = rawOutput;
+    }
+    // Check for array output
+    else if (Array.isArray(rawOutput) && rawOutput.length > 0) {
+      const first = rawOutput[0];
+      if (typeof first === 'string' && first.startsWith('http')) {
+        outputUrl = first;
+      } else if (first && typeof first.url === 'function') {
+        outputUrl = first.url();
+      } else if (first && typeof first === 'object') {
+        outputUrl = first.url || first.image || first.output;
+      }
+    }
+    // Check for general object properties
+    else if (rawOutput && typeof rawOutput === 'object') {
+      outputUrl = rawOutput.url || rawOutput.image || rawOutput.output;
+      // Final fallback: check if String(rawOutput) looks like a URL
+      const outputStr = String(rawOutput);
+      if (!outputUrl && outputStr.startsWith('http')) {
+        outputUrl = outputStr;
+      }
+    }
+
+    if (!outputUrl || typeof outputUrl !== 'string') {
+      const keys = rawOutput && typeof rawOutput === 'object' ? Object.keys(rawOutput) : [];
+      const proto = rawOutput ? Object.getPrototypeOf(rawOutput)?.constructor?.name : 'null';
+      console.error('[Replicate] Invalid output structure:', { type: typeof rawOutput, keys, proto, value: JSON.stringify(rawOutput) });
+      throw new Error(`Invalid output structure: ${JSON.stringify(rawOutput)}`);
+    }
+
+    console.log(`[Replicate] Output URL resolved: ${outputUrl}`);
+    return { outputUrl, processingTime };
   }
 
   /**
@@ -92,115 +186,7 @@ export class ReplicateClient {
         }
       );
 
-      console.log('[Replicate] Raw output type:', typeof output);
-      console.log('[Replicate] Is array:', Array.isArray(output));
-      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
-      console.log('[Replicate] Raw output:', JSON.stringify(output));
-
-      const rawOutput: any = output;
-      const processingTime = Date.now() - startTime;
-
-      // 1. Handle ReadableStream directly for robust extraction
-      if (rawOutput instanceof ReadableStream) {
-        console.log('[Replicate] Reading image data from stream...');
-        const reader = rawOutput.getReader();
-        const chunks: Uint8Array[] = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) {
-            chunks.push(value);
-          }
-        }
-
-        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-        const imageData = new Uint8Array(totalLength);
-        let offset = 0;
-
-        for (const chunk of chunks) {
-          imageData.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        const imageBuffer = Buffer.from(imageData);
-
-        console.log(`[Replicate] Image recolor completed (via stream) in ${processingTime}ms`);
-        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
-
-        return {
-          imageBuffer,
-          processingTime,
-        };
-      }
-
-      // 2. Handle objects with arrayBuffer method (Common in Replicate FileOutput)
-      if (rawOutput && typeof rawOutput.arrayBuffer === 'function') {
-        console.log('[Replicate] Extracting image data via arrayBuffer()...');
-        const ab = await rawOutput.arrayBuffer();
-        const imageBuffer = Buffer.from(ab);
-
-        console.log(`[Replicate] Image recolor completed (via arrayBuffer) in ${processingTime}ms`);
-        return {
-          imageBuffer,
-          processingTime,
-        };
-      }
-
-      // Nano-banana usually returns a string URL, an array with one URL,
-      // or a FileOutput object (which has a .url() method).
-      let outputUrl: string | null = null;
-
-
-      // 3. Check if it's a direct string
-      if (typeof rawOutput === 'string' && rawOutput.startsWith('http')) {
-        outputUrl = rawOutput;
-      }
-      // 2. Check for Replicate FileOutput object (.url())
-      else if (rawOutput && typeof rawOutput.url === 'function') {
-        outputUrl = rawOutput.url();
-      }
-      // 3. Check for array output
-      else if (Array.isArray(rawOutput) && rawOutput.length > 0) {
-        const first = rawOutput[0];
-        if (typeof first === 'string' && first.startsWith('http')) {
-          outputUrl = first;
-        } else if (first && typeof first.url === 'function') {
-          outputUrl = first.url();
-        } else if (first && typeof first === 'object') {
-          outputUrl = first.url || first.image || first.output;
-        }
-      }
-      // 4. Check for general object properties
-      else if (rawOutput && typeof rawOutput === 'object') {
-        outputUrl = rawOutput.url || rawOutput.image || rawOutput.output;
-
-        // Final fallback: check if String(rawOutput) looks like a URL
-        const outputStr = String(rawOutput);
-        if (!outputUrl && outputStr.startsWith('http')) {
-          outputUrl = outputStr;
-        }
-      }
-
-      if (!outputUrl || typeof outputUrl !== 'string') {
-        const keys = rawOutput && typeof rawOutput === 'object' ? Object.keys(rawOutput) : [];
-        const proto = rawOutput ? Object.getPrototypeOf(rawOutput)?.constructor?.name : 'null';
-        console.error('[Replicate] Invalid output structure:', {
-          type: typeof rawOutput,
-          keys,
-          proto,
-          value: JSON.stringify(rawOutput)
-        });
-        throw new Error(`Invalid output from nano-banana: ${JSON.stringify(rawOutput)} (Type: ${typeof rawOutput}, Keys: ${keys.join(',')}, Proto: ${proto})`);
-      }
-
-      console.log(`[Replicate] Image recolor completed in ${processingTime}ms`);
-      console.log(`[Replicate] Output URL: ${outputUrl}`);
-
-      return {
-        outputUrl,
-        processingTime,
-      };
+      return this._handleReplicateOutput(output, startTime);
     } catch (error: any) {
       console.error('[Replicate] Image recolor failed:', error);
       throw new Error(`Image recolor failed: ${error.message}`);
@@ -212,91 +198,25 @@ export class ReplicateClient {
    * @param imageUrl - URL of the image to process
    * @returns Result with enhanced image
    */
-  async enhanceImage(imageUrl: string): Promise<EnhancementResult> {
+  async enhanceImage(imageUrl: string, prompt?: string): Promise<EnhancementResult> {
     const startTime = Date.now();
-
     try {
-      console.log('[Replicate] Starting image enhancement (2x upscale)...');
+      console.log('[Replicate] Starting image enhancement with google/nano-banana...');
 
-      let output = await this.client.run(
+      const enhancementPrompt = prompt || "enhance image clarity, sharpen details, improve lighting, remove noise, keep original colors";
+
+      const output = await this.client.run(
         this.enhancementModel as any,
         {
           input: {
-            image: imageUrl,
-            scale: 2,
-            face_enhance: false,  // Don't enhance faces (for miniatures)
-          },
-        }
-      );
-
-      console.log('[Replicate] Raw output type:', typeof output);
-      console.log('[Replicate] Is array:', Array.isArray(output));
-      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
-
-      // Handle ReadableStream - Replicate streams the actual image data
-      if (output instanceof ReadableStream) {
-        console.log('[Replicate] Reading image data stream...');
-        const reader = output.getReader();
-        const chunks: Uint8Array[] = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) {
-            chunks.push(value);
+            prompt: enhancementPrompt,
+            image_input: [imageUrl],
+            aspect_ratio: "match_input_image",
+            output_format: "jpg"
           }
         }
-
-        console.log('[Replicate] Stream chunks count:', chunks.length);
-
-        // Concatenate all chunks into a single buffer
-        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-        const imageData = new Uint8Array(totalLength);
-        let offset = 0;
-
-        for (const chunk of chunks) {
-          imageData.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        const imageBuffer = Buffer.from(imageData);
-        const processingTime = Date.now() - startTime;
-
-        console.log(`[Replicate] Image enhancement completed in ${processingTime}ms`);
-        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
-
-        return {
-          imageBuffer,
-          processingTime,
-        };
-      }
-
-      const processingTime = Date.now() - startTime;
-
-      // Fallback: Output is a URL string or array with one URL
-      let outputUrl: string | null = null;
-
-      if (Array.isArray(output)) {
-        outputUrl = output[0];
-      } else if (typeof output === 'string') {
-        outputUrl = output;
-      } else if (output && typeof output === 'object') {
-        // Sometimes Replicate returns an object with a URL
-        outputUrl = (output as any).url || (output as any).output || (output as any).image;
-      }
-
-      if (!outputUrl || typeof outputUrl !== 'string') {
-        console.error('[Replicate] Invalid output structure:', output);
-        throw new Error(`Invalid output from enhancement model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
-      }
-
-      console.log(`[Replicate] Image enhancement completed in ${processingTime}ms`);
-      console.log(`[Replicate] Output URL: ${outputUrl}`);
-
-      return {
-        outputUrl,
-        processingTime,
-      };
+      );
+      return this._handleReplicateOutput(output, startTime);
     } catch (error: any) {
       console.error('[Replicate] Image enhancement failed:', error);
       throw new Error(`Image enhancement failed: ${error.message}`);
@@ -310,13 +230,12 @@ export class ReplicateClient {
    */
   async aiCleanup(imageUrl: string): Promise<AICleanupResult> {
     const startTime = Date.now();
-
     try {
       console.log('[Replicate] Starting background removal...');
       console.log('[Replicate] Image URL:', imageUrl);
 
       // Use rembg for clean background removal
-      let output = await this.client.run(
+      const output = await this.client.run(
         this.aiCleanupModel as any,
         {
           input: {
@@ -325,72 +244,7 @@ export class ReplicateClient {
         }
       );
 
-      console.log('[Replicate] Raw output type:', typeof output);
-      console.log('[Replicate] Is array:', Array.isArray(output));
-      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
-
-      // Handle ReadableStream - Replicate streams the actual image data
-      if (output instanceof ReadableStream) {
-        console.log('[Replicate] Reading image data stream...');
-        const reader = output.getReader();
-        const chunks: Uint8Array[] = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) {
-            chunks.push(value);
-          }
-        }
-
-        console.log('[Replicate] Stream chunks count:', chunks.length);
-
-        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-        const imageData = new Uint8Array(totalLength);
-        let offset = 0;
-
-        for (const chunk of chunks) {
-          imageData.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        const imageBuffer = Buffer.from(imageData);
-        const processingTime = Date.now() - startTime;
-
-        console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
-        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
-
-        return {
-          imageBuffer,
-          processingTime,
-        };
-      }
-
-      const processingTime = Date.now() - startTime;
-
-      // Fallback: Output is a URL string or array with one URL
-      let outputUrl: string | null = null;
-
-      if (Array.isArray(output)) {
-        outputUrl = output[0];
-      } else if (typeof output === 'string') {
-        outputUrl = output;
-      } else if (output && typeof output === 'object') {
-        outputUrl = (output as any).url || (output as any).output || (output as any).image;
-      }
-
-      if (!outputUrl || typeof outputUrl !== 'string') {
-        console.error('[Replicate] Invalid output structure:', output);
-        throw new Error(`Invalid output from background removal model. Output type: ${typeof output}, Value: ${JSON.stringify(output)}`);
-      }
-
-      console.log(`[Replicate] Background removal completed in ${processingTime}ms`);
-      console.log(`[Replicate] Output URL: ${outputUrl}`);
-
-      return {
-        outputUrl,
-        processingTime,
-      };
+      return this._handleReplicateOutput(output, startTime);
     } catch (error: any) {
       console.error('[Replicate] Background removal failed:', error);
       throw new Error(`Background removal failed: ${error.message}`);
@@ -442,6 +296,46 @@ export class ReplicateClient {
     } catch (error: any) {
       console.error('[Replicate] Upscaling failed:', error);
       throw new Error(`Upscaling failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generate text using Llama 3
+   * @param prompt - The full prompt including system instructions
+   * @returns Generated text
+   */
+  async generateText(prompt: string): Promise<string> {
+    const startTime = Date.now();
+    try {
+      console.log('[Replicate] Starting text generation with Llama 3...');
+
+      const output = await this.client.run(
+        this.textGenerationModel as any,
+        {
+          input: {
+            prompt,
+            max_tokens: 1024,
+            temperature: 0.2, // Low temperature for deterministic output (good for JSON)
+            top_p: 0.9,
+          }
+        }
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      // Llama 3 output is an array of strings (tokens) or a single string
+      let text = '';
+      if (Array.isArray(output)) {
+        text = output.join('');
+      } else {
+        text = String(output);
+      }
+
+      console.log(`[Replicate] Text generation completed in ${processingTime}ms`);
+      return text;
+    } catch (error: any) {
+      console.error('[Replicate] Text generation failed:', error);
+      throw new Error(`Text generation failed: ${error.message}`);
     }
   }
 
@@ -510,6 +404,14 @@ export class ReplicateClient {
   estimateRecolorCost(): number {
     // InstructPix2Pix run
     return 20; // ~2.0 cents = 20 credits
+  }
+
+  /**
+   * Estimate cost for text generation (in credits)
+   */
+  estimateTextGenerationCost(): number {
+    // Llama 3 8B is very cheap
+    return 1; // ~0.1 cents
   }
 
   /**

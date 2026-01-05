@@ -22,3 +22,12 @@ export interface ProjectPaint {
   notes?: string;            // User notes about this paint in the project
   usageCount: number;        // How many photos/annotations use this paint
 }
+
+export interface UserOwnedPaint {
+  docId?: string;       // Firestore document ID (usually same as paintId or composite)
+  userId: string;
+  paintId: string;
+  quantity: number;     // Usually 1
+  notes?: string;       // Private notes (e.g. "Low", "Dried out")
+  acquiredAt: Timestamp;
+}

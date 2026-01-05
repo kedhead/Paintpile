@@ -6,18 +6,23 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AddCustomPaintDialog } from '@/components/paints/AddCustomPaintDialog';
+import { AIImportDialog } from '@/components/paints/AIImportDialog';
 import { getUserCustomPaints, deleteCustomPaint, isCustomPaint } from '@/lib/firestore/custom-paints';
 import { getAllPaints } from '@/lib/firestore/paints';
-import { Paint, CustomPaint } from '@/types/paint';
-import { Search, Trash2, Palette } from 'lucide-react';
+import { getUserInventory, addToInventory, removeFromInventory } from '@/lib/firestore/inventory';
+import { Paint, CustomPaint, UserOwnedPaint } from '@/types/paint';
+import { Search, Trash2, Palette, CheckCircle, Package } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 
 export default function PaintsPage() {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [globalPaints, setGlobalPaints] = useState<Paint[]>([]);
   const [customPaints, setCustomPaints] = useState<CustomPaint[]>([]);
+  const [userInventory, setUserInventory] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<string>('all');
+  const [showInventoryOnly, setShowInventoryOnly] = useState(false);
 
   useEffect(() => {
     loadPaints();
@@ -28,12 +33,14 @@ export default function PaintsPage() {
 
     try {
       setLoading(true);
-      const [global, custom] = await Promise.all([
+      const [global, custom, inventory] = await Promise.all([
         getAllPaints(),
         getUserCustomPaints(currentUser.uid),
+        getUserInventory(currentUser.uid),
       ]);
       setGlobalPaints(global);
       setCustomPaints(custom);
+      setUserInventory(new Set(inventory.map(p => p.paintId)));
     } catch (error) {
       console.error('Error loading paints:', error);
     } finally {
@@ -54,6 +61,38 @@ export default function PaintsPage() {
     }
   }
 
+  async function toggleInventory(paintId: string) {
+    if (!currentUser) return;
+
+    // optimistic update
+    const isOwned = userInventory.has(paintId);
+    const newInventory = new Set(userInventory);
+
+    if (isOwned) {
+      newInventory.delete(paintId);
+      setUserInventory(newInventory);
+      try {
+        await removeFromInventory(currentUser.uid, paintId);
+      } catch (err) {
+        console.error('Failed to remove from inventory', err);
+        setUserInventory(prev => new Set(prev).add(paintId)); // revert
+      }
+    } else {
+      newInventory.add(paintId);
+      setUserInventory(newInventory);
+      try {
+        await addToInventory(currentUser.uid, paintId);
+      } catch (err) {
+        console.error('Failed to add to inventory', err);
+        setUserInventory(prev => {
+          const revert = new Set(prev);
+          revert.delete(paintId);
+          return revert;
+        }); // revert
+      }
+    }
+  }
+
   // Get all unique brands
   const allBrands = Array.from(
     new Set([
@@ -69,7 +108,8 @@ export default function PaintsPage() {
       paint.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paint.brand.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesBrand = selectedBrand === 'all' || paint.brand === selectedBrand;
-    return matchesSearch && matchesBrand;
+    const matchesInventory = !showInventoryOnly || userInventory.has(paint.paintId);
+    return matchesSearch && matchesBrand && matchesInventory;
   });
 
   const filteredCustomPaints = customPaints.filter((paint) => {
@@ -78,7 +118,8 @@ export default function PaintsPage() {
       paint.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paint.brand.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesBrand = selectedBrand === 'all' || paint.brand === selectedBrand;
-    return matchesSearch && matchesBrand;
+    const matchesInventory = !showInventoryOnly || userInventory.has(paint.paintId);
+    return matchesSearch && matchesBrand && matchesInventory;
   });
 
   if (!currentUser) {
@@ -103,7 +144,10 @@ export default function PaintsPage() {
                 Browse 200+ paints or create your own custom colors
               </p>
             </div>
-            <AddCustomPaintDialog userId={currentUser.uid} onPaintAdded={loadPaints} />
+            <div className="flex items-center gap-2">
+              <AIImportDialog userId={currentUser.uid} onImportComplete={loadPaints} />
+              <AddCustomPaintDialog userId={currentUser.uid} onPaintAdded={loadPaints} />
+            </div>
           </div>
 
           {/* Search and Filters */}
@@ -129,6 +173,14 @@ export default function PaintsPage() {
                 </option>
               ))}
             </select>
+            <Button
+              variant={showInventoryOnly ? 'default' : 'outline'}
+              onClick={() => setShowInventoryOnly(!showInventoryOnly)}
+              className="gap-2"
+            >
+              <Package className="w-4 h-4" />
+              {showInventoryOnly ? 'My Inventory' : 'All Paints'}
+            </Button>
           </div>
         </div>
       </div>
@@ -158,6 +210,8 @@ export default function PaintsPage() {
                         key={paint.paintId}
                         paint={paint}
                         isCustom
+                        isOwned={userInventory.has(paint.paintId)}
+                        onToggleOwn={() => toggleInventory(paint.paintId)}
                         onDelete={() => handleDeleteCustomPaint(paint.paintId)}
                       />
                     ))}
@@ -178,7 +232,12 @@ export default function PaintsPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {filteredGlobalPaints.map((paint) => (
-                    <PaintCard key={paint.paintId} paint={paint} />
+                    <PaintCard
+                      key={paint.paintId}
+                      paint={paint}
+                      isOwned={userInventory.has(paint.paintId)}
+                      onToggleOwn={() => toggleInventory(paint.paintId)}
+                    />
                   ))}
                 </div>
               )}
@@ -193,37 +252,56 @@ export default function PaintsPage() {
 interface PaintCardProps {
   paint: Paint | CustomPaint;
   isCustom?: boolean;
+  isOwned?: boolean;
+  onToggleOwn?: () => void;
   onDelete?: () => void;
 }
 
-function PaintCard({ paint, isCustom, onDelete }: PaintCardProps) {
+function PaintCard({ paint, isCustom, isOwned, onToggleOwn, onDelete }: PaintCardProps) {
   return (
-    <div className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
+    <div className={cn(
+      "bg-card border rounded-lg p-4 transition-all",
+      isOwned ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/50"
+    )}>
       <div className="flex items-start gap-3">
         <div
-          className="w-12 h-12 rounded border border-border flex-shrink-0"
+          className="w-12 h-12 rounded border border-border flex-shrink-0 cursor-pointer"
           style={{ backgroundColor: paint.hexColor }}
+          onClick={onToggleOwn}
+          title={isOwned ? "Remove from inventory" : "Add to inventory"}
         />
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-foreground truncate">{paint.name}</h3>
+          <div className="flex items-start justify-between">
+            <h3 className="font-medium text-foreground truncate" title={paint.name}>{paint.name}</h3>
+            {isOwned && <CheckCircle className="w-4 h-4 text-primary shrink-0" />}
+          </div>
           <p className="text-xs text-muted-foreground">{paint.brand}</p>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs px-2 py-0.5 bg-background border border-border rounded capitalize">
               {paint.type}
             </span>
-            <span className="text-xs text-muted-foreground font-mono">
-              {paint.hexColor}
-            </span>
           </div>
         </div>
+      </div>
+      <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-border/50">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("h-7 text-xs", isOwned && "text-primary")}
+          onClick={onToggleOwn}
+        >
+          {isOwned ? 'Owned' : 'Add to Pile'}
+        </Button>
         {isCustom && onDelete && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onDelete}
-            className="text-muted-foreground hover:text-destructive transition-colors p-1"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
             title="Delete custom paint"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </div>
     </div>
