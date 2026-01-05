@@ -94,17 +94,65 @@ export class ReplicateClient {
 
       console.log('[Replicate] Raw output type:', typeof output);
       console.log('[Replicate] Is array:', Array.isArray(output));
+      console.log('[Replicate] Is ReadableStream:', output instanceof ReadableStream);
       console.log('[Replicate] Raw output:', JSON.stringify(output));
 
+      const rawOutput: any = output;
       const processingTime = Date.now() - startTime;
+
+      // 1. Handle ReadableStream directly for robust extraction
+      if (rawOutput instanceof ReadableStream) {
+        console.log('[Replicate] Reading image data from stream...');
+        const reader = rawOutput.getReader();
+        const chunks: Uint8Array[] = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+          }
+        }
+
+        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const imageData = new Uint8Array(totalLength);
+        let offset = 0;
+
+        for (const chunk of chunks) {
+          imageData.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        const imageBuffer = Buffer.from(imageData);
+
+        console.log(`[Replicate] Image recolor completed (via stream) in ${processingTime}ms`);
+        console.log(`[Replicate] Image buffer size: ${imageBuffer.length} bytes`);
+
+        return {
+          imageBuffer,
+          processingTime,
+        };
+      }
+
+      // 2. Handle objects with arrayBuffer method (Common in Replicate FileOutput)
+      if (rawOutput && typeof rawOutput.arrayBuffer === 'function') {
+        console.log('[Replicate] Extracting image data via arrayBuffer()...');
+        const ab = await rawOutput.arrayBuffer();
+        const imageBuffer = Buffer.from(ab);
+
+        console.log(`[Replicate] Image recolor completed (via arrayBuffer) in ${processingTime}ms`);
+        return {
+          imageBuffer,
+          processingTime,
+        };
+      }
 
       // Nano-banana usually returns a string URL, an array with one URL,
       // or a FileOutput object (which has a .url() method).
       let outputUrl: string | null = null;
 
-      const rawOutput: any = output;
 
-      // 1. Check if it's a direct string
+      // 3. Check if it's a direct string
       if (typeof rawOutput === 'string' && rawOutput.startsWith('http')) {
         outputUrl = rawOutput;
       }
