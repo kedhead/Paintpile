@@ -36,6 +36,11 @@ service cloud.firestore {
       match /savedRecipes/{recipeId} {
         allow read, write: if isAuthenticated() && isOwner(userId);
       }
+
+      // User's inventory subcollection
+      match /inventory/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Projects collection

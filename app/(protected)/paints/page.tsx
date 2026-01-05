@@ -33,14 +33,32 @@ export default function PaintsPage() {
 
     try {
       setLoading(true);
-      const [global, custom, inventory] = await Promise.all([
+      setLoading(true);
+
+      const [globalResult, customResult, inventoryResult] = await Promise.allSettled([
         getAllPaints(),
         getUserCustomPaints(currentUser.uid),
         getUserInventory(currentUser.uid),
       ]);
-      setGlobalPaints(global);
-      setCustomPaints(custom);
-      setUserInventory(new Set(inventory.map(p => p.paintId)));
+
+      if (globalResult.status === 'fulfilled') {
+        setGlobalPaints(globalResult.value);
+      } else {
+        console.error('Failed to load global paints', globalResult.reason);
+      }
+
+      if (customResult.status === 'fulfilled') {
+        setCustomPaints(customResult.value);
+      } else {
+        console.error('Failed to load custom paints', customResult.reason);
+      }
+
+      if (inventoryResult.status === 'fulfilled') {
+        setUserInventory(new Set(inventoryResult.value.map(p => p.paintId)));
+      } else {
+        console.error('Failed to load inventory', inventoryResult.reason);
+        // Don't crash, just show empty inventory
+      }
     } catch (error) {
       console.error('Error loading paints:', error);
     } finally {
