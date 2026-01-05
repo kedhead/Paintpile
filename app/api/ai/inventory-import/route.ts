@@ -29,25 +29,59 @@ export async function POST(request: NextRequest) {
         // Fetch all paints to provide context
         const allPaints = await getAllPaints();
 
+        // Smart Context Filtering (RAG-lite)
+        // 1. Identify all unique brands from database
+        const allBrands = Array.from(new Set(allPaints.map(p => p.brand)));
+
+        // 2. Check which brands are mentioned in user description
+        const userDescLower = description.toLowerCase();
+
+        // Helper to check if brand is mentioned
+        const isBrandMentioned = (brand: string) => {
+            const brandParts = brand.toLowerCase().split(' ');
+            // Check if any significant part of the brand name is in description
+            // e.g. "Army Painter" matched by "Army" or "Painter" might be too loose, 
+            // but "Army Painter" is good.
+            // Let's use simple inclusion for full brand name or strict sub-parts
+            return userDescLower.includes(brand.toLowerCase()) ||
+                (brandParts.length > 1 && brandParts.some(p => p.length > 3 && userDescLower.includes(p)));
+        };
+
+        const mentionedBrands = allBrands.filter(isBrandMentioned);
+
+        let targetPaints = allPaints;
+
+        if (mentionedBrands.length > 0) {
+            console.log("Detected brands:", mentionedBrands);
+            // Include paints from mentioned brands
+            targetPaints = allPaints.filter(p => mentionedBrands.includes(p.brand));
+        } else {
+            // Fallback: Use popular brands if none detected
+            const defaultBrands = ['Citadel', 'Army Painter Fanatic', 'Vallejo Game Color', 'Vallejo Model Color'];
+            targetPaints = allPaints.filter(p => defaultBrands.some(db => p.brand.includes(db)));
+        }
+
         // Create a compact list of valid paints for the prompt
         // Format: "Brand: Paint Name"
-        const validPaintList = allPaints
+        // Limit to 500 paints to keep prompt size safe (~20k chars)
+        const validPaintList = targetPaints
             .map(p => `"${p.brand}": "${p.name}"`)
+            .slice(0, 500)
             .join('\n');
 
         // 1. Construct prompt for Llama 3
         const systemPrompt = `You are an expert miniature painting assistant. 
     Your goal is to identify which paints a user owns based on their description.
     
-    Here is the COMPLETE list of valid paints in our database:
+    Here is a list of RELEVANT paints from our database (filtered by context):
     ${validPaintList}
     
     INSTRUCTIONS:
     1. Analyze the user's input to understand what they own.
     2. Map their description to the EXACT "brand" and "name" from the valid list above.
-    3. If the user mentions a specific SET (e.g. "Mega Set", "Starter Set"), and you don't know the exact contents, YOU MUST INFER it by selecting a representative collection of paints from that brand (e.g. 50 paints for a Mega Set, 10 for a Starter) from the valid list. Choose a balanced variety of colors (Base, Layer, Metallic, Wash).
-    4. Return ONLY a JSON array of objects with "brand" and "name". 
-    5. Do not invent names that are not in the valid list. 
+    3. If the user mentions a specific SET (e.g. "Mega Set"), and the individual paints are in the list above, select a representative collection of them (e.g. 50 paints for a Mega Set).
+    4. If the user mentions a brand NOT in the list above, do your best to guess standard color names for that brand.
+    5. Return ONLY a JSON array of objects with "brand" and "name". 
     
     User Input: "${description}"
     
@@ -55,7 +89,7 @@ export async function POST(request: NextRequest) {
 
         // 2. Generate text
         const textOutput = await replicateClient.generateText(systemPrompt);
-        console.log("AI Output:", textOutput);
+        console.log("AI Output (First 100 chars):", textOutput.substring(0, 100));
 
         // 3. Parse JSON
         let paintItems: { brand: string; name: string }[] = [];
@@ -64,7 +98,7 @@ export async function POST(request: NextRequest) {
             const cleanJson = textOutput.replace(/```json/g, '').replace(/```/g, '').trim();
             paintItems = JSON.parse(cleanJson);
         } catch (e) {
-            console.error('Failed to parse AI output as JSON:', textOutput);
+            console.error('Failed to parse AI output as JSON. Raw output:', textOutput);
             // Fallback: Try regex to extract objects if full JSON parse fails
             const matches = textOutput.match(/\{"brand":\s*"[^"]+",\s*"name":\s*"[^"]+"\}/g);
             if (matches) {
@@ -74,20 +108,19 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 4. Match against database
+        // 4. Match against database (using FULL database for matching, not just filtered context)
         const matchedPaints: Paint[] = [];
 
-        // Simple robust matching
         for (const item of paintItems) {
             const targetName = item.name.toLowerCase();
             const targetBrand = item.brand.toLowerCase();
 
-            // Find best match
+            // Find best match in FULL list
             const match = allPaints.find(p => {
                 const pName = p.name.toLowerCase();
                 const pBrand = p.brand.toLowerCase();
 
-                // Exact match preferred (and expected since we gave the list)
+                // Exact match preferred
                 if (pName === targetName && pBrand === targetBrand) return true;
 
                 // Fuzzy match fallback
@@ -95,7 +128,6 @@ export async function POST(request: NextRequest) {
             });
 
             if (match) {
-                // Avoid duplicates in return
                 if (!matchedPaints.some(p => p.paintId === match.paintId)) {
                     matchedPaints.push(match);
                 }
