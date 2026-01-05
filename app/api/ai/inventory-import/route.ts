@@ -65,8 +65,14 @@ export async function POST(request: NextRequest) {
         if (body.brand) {
             const filterBrand = body.brand;
             console.log(`[AI Import] Applying strict brand filter: ${filterBrand}`);
-            // Use loose check to allow "Army Painter" to match "Army Painter Fanatic" etc
-            targetPaints = allPaints.filter(p => p.brand.toLowerCase().includes(filterBrand.toLowerCase()));
+
+            // Robust check: Remove all whitespace and lowercase to handle "Army  Painter" vs "Army Painter" mismatch
+            const normalizedFilter = filterBrand.replace(/\s+/g, '').toLowerCase();
+
+            targetPaints = allPaints.filter(p => {
+                const normalizedPaintBrand = p.brand.replace(/\s+/g, '').toLowerCase();
+                return normalizedPaintBrand.includes(normalizedFilter);
+            });
         }
 
         // Create a compact list of valid paints for the prompt

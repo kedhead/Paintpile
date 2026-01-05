@@ -102,6 +102,14 @@ export default function LoginPage() {
                 {...register('password')}
                 className="bg-background/50"
               />
+              <div className="flex justify-end -mt-1">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
 
               <Button type="submit" variant="default" className="w-full font-semibold" isLoading={isLoading}>
                 Log In
