@@ -63,9 +63,10 @@ export async function POST(request: NextRequest) {
 
         // STRICT OVERRIDE: If user manually selected a brand, enforce it
         if (body.brand) {
-            console.log(`[AI Import] Applying strict brand filter: ${body.brand}`);
+            const filterBrand = body.brand;
+            console.log(`[AI Import] Applying strict brand filter: ${filterBrand}`);
             // Use loose check to allow "Army Painter" to match "Army Painter Fanatic" etc
-            targetPaints = allPaints.filter(p => p.brand.toLowerCase().includes(body.brand.toLowerCase()));
+            targetPaints = allPaints.filter(p => p.brand.toLowerCase().includes(filterBrand.toLowerCase()));
         }
 
         // Create a compact list of valid paints for the prompt
