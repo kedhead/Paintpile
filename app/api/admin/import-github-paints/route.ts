@@ -241,7 +241,7 @@ function determineType(set: string): string {
   if (lowerSet.includes('technical') || lowerSet.includes('effect')) {
     return 'technical';
   }
-  if (lowerSet.includes('contrast')) {
+  if (lowerSet.includes('contrast') || lowerSet.includes('speedpaint') || lowerSet.includes('xpress')) {
     return 'contrast';
   }
   if (lowerSet.includes('air')) {

@@ -298,6 +298,11 @@ function PaintCard({ paint, isCustom, isOwned, onToggleOwn, onDelete }: PaintCar
             <span className="text-xs px-2 py-0.5 bg-background border border-border rounded capitalize">
               {paint.type}
             </span>
+            {(paint as any).category && (paint as any).category !== 'Standard' && (
+              <span className="text-xs px-2 py-0.5 bg-secondary/50 border border-border rounded text-secondary-foreground truncate max-w-[120px]">
+                {(paint as any).category}
+              </span>
+            )}
           </div>
         </div>
       </div>
