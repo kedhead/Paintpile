@@ -102,28 +102,48 @@ export class ReplicateClient {
       // or a FileOutput object (which has a .url() method).
       let outputUrl: string | null = null;
 
-      if (typeof output === 'string') {
-        outputUrl = output;
-      } else if (typeof (output as any)?.url === 'function') {
-        // High priority: handled Replicate FileOutput object
-        outputUrl = (output as any).url();
-      } else if (Array.isArray(output)) {
-        const first = output[0];
-        if (typeof first === 'string') {
+      const rawOutput: any = output;
+
+      // 1. Check if it's a direct string
+      if (typeof rawOutput === 'string' && rawOutput.startsWith('http')) {
+        outputUrl = rawOutput;
+      }
+      // 2. Check for Replicate FileOutput object (.url())
+      else if (rawOutput && typeof rawOutput.url === 'function') {
+        outputUrl = rawOutput.url();
+      }
+      // 3. Check for array output
+      else if (Array.isArray(rawOutput) && rawOutput.length > 0) {
+        const first = rawOutput[0];
+        if (typeof first === 'string' && first.startsWith('http')) {
           outputUrl = first;
-        } else if (typeof (first as any)?.url === 'function') {
-          outputUrl = (first as any).url();
+        } else if (first && typeof first.url === 'function') {
+          outputUrl = first.url();
         } else if (first && typeof first === 'object') {
-          outputUrl = (first as any).image || (first as any).url || (first as any).output;
+          outputUrl = first.url || first.image || first.output;
         }
-      } else if (output && typeof output === 'object') {
-        // Fallback for unexpected object structures
-        outputUrl = (output as any).url || (output as any).image || (output as any).output;
+      }
+      // 4. Check for general object properties
+      else if (rawOutput && typeof rawOutput === 'object') {
+        outputUrl = rawOutput.url || rawOutput.image || rawOutput.output;
+
+        // Final fallback: check if String(rawOutput) looks like a URL
+        const outputStr = String(rawOutput);
+        if (!outputUrl && outputStr.startsWith('http')) {
+          outputUrl = outputStr;
+        }
       }
 
       if (!outputUrl || typeof outputUrl !== 'string') {
-        console.error('[Replicate] Invalid output structure:', output);
-        throw new Error(`Invalid output from nano-banana: ${JSON.stringify(output)}`);
+        const keys = rawOutput && typeof rawOutput === 'object' ? Object.keys(rawOutput) : [];
+        const proto = rawOutput ? Object.getPrototypeOf(rawOutput)?.constructor?.name : 'null';
+        console.error('[Replicate] Invalid output structure:', {
+          type: typeof rawOutput,
+          keys,
+          proto,
+          value: JSON.stringify(rawOutput)
+        });
+        throw new Error(`Invalid output from nano-banana: ${JSON.stringify(rawOutput)} (Type: ${typeof rawOutput}, Keys: ${keys.join(',')}, Proto: ${proto})`);
       }
 
       console.log(`[Replicate] Image recolor completed in ${processingTime}ms`);
