@@ -129,8 +129,12 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
         {/* User Profile & Actions */}
         <div className="p-4 border-t border-sidebar-border space-y-3">
           {/* User Info */}
-          <div className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          {/* User Info */}
+          <Link
+            href="/profile"
+            className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent/50 rounded-md transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
               <span className="text-primary font-semibold">
                 {currentUser?.displayName?.[0]?.toUpperCase() || currentUser?.email?.[0]?.toUpperCase() || 'U'}
               </span>
@@ -139,8 +143,11 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
               <p className="text-foreground font-medium truncate">
                 {currentUser?.displayName || 'User'}
               </p>
+              <p className="text-xs text-muted-foreground truncate">
+                View Profile
+              </p>
             </div>
-          </div>
+          </Link>
 
           {/* New Project Button */}
           <button

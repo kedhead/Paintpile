@@ -94,17 +94,48 @@ export async function POST(request: NextRequest) {
         // 3. Parse JSON
         let paintItems: { brand: string; name: string }[] = [];
         try {
-            // Clean up potential markdown code blocks
-            const cleanJson = textOutput.replace(/```json/g, '').replace(/```/g, '').trim();
-            paintItems = JSON.parse(cleanJson);
-        } catch (e) {
-            console.error('Failed to parse AI output as JSON. Raw output:', textOutput);
-            // Fallback: Try regex to extract objects if full JSON parse fails
-            const matches = textOutput.match(/\{"brand":\s*"[^"]+",\s*"name":\s*"[^"]+"\}/g);
-            if (matches) {
-                paintItems = matches.map(m => JSON.parse(m));
+            // Strategy A: Try to find a JSON array within the text
+            // Look for first '[' and last ']'
+            const firstBracket = textOutput.indexOf('[');
+            const lastBracket = textOutput.lastIndexOf(']');
+
+            if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+                const potentialJson = textOutput.substring(firstBracket, lastBracket + 1);
+                paintItems = JSON.parse(potentialJson);
             } else {
-                throw new Error('Could not parse paint data from AI response');
+                // Strategy B: No array brackets found, try cleaning and parsing the whole string
+                const cleanJson = textOutput.replace(/```json/g, '').replace(/```/g, '').trim();
+                paintItems = JSON.parse(cleanJson);
+            }
+        } catch (e) {
+            console.warn('JSON parse strategy A/B failed, trying regex fallback. Error:', e);
+            console.log('Raw text output was:', textOutput);
+
+            // Strategy C: Regex fallback - looser pattern to capture objects
+            // Matches { ... "brand": "...", ... "name": "..." ... }
+            const matches = textOutput.match(/\{[^{}]*"brand"[^{}]*"name"[^{}]*\}/g);
+
+            if (matches) {
+                try {
+                    paintItems = matches.map(m => JSON.parse(m));
+                } catch (regexErr) {
+                    console.error('Regex match parsing failed', regexErr);
+                    // Last ditch: try to fix common JSON errors (like missing quotes keys) - skipping for now
+                }
+            }
+
+            if (paintItems.length === 0) {
+                // Final check - maybe it's a list like "- Brand: Name"
+                const listMatches = textOutput.matchAll(/-\s*([A-Za-z0-9 ]+):\s*([A-Za-z0-9 ]+)/g);
+                for (const match of listMatches) {
+                    if (match[1] && match[2]) {
+                        paintItems.push({ brand: match[1].trim(), name: match[2].trim() });
+                    }
+                }
+            }
+
+            if (paintItems.length === 0) {
+                throw new Error(`Could not parse paint data from AI response. Raw output: ${textOutput.substring(0, 200)}...`);
             }
         }
 
