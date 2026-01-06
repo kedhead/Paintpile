@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
             // Robust check: Remove EVERYTHING except letters and numbers to handle "Army_Painter", "Army-Painter", "The Army Painter"
             // This treats "Army_Painter" and "Army Painter" as "armypainter"
-            const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normalize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             const normalizedFilter = normalize(filterBrand);
 
             targetPaints = allPaints.filter(p => {
