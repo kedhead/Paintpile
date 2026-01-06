@@ -48,7 +48,11 @@ export function AIImportDialog({ userId, onImportComplete }: AIImportDialogProps
 
             setMatchedPaints(data.paints);
             if (data.matchedCount === 0) {
-                setError('No matching paints found in our database. Try checking spelling or being more specific.');
+                let msg = 'No matching paints found in our database.';
+                if (data.debugInfo) {
+                    msg += ` (Debug: DB has ${data.debugInfo.totalPaintsInDb} paints. Brands: ${data.debugInfo.availableBrands.join(', ')})`;
+                }
+                setError(msg);
             }
         } catch (err: any) {
             console.error(err);

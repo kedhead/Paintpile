@@ -102,6 +102,21 @@ export async function POST(request: NextRequest) {
             .slice(0, 600)
             .join('\n');
 
+        if (targetPaints.length === 0) {
+            // Debugging: Why is it empty?
+            const allBrands = Array.from(new Set(allPaints.map(p => p.brand)));
+            console.log(`[AI Import] Filter '${body.brand}' resulted in 0 paints. Available brands:`, allBrands);
+
+            return NextResponse.json({
+                paints: [],
+                matchedCount: 0,
+                debugInfo: {
+                    message: `Filter '${body.brand}' found 0 paints.`,
+                    totalPaintsInDb: allPaints.length,
+                    availableBrands: allBrands.slice(0, 10) // Show top 10 brands
+                }
+            });
+        }
         // 1. Construct prompt for Llama 3
         const systemPrompt = `You are an expert miniature painting assistant. 
     Your goal is to identify which paints a user owns based on their description.
