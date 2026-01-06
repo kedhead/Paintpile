@@ -125,8 +125,10 @@ export async function POST(request: NextRequest) {
     Your goal is to identify which user-owned paints match the available paints in our database.
 
 Rules:
-1. Return ONLY a JSON array of the names of the paints found.
-2. **CRITICAL FOR SETS**: If the user mentions a specific Set (e.g. "Game Color Starter Set" or "Most Wanted Set"), you must use your **internal knowledge** to recall which specific paints are typically included in that set, and then find those specific paint names in the provided list.
+1. Return ONLY a JSON array of the names of the **individual** paints found.
+2. **CRITICAL FOR SETS**: If the user mentions a Set (e.g. "Most Wanted Set"), you **MUST EXPAND IT** into its individual paints using your internal knowledge. 
+   - **DO NOT** output the Set Name itself as a paint.
+   - **DO** output the list of 10-50 individual paints that are inside that set.
 3. The "Set" info in the provided list is helpful but may be incomplete. Trust your knowledge of standard manufacturer sets.
 4. Be generous with fuzzy matching if the name is slightly different.
 5. Ignore paints that are clearly not in the user's description.
