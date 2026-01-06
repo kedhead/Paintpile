@@ -46,6 +46,11 @@ export function AIImportDialog({ userId, onImportComplete }: AIImportDialogProps
                 throw new Error(data.error || 'Failed to process request');
             }
 
+            // DEBUG: Log AI output to console for user to inspect
+            if (data.rawAiOutput) {
+                console.log('%c[AI Raw Output]', 'color: #00ff00; font-weight: bold;', data.rawAiOutput);
+            }
+
             setMatchedPaints(data.paints);
             if (data.matchedCount === 0) {
                 let msg = 'No matching paints found in our database.';
