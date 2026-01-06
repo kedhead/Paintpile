@@ -35,16 +35,17 @@ export async function POST(request: NextRequest) {
         const allBrands = Array.from(new Set(allPaints.map(p => p.brand)));
 
         // 2. Check which brands are mentioned in user description
-        const userDescLower = description.toLowerCase();
+        const userDescLower = (description || '').toLowerCase();
 
         // Helper to check if brand is mentioned
         const isBrandMentioned = (brand: string) => {
-            const brandParts = brand.toLowerCase().split(' ');
+            const safeBrand = (brand || '').toLowerCase();
+            const brandParts = safeBrand.split(' ');
             // Check if any significant part of the brand name is in description
             // e.g. "Army Painter" matched by "Army" or "Painter" might be too loose, 
             // but "Army Painter" is good.
             // Let's use simple inclusion for full brand name or strict sub-parts
-            return userDescLower.includes(brand.toLowerCase()) ||
+            return userDescLower.includes(safeBrand) ||
                 (brandParts.length > 1 && brandParts.some(p => p.length > 3 && userDescLower.includes(p)));
         };
 
@@ -85,8 +86,8 @@ export async function POST(request: NextRequest) {
             let scoreA = 0;
             let scoreB = 0;
 
-            const aStr = `${a.name} ${(a as any).category || ''} ${a.type}`.toLowerCase();
-            const bStr = `${b.name} ${(b as any).category || ''} ${b.type}`.toLowerCase();
+            const aStr = `${(a.name || '')} ${(a as any).category || ''} ${(a.type || '')}`.toLowerCase();
+            const bStr = `${(b.name || '')} ${(b as any).category || ''} ${(b.type || '')}`.toLowerCase();
 
             // Boost score if paint string contains user keywords
             keywords.forEach(kw => {
@@ -193,13 +194,13 @@ Here is a list of RELEVANT paints from our database (filtered by context):
         const matchedPaints: Paint[] = [];
 
         for (const item of paintItems) {
-            const targetName = item.name.toLowerCase();
-            const targetBrand = item.brand.toLowerCase();
+            const targetName = (item.name || '').toLowerCase();
+            const targetBrand = (item.brand || '').toLowerCase();
 
             // Find best match in FULL list
             const match = allPaints.find(p => {
-                const pName = p.name.toLowerCase();
-                const pBrand = p.brand.toLowerCase();
+                const pName = (p.name || '').toLowerCase();
+                const pBrand = (p.brand || '').toLowerCase();
 
                 // Exact match preferred
                 if (pName === targetName && pBrand === targetBrand) return true;
