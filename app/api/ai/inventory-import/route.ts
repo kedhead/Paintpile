@@ -193,20 +193,31 @@ Here is a list of RELEVANT paints from our database (filtered by context):
         // 4. Match against database (using FULL database for matching, not just filtered context)
         const matchedPaints: Paint[] = [];
 
+        // Re-use robust normalization for matching
+        const normalize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
         for (const item of paintItems) {
             const targetName = (item.name || '').toLowerCase();
-            const targetBrand = (item.brand || '').toLowerCase();
+            const targetBrandNormal = normalize(item.brand);
 
             // Find best match in FULL list
             const match = allPaints.find(p => {
                 const pName = (p.name || '').toLowerCase();
-                const pBrand = (p.brand || '').toLowerCase();
+                const pBrandNormal = normalize(p.brand);
 
-                // Exact match preferred
-                if (pName === targetName && pBrand === targetBrand) return true;
+                // Check brand match first (fastest fail)
+                // We use includes() for safety, but with normalized strings it's basically exact match
+                if (!pBrandNormal.includes(targetBrandNormal) && !targetBrandNormal.includes(pBrandNormal)) {
+                    return false;
+                }
 
-                // Fuzzy match fallback
-                return pName === targetName && pBrand.includes(targetBrand);
+                // Check name match
+                // Exact match
+                if (pName === targetName) return true;
+
+                // Fuzzy match: matched name is substring of DB name OR DB name is substring of matched name
+                // e.g. "Gravelord Grey" matches "Gravelord Grey (Speedpaint)"
+                return pName.includes(targetName) || targetName.includes(pName);
             });
 
             if (match) {
