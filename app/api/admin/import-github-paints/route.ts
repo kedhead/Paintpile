@@ -92,8 +92,9 @@ function parseMarkdownTable(markdown: string, manufacturerFile: string): any[] {
   const paints: any[] = [];
 
   // Extract brand name from filename
+  // Replace ALL underscores with spaces
   const brand = manufacturerFile
-    .replace('_', ' ')
+    .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .trim();
 

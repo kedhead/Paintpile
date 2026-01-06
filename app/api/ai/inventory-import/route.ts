@@ -66,11 +66,13 @@ export async function POST(request: NextRequest) {
             const filterBrand = body.brand;
             console.log(`[AI Import] Applying strict brand filter: ${filterBrand}`);
 
-            // Robust check: Remove all whitespace and lowercase to handle "Army  Painter" vs "Army Painter" mismatch
-            const normalizedFilter = filterBrand.replace(/\s+/g, '').toLowerCase();
+            // Robust check: Remove EVERYTHING except letters and numbers to handle "Army_Painter", "Army-Painter", "The Army Painter"
+            // This treats "Army_Painter" and "Army Painter" as "armypainter"
+            const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normalizedFilter = normalize(filterBrand);
 
             targetPaints = allPaints.filter(p => {
-                const normalizedPaintBrand = p.brand.replace(/\s+/g, '').toLowerCase();
+                const normalizedPaintBrand = normalize(p.brand);
                 return normalizedPaintBrand.includes(normalizedFilter);
             });
         }
