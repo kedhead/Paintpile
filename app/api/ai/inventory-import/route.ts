@@ -121,17 +121,17 @@ export async function POST(request: NextRequest) {
         }
         // 1. Construct prompt for Llama 3
         const systemPrompt = `You are an expert miniature painting assistant. 
-    Your goal is to identify which paints a user owns based on their description.
-    
-    Here is a list of RELEVANT paints from our database (filtered by context):
+    Your goal is to identify which user-owned paints match the available paints in our database.
+
+Rules:
+1. Return ONLY a JSON array of the names of the paints found.
+2. **CRITICAL FOR SETS**: If the user mentions a specific Set (e.g. "Game Color Starter Set" or "Most Wanted Set"), you must use your **internal knowledge** to recall which specific paints are typically included in that set, and then find those specific paint names in the provided list.
+3. The "Set" info in the provided list is helpful but may be incomplete. Trust your knowledge of standard manufacturer sets.
+4. Be generous with fuzzy matching if the name is slightly different.
+5. Ignore paints that are clearly not in the user's description.
+
+Here is a list of RELEVANT paints from our database (filtered by context):
     ${validPaintList}
-    
-    INSTRUCTIONS:
-    1. Analyze the user's input to understand what they own.
-    2. Map their description to the EXACT "brand" and "name" from the valid list above.
-    3. If the user mentions a specific SET (e.g. "Mega Set"), and the individual paints are in the list above, select a representative collection of them (e.g. 50 paints for a Mega Set).
-    4. If the user mentions a brand NOT in the list above, do your best to guess standard color names for that brand.
-    5. Return ONLY a JSON array of objects with "brand" and "name". 
     
     User Input: "${description}"
     

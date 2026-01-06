@@ -67,8 +67,8 @@ export class ReplicateClient {
     this.recolorModel = process.env.REPLICATE_RECOLOR_MODEL || nanoBanana;
     this.enhancementModel = process.env.REPLICATE_ENHANCEMENT_MODEL || nanoBanana;
 
-    // Meta Llama 3 8B Instruct for text generation / parsing
-    this.textGenerationModel = 'meta/meta-llama-3-8b-instruct';
+    // Meta Llama 3 70B Instruct for better knowledge retrieval (specifically for paint sets)
+    this.textGenerationModel = 'meta/meta-llama-3-70b-instruct';
   }
 
   /**
