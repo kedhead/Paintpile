@@ -190,18 +190,22 @@ Here is a list of RELEVANT paints from our database (filtered by context):
             }
         }
 
-        // 4. Match against database (using FULL database for matching, not just filtered context)
+        // 4. Match against database
         const matchedPaints: Paint[] = [];
 
         // Re-use robust normalization for matching
         const normalize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
+        // CRITICAL FIX: If user selected a brand, ONLY search within that filtered list (`targetPaints`).
+        // Otherwise, search `allPaints` (full DB) to allow auto-detection of other brands.
+        const searchPool = body.brand ? targetPaints : allPaints;
+
         for (const item of paintItems) {
             const targetName = (item.name || '').toLowerCase();
             const targetBrandNormal = normalize(item.brand);
 
-            // Find best match in FULL list
-            const match = allPaints.find(p => {
+            // Find best match in restricted pool
+            const match = searchPool.find(p => {
                 const pName = (p.name || '').toLowerCase();
                 const pBrandNormal = normalize(p.brand);
 
