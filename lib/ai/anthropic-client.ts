@@ -288,6 +288,78 @@ Important:
     // Cost: ~$0.0008 = 0.8 credits
     return 8; // 0.8 cents = 8 credits
   }
+
+  /**
+   * Expand a paint set description into individual paint names.
+   * Uses Claude's knowledge of hobby paint products.
+   * 
+   * @param description - User's description (e.g., "Speedpaint 2.0 Most Wanted Set")
+   * @param availablePaints - List of paint names available in the database (for matching)
+   * @returns Array of paint names that match
+   */
+  async expandPaintSet(
+    description: string,
+    availablePaints: string[]
+  ): Promise<{ paints: string[]; rawOutput: string }> {
+    try {
+      // Build the prompt
+      const prompt = `You are an expert on miniature painting paints and products from brands like Army Painter, Citadel, Vallejo, Scale75, and others.
+
+A user says they own: "${description}"
+
+Your task is to identify which INDIVIDUAL PAINTS from our database they likely own based on this description.
+
+**CRITICAL INSTRUCTIONS:**
+1. If the user mentions a SET (e.g., "Speedpaint 2.0 Most Wanted Set", "Game Color Starter Set"), you MUST use your knowledge to recall ALL the individual paints that are typically included in that set, and find matches for each one.
+2. Do NOT output the set name as a paint. Only output individual paint names.
+3. Be generous with fuzzy matching - if a paint like "Gravelord Grey" from your knowledge matches something like "Gravelord Gray" in the list, that's a match.
+4. If you don't recognize a set name, do your best to identify paints that match the description.
+
+Here is the list of available paints in our database (these are the ONLY valid paint names you can return):
+${availablePaints.slice(0, 500).join('\n')}
+
+Return ONLY a JSON array of the EXACT paint names from the list above that match the user's description. Example:
+["Gravelord Grey", "Slaughter Red", "Pallid Bone"]
+
+If no matches are found, return an empty array: []
+
+JSON Output:`;
+
+      // Use Claude 3.5 Sonnet for better reasoning (smarter than Haiku)
+      const response = await this.client.messages.create({
+        model: 'claude-3-5-sonnet-20241022', // Smarter model for knowledge tasks
+        max_tokens: 4000,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      });
+
+      // Extract text response
+      const textContent = response.content.find(c => c.type === 'text');
+      if (!textContent || textContent.type !== 'text') {
+        throw new Error('No text response from Claude API');
+      }
+
+      const rawOutput = textContent.text;
+      console.log('[Claude] Raw output:', rawOutput.substring(0, 200));
+
+      // Parse JSON array
+      const jsonMatch = rawOutput.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        console.warn('[Claude] No JSON array found in response');
+        return { paints: [], rawOutput };
+      }
+
+      const paints = JSON.parse(jsonMatch[0]) as string[];
+      return { paints, rawOutput };
+    } catch (error: any) {
+      console.error('[Claude] Error expanding paint set:', error);
+      throw new Error(`Failed to expand paint set: ${error.message}`);
+    }
+  }
 }
 
 /**
