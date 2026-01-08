@@ -325,9 +325,9 @@ If no matches are found, return an empty array: []
 
 JSON Output:`;
 
-      // Use Claude 3.5 Sonnet for better reasoning (smarter than Haiku)
+      // Use Claude Haiku 4.5 for knowledge tasks
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-latest', // Smarter model for knowledge tasks
+        model: 'claude-haiku-4-5-20250514',
         max_tokens: 4000,
         messages: [
           {
