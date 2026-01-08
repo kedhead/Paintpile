@@ -316,7 +316,7 @@ Your task is to identify which INDIVIDUAL PAINTS from our database they likely o
 4. If you don't recognize a set name, do your best to identify paints that match the description.
 
 Here is the list of available paints in our database (these are the ONLY valid paint names you can return):
-${availablePaints.slice(0, 500).join('\n')}
+${availablePaints.slice(0, 10000).join('\n')}
 
 Return ONLY a JSON array of the EXACT paint names from the list above that match the user's description. Example:
 ["Gravelord Grey", "Slaughter Red", "Pallid Bone"]
