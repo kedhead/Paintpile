@@ -318,9 +318,10 @@ Example Output:
 
 JSON Output:`;
 
-      // Use the same model as for image analysis (known working)
+      // Use Claude 3.5 Sonnet (Smartest 3.5 model) for deep knowledge recall
+      // Haiku (this.model) is too "lazy" for full set retrieval
       const response = await this.client.messages.create({
-        model: this.model, // Uses claude-3-5-haiku-20241022 from constructor
+        model: 'claude-3-5-sonnet-20240620',
         max_tokens: 4000,
         messages: [
           {
