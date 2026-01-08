@@ -82,21 +82,23 @@ export async function POST(request: NextRequest) {
         // Smart/Relevance Sorting before slicing
         const keywords = description.toLowerCase().split(/\s+/).filter(w => w.length > 3);
 
-        targetPaints.sort((a, b) => {
-            let scoreA = 0;
-            let scoreB = 0;
+        if (!body.brand) {
+            targetPaints.sort((a, b) => {
+                let scoreA = 0;
+                let scoreB = 0;
 
-            const aStr = `${(a.name || '')} ${(a as any).category || ''} ${(a.type || '')}`.toLowerCase();
-            const bStr = `${(b.name || '')} ${(b as any).category || ''} ${(b.type || '')}`.toLowerCase();
+                const aStr = `${(a.name || '')} ${(a as any).category || ''} ${(a.type || '')}`.toLowerCase();
+                const bStr = `${(b.name || '')} ${(b as any).category || ''} ${(b.type || '')}`.toLowerCase();
 
-            // Boost score if paint string contains user keywords
-            keywords.forEach(kw => {
-                if (aStr.includes(kw)) scoreA += 1;
-                if (bStr.includes(kw)) scoreB += 1;
+                // Boost score if paint string contains user keywords
+                keywords.forEach(kw => {
+                    if (aStr.includes(kw)) scoreA += 1;
+                    if (bStr.includes(kw)) scoreB += 1;
+                });
+
+                return scoreB - scoreA; // Descending order
             });
-
-            return scoreB - scoreA; // Descending order
-        });
+        }
 
         // Format: "Brand: Paint Name"
         // Limit to 600 paints to keep prompt size safe (increased slightly)
@@ -237,7 +239,8 @@ Here is a list of RELEVANT paints from our database (filtered by context):
             success: true,
             paints: matchedPaints,
             rawCount: paintItems.length,
-            matchedCount: matchedPaints.length
+            matchedCount: matchedPaints.length,
+            rawAiOutput: textOutput // RETURN THIS FOR DEBUGGING
         });
 
     } catch (error: any) {

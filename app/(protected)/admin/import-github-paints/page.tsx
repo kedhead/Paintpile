@@ -24,17 +24,30 @@ const MANUFACTURERS = [
 ];
 
 export default function ImportGithubPaintsPage() {
-  const [importing, setImporting] = useState(false);
-  const [statuses, setStatuses] = useState<ImportStatus[]>([]);
-  const [totalImported, setTotalImported] = useState(0);
+  const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>([]);
 
-  async function handleImportAll() {
+  // Initialize selection with effective "Select None" or maybe "Select All" by default? 
+  // Let's start with empty so they choose what they want, or all? User said "choose only the paint brands I want".
+  // Let's start empty to be safe/lightweight.
+
+  const toggleManufacturer = (m: string) => {
+    setSelectedManufacturers(prev =>
+      prev.includes(m) ? prev.filter(item => item !== m) : [...prev, m]
+    );
+  };
+
+  const selectAll = () => setSelectedManufacturers(MANUFACTURERS);
+  const selectNone = () => setSelectedManufacturers([]);
+
+  async function handleImportSelected() {
+    if (selectedManufacturers.length === 0) return;
+
     setImporting(true);
     setStatuses([]);
     setTotalImported(0);
 
-    // Initialize statuses
-    const initialStatuses: ImportStatus[] = MANUFACTURERS.map(m => ({
+    // Initialize statuses for SELECTED items only
+    const initialStatuses: ImportStatus[] = selectedManufacturers.map(m => ({
       manufacturer: m.replace('_', ' '),
       status: 'pending'
     }));
@@ -42,9 +55,9 @@ export default function ImportGithubPaintsPage() {
 
     let totalCount = 0;
 
-    // Import each manufacturer sequentially
-    for (let i = 0; i < MANUFACTURERS.length; i++) {
-      const manufacturer = MANUFACTURERS[i];
+    // Import selected manufacturers sequentially
+    for (let i = 0; i < selectedManufacturers.length; i++) {
+      const manufacturer = selectedManufacturers[i];
 
       // Update status to processing
       setStatuses(prev => prev.map((s, idx) =>
@@ -84,7 +97,7 @@ export default function ImportGithubPaintsPage() {
         ));
       }
 
-      // Small delay between requests to avoid rate limiting
+      // Small delay between requests
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
@@ -107,7 +120,7 @@ export default function ImportGithubPaintsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Import Paints from GitHub</h1>
           <p className="text-muted-foreground">
-            Import {MANUFACTURERS.length} paint manufacturers from the miniature-paints repository
+            Select the paint brands you want to import from the repository.
           </p>
         </div>
 
@@ -118,12 +131,31 @@ export default function ImportGithubPaintsPage() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-lg mb-2">
-                Import Paint Database
+                Select Manufacturers
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                This will import paints from the Arcturus5404/miniature-paints GitHub repository.
-                Includes major brands like Citadel, Vallejo, Army Painter, and more.
-              </p>
+
+              <div className="flex gap-2 mb-4">
+                <Button variant="outline" size="sm" onClick={selectAll} disabled={importing}>Select All</Button>
+                <Button variant="outline" size="sm" onClick={selectNone} disabled={importing}>Deselect All</Button>
+                <span className="text-sm text-muted-foreground self-center ml-2">
+                  {selectedManufacturers.length} selected
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6 max-h-60 overflow-y-auto p-2 border rounded-md">
+                {MANUFACTURERS.map(m => (
+                  <label key={m} className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-accent p-1 rounded">
+                    <input
+                      type="checkbox"
+                      checked={selectedManufacturers.includes(m)}
+                      onChange={() => toggleManufacturer(m)}
+                      disabled={importing}
+                      className="rounded border-gray-300"
+                    />
+                    <span>{m.replace('_', ' ')}</span>
+                  </label>
+                ))}
+              </div>
 
               <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
                 <div className="flex gap-2">
@@ -134,26 +166,25 @@ export default function ImportGithubPaintsPage() {
                     </p>
                     <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
                       This will add paints to your database. It won't remove existing paints.
-                      If you want a clean import, use "Clear Paints" first.
                     </p>
                   </div>
                 </div>
               </div>
 
               <Button
-                onClick={handleImportAll}
-                disabled={importing}
+                onClick={handleImportSelected}
+                disabled={importing || selectedManufacturers.length === 0}
                 className="w-full"
               >
                 {importing ? (
                   <>
                     <Spinner size="sm" className="mr-2" />
-                    Importing... ({successCount + errorCount}/{MANUFACTURERS.length})
+                    Importing... ({successCount + errorCount}/{statuses.length})
                   </>
                 ) : (
                   <>
                     <Download className="h-4 w-4 mr-2" />
-                    Import All Manufacturers
+                    Import {selectedManufacturers.length} Selected Brands
                   </>
                 )}
               </Button>
