@@ -325,9 +325,9 @@ If no matches are found, return an empty array: []
 
 JSON Output:`;
 
-      // Use Claude Haiku 4.5 for knowledge tasks
+      // Use the same model as for image analysis (known working)
       const response = await this.client.messages.create({
-        model: 'claude-haiku-4-5-20250514',
+        model: this.model, // Uses claude-3-5-haiku-20241022 from constructor
         max_tokens: 4000,
         messages: [
           {
