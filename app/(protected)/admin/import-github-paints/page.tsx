@@ -25,6 +25,9 @@ const MANUFACTURERS = [
 
 export default function ImportGithubPaintsPage() {
   const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [statuses, setStatuses] = useState<ImportStatus[]>([]);
+  const [totalImported, setTotalImported] = useState(0);
 
   // Initialize selection with effective "Select None" or maybe "Select All" by default? 
   // Let's start with empty so they choose what they want, or all? User said "choose only the paint brands I want".
