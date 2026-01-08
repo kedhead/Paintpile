@@ -60,33 +60,41 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Extract just the names for Claude
-        const availablePaintNames = targetPaints.map(p => p.name);
-
-        // Call Claude to expand paint sets
+        // Call Claude to recall paint sets (Pure Recall)
         const anthropicClient = getAnthropicClient();
-        const { paints: matchedNames, rawOutput } = await anthropicClient.expandPaintSet(
-            description,
-            availablePaintNames
+        const { paints: recalledNames, rawOutput } = await anthropicClient.expandPaintSet(
+            description
         );
 
-        console.log(`[AI Import] Claude returned ${matchedNames.length} paint names`);
+        console.log(`[AI Import] Claude recalled ${recalledNames.length} paint names`);
 
         // Match names back to full Paint objects
         const matchedPaints: Paint[] = [];
         const normalize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        for (const name of matchedNames) {
-            const normalizedName = normalize(name);
+        for (const recalledName of recalledNames) {
+            const normalizedRecalled = normalize(recalledName);
 
-            // Find in targetPaints (already brand-filtered)
-            const match = targetPaints.find(p => {
+            // Find best match in targetPaints (already brand-filtered)
+            // We want to find the DB paint that BEST matches the recalled name
+            // Strategy: Check if DB name includes recalled name OR recalled name includes DB name
+            const matches = targetPaints.filter(p => {
                 const pNameNormal = normalize(p.name);
-                // Exact match or fuzzy substring
-                return pNameNormal === normalizedName ||
-                    pNameNormal.includes(normalizedName) ||
-                    normalizedName.includes(pNameNormal);
+                return pNameNormal.includes(normalizedRecalled) || normalizedRecalled.includes(pNameNormal);
             });
+
+            // If multiple matches, maybe pick the shortest one (usually the base paint) or the one that is closest in length?
+            // For now, let's just take the first one or add all plausible matches? 
+            // Better to add the exact match if possible.
+
+            // Let's refine:
+            // 1. Exact match (normalized)
+            let match = matches.find(p => normalize(p.name) === normalizedRecalled);
+
+            // 2. If no exact match, take the first fuzzy match
+            if (!match && matches.length > 0) {
+                match = matches[0];
+            }
 
             if (match && !matchedPaints.some(p => p.paintId === match.paintId)) {
                 matchedPaints.push(match);
@@ -96,7 +104,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             paints: matchedPaints,
-            rawCount: matchedNames.length,
+            rawCount: recalledNames.length,
             matchedCount: matchedPaints.length,
             rawAiOutput: rawOutput
         });

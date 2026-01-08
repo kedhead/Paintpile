@@ -294,12 +294,10 @@ Important:
    * Uses Claude's knowledge of hobby paint products.
    * 
    * @param description - User's description (e.g., "Speedpaint 2.0 Most Wanted Set")
-   * @param availablePaints - List of paint names available in the database (for matching)
    * @returns Array of paint names that match
    */
   async expandPaintSet(
-    description: string,
-    availablePaints: string[]
+    description: string
   ): Promise<{ paints: string[]; rawOutput: string }> {
     try {
       // Build the prompt
@@ -307,21 +305,16 @@ Important:
 
 A user says they own: "${description}"
 
-Your task is to identify which INDIVIDUAL PAINTS from our database they likely own based on this description.
+Your task is to identify which INDIVIDUAL PAINTS are likely included in this set or description.
 
 **CRITICAL INSTRUCTIONS:**
-1. If the user mentions a SET (e.g., "Speedpaint 2.0 Most Wanted Set", "Game Color Starter Set"), you MUST use your knowledge to recall ALL the individual paints that are typically included in that set, and find matches for each one.
-2. Do NOT output the set name as a paint. Only output individual paint names.
-3. Be generous with fuzzy matching - if a paint like "Gravelord Grey" from your knowledge matches something like "Gravelord Gray" in the list, that's a match.
-4. If you don't recognize a set name, do your best to identify paints that match the description.
+1. If the user mentions a SET (e.g., "Speedpaint 2.0 Most Wanted Set", "Game Color Starter Set"), you MUST use your knowledge to recall ALL the individual paints that are typically included in that set.
+2. If it's a general description (e.g., "some red and blue paints"), list a few common standard paints that fit.
+3. Return ONLY a JSON array of the paint names.
+4. Do NOT output the set name itself in the array.
 
-Here is the list of available paints in our database (these are the ONLY valid paint names you can return):
-${availablePaints.slice(0, 10000).join('\n')}
-
-Return ONLY a JSON array of the EXACT paint names from the list above that match the user's description. Example:
+Example Output:
 ["Gravelord Grey", "Slaughter Red", "Pallid Bone"]
-
-If no matches are found, return an empty array: []
 
 JSON Output:`;
 
@@ -361,6 +354,7 @@ JSON Output:`;
     }
   }
 }
+
 
 /**
  * Singleton instance
