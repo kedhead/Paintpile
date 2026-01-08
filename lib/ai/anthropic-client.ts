@@ -327,7 +327,7 @@ JSON Output:`;
 
       // Use Claude 3.5 Sonnet for better reasoning (smarter than Haiku)
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022', // Smarter model for knowledge tasks
+        model: 'claude-3-5-sonnet-latest', // Smarter model for knowledge tasks
         max_tokens: 4000,
         messages: [
           {
