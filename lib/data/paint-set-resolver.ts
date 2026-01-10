@@ -11,6 +11,12 @@ export function resolvePaintSet(
   const matchedPaints: Paint[] = [];
   const unmatchedNames: string[] = [];
 
+  // DEBUG logging for ProAcryl
+  const isDebugBrand = paintSet.brand.toLowerCase().includes('proacryl') || paintSet.brand.toLowerCase().includes('monument');
+  if (isDebugBrand) {
+    console.log(`[RESOLVER] Starting resolution for brand: ${paintSet.brand}`);
+  }
+
   // Normalize function for fuzzy matching
   const normalize = (str: string) =>
     str.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -32,11 +38,19 @@ export function resolvePaintSet(
   for (const paintName of paintSet.paintNames) {
     let found = false;
 
+    if (isDebugBrand && unmatchedNames.length === 0) {
+      // Only log first few for brevity
+      console.log(`[RESOLVER] Trying to match: "${paintName}"`);
+    }
+
     // Try 1: Exact match with brand + name
     const fullKey = normalize(`${paintSet.brand} ${paintName}`);
     if (paintMap.has(fullKey)) {
       matchedPaints.push(paintMap.get(fullKey)!);
       found = true;
+      if (isDebugBrand && matchedPaints.length <= 3) {
+        console.log(`[RESOLVER] ✓ Matched via brand+name: "${paintName}"`);
+      }
     }
 
     // Try 2: Just the paint name
@@ -48,6 +62,9 @@ export function resolvePaintSet(
         if (brandsMatch(paintSet.brand, paint.brand)) {
           matchedPaints.push(paint);
           found = true;
+          if (isDebugBrand && matchedPaints.length <= 3) {
+            console.log(`[RESOLVER] ✓ Matched via name: "${paintName}" -> ${paint.brand} ${paint.name}`);
+          }
         }
       }
     }
@@ -57,6 +74,10 @@ export function resolvePaintSet(
       const brandPaints = allPaints.filter(p =>
         brandsMatch(paintSet.brand, p.brand)
       );
+
+      if (isDebugBrand && unmatchedNames.length === 0) {
+        console.log(`[RESOLVER] Fuzzy search: ${brandPaints.length} paints match brand`);
+      }
 
       const normalizedName = normalize(paintName);
       const fuzzyMatch = brandPaints.find(p => {
@@ -68,13 +89,23 @@ export function resolvePaintSet(
       if (fuzzyMatch) {
         matchedPaints.push(fuzzyMatch);
         found = true;
+        if (isDebugBrand && matchedPaints.length <= 3) {
+          console.log(`[RESOLVER] ✓ Matched via fuzzy: "${paintName}" -> ${fuzzyMatch.brand} ${fuzzyMatch.name}`);
+        }
       }
     }
 
     // If still not found, add to unmatched list
     if (!found) {
       unmatchedNames.push(paintName);
+      if (isDebugBrand && unmatchedNames.length <= 3) {
+        console.log(`[RESOLVER] ✗ No match found for: "${paintName}"`);
+      }
     }
+  }
+
+  if (isDebugBrand) {
+    console.log(`[RESOLVER] Final: ${matchedPaints.length} matched, ${unmatchedNames.length} unmatched`);
   }
 
   // Calculate match rate
@@ -111,6 +142,7 @@ function brandsMatch(brand1: string, brand2: string): boolean {
     'vallejo': ['vallejo', 'vallejomodelcolor', 'vallejogamecolor'],
     'reaper': ['reaper', 'reapermsp', 'reaperminiatures'],
     'scale75': ['scale75', 'scale', 'scalecolor'],
+    'proacryl': ['proacryl', 'monument', 'monumenthobbies'],
   };
 
   for (const [key, variants] of Object.entries(equivalents)) {

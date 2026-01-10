@@ -77,6 +77,23 @@ export async function POST(request: NextRequest) {
     // Fetch all paints from database
     const allPaints = await getAllPaints();
 
+    // DEBUG: Log ProAcryl/Monument paint debugging info
+    if (paintSet.brand.toLowerCase().includes('proacryl') || paintSet.brand.toLowerCase().includes('monument')) {
+      console.log(`[DEBUG] Resolving ${paintSet.brand} set: ${paintSet.setName}`);
+      console.log(`[DEBUG] Total paints in database: ${allPaints.length}`);
+
+      // Find all paints with ProAcryl or Monument in the brand name
+      const proacrylPaints = allPaints.filter(p =>
+        p.brand.toLowerCase().includes('proacryl') ||
+        p.brand.toLowerCase().includes('monument')
+      );
+      console.log(`[DEBUG] Found ${proacrylPaints.length} ProAcryl/Monument paints in database`);
+      console.log(`[DEBUG] Brands in database:`, Array.from(new Set(proacrylPaints.map(p => p.brand))));
+      console.log(`[DEBUG] Sample paint names:`, proacrylPaints.slice(0, 10).map(p => p.name));
+
+      console.log(`[DEBUG] Looking for these paint names from set:`, paintSet.paintNames.slice(0, 5));
+    }
+
     // Resolve the paint set to actual Paint objects
     const resolved = resolvePaintSet(paintSet, allPaints);
 
