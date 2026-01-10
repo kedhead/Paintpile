@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AddCustomPaintDialog } from '@/components/paints/AddCustomPaintDialog';
-import { AIImportDialog } from '@/components/paints/AIImportDialog';
+import { ImportPaintsDialog } from '@/components/paints/ImportPaintsDialog';
 import { getUserCustomPaints, deleteCustomPaint, isCustomPaint } from '@/lib/firestore/custom-paints';
 import { getAllPaints } from '@/lib/firestore/paints';
 import { getUserInventory, addToInventory, removeFromInventory } from '@/lib/firestore/inventory';
@@ -163,7 +163,7 @@ export default function PaintsPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <AIImportDialog userId={currentUser.uid} onImportComplete={loadPaints} />
+              <ImportPaintsDialog userId={currentUser.uid} onImportComplete={loadPaints} />
               <AddCustomPaintDialog userId={currentUser.uid} onPaintAdded={loadPaints} />
             </div>
           </div>
