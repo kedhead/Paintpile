@@ -14,6 +14,7 @@ import {
   Timestamp,
   arrayUnion,
   arrayRemove,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { Project, ProjectFormData } from '@/types/project';
@@ -46,6 +47,7 @@ export async function createProject(
     paintCount: 0,
     likeCount: 0,
     commentCount: 0,
+    armyIds: [],
   };
 
   await setDoc(newProjectRef, project);
@@ -193,13 +195,55 @@ export async function removeTagFromProject(projectId: string, tag: string): Prom
 
 /**
  * Delete a project
+ * Also removes the project from all armies it belongs to
  */
 export async function deleteProject(projectId: string, userId: string): Promise<void> {
+  // Get the project to check armyIds
+  const project = await getProject(projectId);
+
+  if (!project) {
+    throw new Error('Project not found');
+  }
+
+  if (project.userId !== userId) {
+    throw new Error('Unauthorized to delete this project');
+  }
+
+  const batch = writeBatch(db);
+
+  // If project belongs to any armies, remove it from them
+  if (project.armyIds && project.armyIds.length > 0) {
+    for (const armyId of project.armyIds) {
+      // Remove project from army's projectIds array
+      const armyRef = doc(db, 'armies', armyId);
+      batch.update(armyRef, {
+        projectIds: arrayRemove(projectId),
+        updatedAt: serverTimestamp(),
+      });
+
+      // Delete the army member entry
+      const memberRef = doc(db, 'armies', armyId, 'members', projectId);
+      batch.delete(memberRef);
+    }
+  }
+
+  // Delete the project itself
   const projectRef = doc(db, 'projects', projectId);
-  await deleteDoc(projectRef);
+  batch.delete(projectRef);
+
+  await batch.commit();
 
   // Decrement user's project count
   await incrementUserStats(userId, 'projectCount', -1);
+
+  // Update army stats for all affected armies
+  if (project.armyIds && project.armyIds.length > 0) {
+    // Import dynamically to avoid circular dependency
+    const { updateArmyStats } = await import('./armies');
+    for (const armyId of project.armyIds) {
+      await updateArmyStats(armyId);
+    }
+  }
 }
 
 /**

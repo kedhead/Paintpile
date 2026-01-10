@@ -19,6 +19,7 @@ export interface Project {
   featuredPhotoId?: string;
   likeCount: number;
   commentCount: number;
+  armyIds?: string[];          // IDs of armies this project belongs to
 }
 
 export interface ProjectFormData {
