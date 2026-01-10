@@ -198,6 +198,69 @@ export const COMPREHENSIVE_PAINTS: Array<{
   { brand: 'Army Painter Fanatic', name: 'Blue Wash', hexColor: '#1F2E4D', type: 'shade' },
   { brand: 'Army Painter Fanatic', name: 'Green Wash', hexColor: '#2D3E2F', type: 'shade' },
 
+  // ===== ARMY PAINTER SPEEDPAINT 2.0 (48 paints) =====
+
+  // Reds & Pinks
+  { brand: 'Army Painter', name: 'Crusader Skin 2.0', hexColor: '#E8B4A0', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Mouldy Red 2.0', hexColor: '#8B4049', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Red Gore 2.0', hexColor: '#9B1B1E', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Runic Red 2.0', hexColor: '#C23030', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Blood Red 2.0', hexColor: '#A01A1A', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Sunset Red 2.0', hexColor: '#D84848', type: 'contrast' },
+
+  // Oranges & Yellows
+  { brand: 'Army Painter', name: 'Burnt Sienna 2.0', hexColor: '#A0522D', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Flaming Orange 2.0', hexColor: '#FF6A00', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Fire Giant Orange 2.0', hexColor: '#E85D00', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Daemonic Yellow 2.0', hexColor: '#F4C430', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Zealot Yellow 2.0', hexColor: '#FFD700', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Highlord Yellow 2.0', hexColor: '#FFED4E', type: 'contrast' },
+
+  // Greens
+  { brand: 'Army Painter', name: 'Goblin Green 2.0', hexColor: '#5DBB5D', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Zealous Green 2.0', hexColor: '#4A9B4A', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Woodland Green 2.0', hexColor: '#3E5E3E', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Orc Skin 2.0', hexColor: '#6B8E5D', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Malignant Green 2.0', hexColor: '#76D67B', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Pale Green 2.0', hexColor: '#C8E6C9', type: 'contrast' },
+
+  // Blues & Cyans
+  { brand: 'Army Painter', name: 'Dark Blue 2.0', hexColor: '#1A3A5C', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Deep Blue 2.0', hexColor: '#0D47A1', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Magic Blue 2.0', hexColor: '#4A90E2', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Cloudburst Blue 2.0', hexColor: '#87CEEB', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Turquoise 2.0', hexColor: '#40E0D0', type: 'contrast' },
+
+  // Purples
+  { brand: 'Army Painter', name: 'Hive Purple 2.0', hexColor: '#6A2E8E', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Royal Purple 2.0', hexColor: '#7851A9', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Malignant Magenta 2.0', hexColor: '#E040FB', type: 'contrast' },
+
+  // Browns & Tans
+  { brand: 'Army Painter', name: 'Tanned Skin 2.0', hexColor: '#D2A679', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Terradon Turquoise 2.0', hexColor: '#48D1CC', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Pallid Bone 2.0', hexColor: '#E8DCC8', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Mummy Skin 2.0', hexColor: '#C9B592', type: 'contrast' },
+
+  // Greys & Blacks
+  { brand: 'Army Painter', name: 'Dark Grey 2.0', hexColor: '#4A4A4A', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Hardened Carapace 2.0', hexColor: '#3A3A3A', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Dusk Grey 2.0', hexColor: '#6B6B6B', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Grim Black 2.0', hexColor: '#1A1A1A', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Ashen Grey 2.0', hexColor: '#B8B8B8', type: 'contrast' },
+
+  // Metals & Special Colors
+  { brand: 'Army Painter', name: 'Orichalcum Gold 2.0', hexColor: '#D4AF37', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Bright Gold 2.0', hexColor: '#FFD700', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Aged Steel 2.0', hexColor: '#7C8B95', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Chainmail Silver 2.0', hexColor: '#C0C0C0', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Hardened Leather 2.0', hexColor: '#8B7355', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Tainted Skin 2.0', hexColor: '#9FA89E', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Holy White 2.0', hexColor: '#F5F5F5', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Slaughter Red 2.0', hexColor: '#8B0000', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Gravelord Grey 2.0', hexColor: '#696969', type: 'contrast' },
+  { brand: 'Army Painter', name: 'Hiveborn Chitin 2.0', hexColor: '#4D3A2E', type: 'contrast' },
+
   // ===== VALLEJO MODEL COLOR (80 paints) =====
 
   { brand: 'Vallejo Model Color', name: 'Black', hexColor: '#000000', type: 'base' },

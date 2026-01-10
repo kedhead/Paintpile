@@ -1,0 +1,188 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.token.admin == true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read public profiles
+      allow read: if true;
+      // Only authenticated users can create their own profile
+      allow create: if isAuthenticated() && isOwner(userId);
+      // User can update their own profile, OR admin can update anyone
+      allow update: if isOwner(userId) || isAdmin();
+      // Only the user can delete their own profile
+      allow delete: if isOwner(userId);
+
+      // User's pile subcollection
+      match /pile/{pileId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // User's saved recipes subcollection
+      match /savedRecipes/{recipeId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+
+      // User's inventory subcollection
+      match /inventory/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Projects collection
+    match /projects/{projectId} {
+      // Read if project is public OR user is the owner
+      allow read: if resource.data.isPublic == true ||
+                     isOwner(resource.data.userId);
+      // Only authenticated users can create projects
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      // Only the owner can update their project
+      allow update, delete: if isOwner(resource.data.userId);
+
+      // Project photos subcollection
+      match /photos/{photoId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write photos
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+
+      // Project paints subcollection
+      match /paints/{paintId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write paints
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+
+      // Project paint recipes subcollection
+      match /paintRecipes/{recipeId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write recipes
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+
+      // Project techniques subcollection
+      match /techniques/{techniqueId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write techniques
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+
+      // Project timeline subcollection
+      match /timeline/{eventId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write timeline events
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+
+      // Project comments subcollection
+      match /comments/{commentId} {
+        // Read if parent project is public
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true;
+        // Create if authenticated and project is public
+        allow create: if isAuthenticated() &&
+                         get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true &&
+                         request.resource.data.userId == request.auth.uid;
+        // Update/delete only own comments
+        allow update, delete: if isAuthenticated() &&
+                                 resource.data.userId == request.auth.uid;
+      }
+
+      // Project recipe usages subcollection
+      match /recipeUsages/{usageId} {
+        // Read if parent project is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        // Only project owner can write recipe usages
+        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+      }
+    }
+
+    // Global paints database
+    match /paints/{paintId} {
+      allow read: if true;
+      // Allow authenticated users to write (for seeding)
+      // In production, you may want to restrict this to specific admin users
+      allow write: if isAuthenticated();
+    }
+
+    // Custom paints (user-created paints)
+    match /customPaints/{paintId} {
+      // Anyone can read custom paints (for now - could restrict to owner only)
+      allow read: if true;
+      // Only authenticated users can create custom paints
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      // Only the owner can delete their custom paints
+      allow delete: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+    }
+
+    // Pile collection (top-level)
+    match /pile/{pileId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create, update: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // Follows collection
+    match /follows/{followId} {
+      // Anyone can read follows
+      allow read: if true;
+      // Create if authenticated and followerId matches current user
+      allow create: if isAuthenticated() &&
+                       request.resource.data.followerId == request.auth.uid;
+      // Delete only own follows
+      allow delete: if isAuthenticated() &&
+                       resource.data.followerId == request.auth.uid;
+    }
+
+    // Likes collection
+    match /likes/{likeId} {
+      // Anyone can read likes
+      allow read: if true;
+      // Create if authenticated and userId matches current user
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      // Delete only own likes
+      allow delete: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+    }
+
+    // Global paint recipes collection
+    match /paintRecipes/{recipeId} {
+      // Anyone can read public recipes
+      allow read: if true;
+      // Only authenticated users can create recipes
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      // Only the owner can update or delete their recipes
+      allow update, delete: if isAuthenticated() &&
+                               resource.data.userId == request.auth.uid;
+    }
+  }
+}

@@ -137,7 +137,7 @@ function brandsMatch(brand1: string, brand2: string): boolean {
 
   // Known equivalents
   const equivalents: Record<string, string[]> = {
-    'armypainter': ['armypainter', 'thearmypainter'],
+    'armypainter': ['armypainter', 'thearmypainter', 'armypainterfanatic'],
     'citadel': ['citadel', 'gamesworkshop', 'gw'],
     'vallejo': ['vallejo', 'vallejomodelcolor', 'vallejogamecolor'],
     'reaper': ['reaper', 'reapermsp', 'reaperminiatures'],

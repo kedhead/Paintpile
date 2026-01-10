@@ -1,0 +1,121 @@
+# PaintPile - Claude AI Configuration
+
+## Project Context
+PaintPile is a cross-platform miniature painting journal app (web, iOS, Android) built on Firebase that helps hobbyists track their painting progress, manage paint inventories, and share completed projects.
+
+**Tech Stack:**
+- Next.js 15 + TypeScript
+- Firebase (Auth, Firestore, Storage)
+- Tailwind CSS
+- Vercel hosting
+
+**Brand Colors:**
+- Orange: #FB923C
+- Amber: #FBBF24
+- Rose: #FB7185
+
+## Code Style Guidelines
+
+### TypeScript
+- Use strict mode
+- Define interfaces/types for all data structures
+- Avoid `any` types
+- Use type inference where appropriate
+
+### React/Next.js
+- Prefer functional components with hooks
+- Use Next.js 15 App Router conventions
+- Mark components with `'use client'` only when needed (server components by default)
+- Use React Server Components where possible for better performance
+
+### Styling
+- Use Tailwind CSS for all styling
+- Follow mobile-first responsive design
+- Maintain consistent spacing using Tailwind's scale
+- Use brand colors from the palette above
+
+### Error Handling
+- Always wrap async operations in try/catch
+- Provide user-friendly error messages
+- Log errors appropriately
+- Include loading states for all async operations
+
+### Component Structure
+- Place components in `/components` directory
+- Use descriptive names: `UserProfileCard.tsx`
+- Include TypeScript interfaces for props
+- Add comments for complex logic
+- Keep components focused and single-purpose
+
+## Firebase Patterns
+
+### Authentication
+- Always check auth state before data operations
+- Handle auth state changes gracefully
+- Provide clear feedback during auth operations
+
+### Firestore
+- Use optimistic updates for better UX
+- Implement proper error handling
+- Add loading states
+- Cache data when appropriate
+- Use Firestore security rules
+
+### Storage
+- Compress images before upload (max 1920px width)
+- Generate thumbnails (400px)
+- Validate file types and sizes
+- Show upload progress
+
+## File Organization
+
+```
+paintpile/
+├── app/              # Next.js App Router pages
+├── components/       # React components
+├── contexts/         # React contexts
+├── lib/              # Utilities and helpers
+├── types/            # TypeScript type definitions
+└── public/           # Static assets
+```
+
+## Security Best Practices
+
+- Never expose Firebase secrets in client code
+- Validate all user inputs
+- Sanitize data before storage
+- Use Firebase Security Rules
+- Implement proper authentication checks
+
+## Performance
+
+- Use React.memo for expensive components
+- Implement lazy loading for images
+- Use useMemo/useCallback appropriately
+- Optimize bundle size
+- Implement proper caching strategies
+
+## Testing
+
+- Write tests for critical functionality
+- Mock Firebase services in tests
+- Test error cases
+- Test loading states
+- Test user interactions
+
+## Accessibility
+
+- Use semantic HTML
+- Include proper ARIA labels
+- Ensure keyboard navigation
+- Maintain color contrast ratios
+- Test with screen readers
+
+## User Experience
+
+- Provide immediate feedback for user actions
+- Show loading states during async operations
+- Display clear error messages
+- Implement optimistic updates
+- Maintain consistent UI patterns
+
