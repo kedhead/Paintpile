@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAnthropicClient } from '@/lib/ai/anthropic-client';
 import { getAllPaints } from '@/lib/firestore/paints';
 import { Paint } from '@/types/paint';
+import { checkQuota, trackUsage, OPERATION_COSTS } from '@/lib/ai/usage-tracker';
+import { getAuth } from 'firebase-admin/auth';
+import { getAdminApp } from '@/lib/firebase/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,12 +14,13 @@ export const maxDuration = 60;
 interface ImportRequest {
     description: string;
     brand?: string;
+    userId?: string; // For authenticated requests
 }
 
 export async function POST(request: NextRequest) {
     try {
         const body: ImportRequest = await request.json();
-        const { description } = body;
+        const { description, userId } = body;
 
         if (!description || description.trim().length === 0) {
             return NextResponse.json(
@@ -24,6 +28,18 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
+
+        // For now, make AI import free/unrestricted for testing
+        // TODO: Add proper authentication and quota checking when ready
+        // if (userId) {
+        //     const quotaCheck = await checkQuota(userId, OPERATION_COSTS.paintSuggestions);
+        //     if (!quotaCheck.allowed) {
+        //         return NextResponse.json(
+        //             { success: false, error: quotaCheck.reason },
+        //             { status: 403 }
+        //         );
+        //     }
+        // }
 
         // Fetch all paints to provide context
         const allPaints = await getAllPaints();
@@ -100,6 +116,11 @@ export async function POST(request: NextRequest) {
                 matchedPaints.push(match);
             }
         }
+
+        // Optional: Track usage if userId provided
+        // if (userId) {
+        //     await trackUsage(userId, 'paintSuggestions', OPERATION_COSTS.paintSuggestions);
+        // }
 
         return NextResponse.json({
             success: true,
