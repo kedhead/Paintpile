@@ -6,7 +6,7 @@ import { Project } from '@/types/project';
 import { formatDistanceToNow } from 'date-fns';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { LikeButton } from '@/components/social/LikeButton';
-import { Clock, Image as ImageIcon } from 'lucide-react';
+import { Clock, Image as ImageIcon, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ProjectCardProps {
@@ -40,9 +40,17 @@ export function ProjectCard({ project, coverPhotoUrl }: ProjectCardProps) {
               <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
             </div>
           )}
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-3 right-3 flex gap-2">
             <StatusBadge status={project.status} />
           </div>
+          {project.armyIds && project.armyIds.length > 0 && (
+            <div className="absolute top-3 left-3">
+              <span className="px-2 py-1 text-xs font-medium rounded-md bg-purple-500/90 text-white backdrop-blur-sm border border-white/20 flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                {project.armyIds.length} {project.armyIds.length === 1 ? 'Army' : 'Armies'}
+              </span>
+            </div>
+          )}
         </div>
         <div className="p-4 flex flex-col flex-1">
           <h3 className="font-display font-bold text-lg mb-1 group-hover:text-primary transition-colors">
