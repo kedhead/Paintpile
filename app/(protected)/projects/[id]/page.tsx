@@ -7,10 +7,12 @@ import { getProject, deleteProject, updateProject } from '@/lib/firestore/projec
 import { getProjectPhotos, deletePhotoFromProject } from '@/lib/firestore/photos';
 import { deletePhoto as deletePhotoStorage } from '@/lib/firebase/storage';
 import { getUserProfile } from '@/lib/firestore/users';
+import { getProjectArmies } from '@/lib/firestore/armies';
 import { Project } from '@/types/project';
 import { Photo } from '@/types/photo';
 import { Paint } from '@/types/paint';
 import { User } from '@/types/user';
+import { Army } from '@/types/army';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -27,7 +29,7 @@ import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
-import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Share2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Share2, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
@@ -42,6 +44,7 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [armies, setArmies] = useState<Army[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [error, setError] = useState('');
@@ -96,10 +99,20 @@ export default function ProjectDetailPage() {
       }
     }
 
+    async function loadArmies() {
+      try {
+        const projectArmies = await getProjectArmies(projectId);
+        setArmies(projectArmies);
+      } catch (err) {
+        console.error('Error loading armies:', err);
+      }
+    }
+
     if (currentUser) {
       loadProject();
       loadPhotos();
       loadUserProfile();
+      loadArmies();
     }
   }, [projectId, currentUser]);
 
@@ -594,6 +607,33 @@ export default function ProjectDetailPage() {
                             <Tag className="w-3 h-3" />
                             {tag}
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {armies && armies.length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Shield className="w-4 h-4" />
+                        Part of {armies.length} {armies.length === 1 ? 'Army' : 'Armies'}
+                      </h4>
+                      <div className="space-y-2">
+                        {armies.map((army) => (
+                          <Link key={army.armyId} href={`/armies/${army.armyId}`}>
+                            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-border hover:bg-secondary/50 hover:border-primary/50 transition-all cursor-pointer">
+                              <Shield className="w-5 h-5 text-purple-500" />
+                              <div className="flex-1">
+                                <p className="font-medium text-sm text-foreground">{army.name}</p>
+                                {army.faction && (
+                                  <p className="text-xs text-muted-foreground">{army.faction}</p>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {army.projectIds.length} {army.projectIds.length === 1 ? 'project' : 'projects'}
+                              </div>
+                            </div>
+                          </Link>
                         ))}
                       </div>
                     </div>
