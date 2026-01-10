@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllPaints } from '@/lib/firestore/paints';
 import { COMPREHENSIVE_PAINTS } from '@/lib/data/comprehensive-paints';
-import { db } from '@/lib/firebase/admin';
-import { collection, doc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,23 +16,30 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[Update Monument] Starting Monument/ProAcryl paint update...');
 
+    const db = getAdminFirestore();
+    const paintsRef = db.collection('paints');
+
     // Get all existing paints
-    const allPaints = await getAllPaints();
-    console.log(`[Update Monument] Total paints in database: ${allPaints.length}`);
+    const allPaintsSnapshot = await paintsRef.get();
+    console.log(`[Update Monument] Total paints in database: ${allPaintsSnapshot.size}`);
 
     // Find all ProAcryl paints in database
-    const existingProAcryl = allPaints.filter(p =>
-      p.brand.toLowerCase().includes('proacryl') ||
-      p.brand.toLowerCase().includes('monument')
-    );
+    const existingProAcryl: any[] = [];
+    allPaintsSnapshot.forEach(doc => {
+      const paint = doc.data();
+      if (paint.brand && (
+        paint.brand.toLowerCase().includes('proacryl') ||
+        paint.brand.toLowerCase().includes('monument')
+      )) {
+        existingProAcryl.push({ id: doc.id, ...paint });
+      }
+    });
     console.log(`[Update Monument] Found ${existingProAcryl.length} existing ProAcryl/Monument paints to delete`);
 
     // Delete all existing ProAcryl paints
-    const paintsRef = collection(db, 'paints');
     let deletedCount = 0;
-
     for (const paint of existingProAcryl) {
-      await deleteDoc(doc(paintsRef, paint.paintId));
+      await paintsRef.doc(paint.id).delete();
       deletedCount++;
     }
     console.log(`[Update Monument] Deleted ${deletedCount} old ProAcryl paints`);
@@ -46,9 +51,9 @@ export async function POST(request: NextRequest) {
     // Add all new ProAcryl paints
     let addedCount = 0;
     for (const paint of newProAcrylPaints) {
-      const paintRef = doc(paintsRef);
-      await setDoc(paintRef, {
-        paintId: paintRef.id,
+      const newDocRef = paintsRef.doc();
+      await newDocRef.set({
+        paintId: newDocRef.id,
         ...paint,
       });
       addedCount++;
