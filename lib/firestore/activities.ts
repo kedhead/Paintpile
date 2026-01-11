@@ -19,7 +19,7 @@ import {
   ActivityMetadata,
   ActivityTargetType,
 } from '@/types/activity';
-import { getFollowing } from './follows';
+import { getUserFollowing } from './follows';
 
 /**
  * Create a new activity entry
@@ -86,7 +86,7 @@ export async function getFollowingActivities(
   limitCount: number = 50
 ): Promise<Activity[]> {
   // Get list of users the current user follows
-  const following = await getFollowing(userId);
+  const following = await getUserFollowing(userId);
 
   if (following.length === 0) {
     return [];
