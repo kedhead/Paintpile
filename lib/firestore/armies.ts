@@ -20,7 +20,9 @@ import { db } from '@/lib/firebase/firebase';
 import { Army, ArmyFormData, ArmyMember } from '@/types/army';
 import { Project } from '@/types/project';
 import { getProject, updateProject } from './projects';
-import { incrementUserStats } from './users';
+import { incrementUserStats, getUser } from './users';
+import { createActivity } from './activities';
+import { checkAndAwardBadges } from './badges';
 
 /**
  * Create a new army
@@ -54,8 +56,38 @@ export async function createArmy(
 
   await setDoc(newArmyRef, army);
 
-  // Increment user's army count (if we add this stat)
-  // await incrementUserStats(userId, 'armyCount', 1);
+  // Increment user's army count
+  await incrementUserStats(userId, 'armyCount', 1);
+
+  // Get user details for activity
+  const user = await getUser(userId);
+
+  if (user) {
+    // Create activity entry
+    try {
+      await createActivity(
+        userId,
+        user.displayName || user.email,
+        user.photoURL,
+        'army_created',
+        armyId,
+        'army',
+        {
+          armyName: armyData.name,
+          visibility: 'private', // New armies are private by default
+        }
+      );
+    } catch (err) {
+      console.error('Error creating army activity:', err);
+    }
+
+    // Check if user earned any badges
+    try {
+      await checkAndAwardBadges(userId);
+    } catch (err) {
+      console.error('Error checking badges:', err);
+    }
+  }
 
   return armyId;
 }

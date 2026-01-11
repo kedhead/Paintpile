@@ -18,7 +18,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { Project, ProjectFormData } from '@/types/project';
-import { incrementUserStats } from './users';
+import { incrementUserStats, getUser } from './users';
+import { createActivity } from './activities';
+import { checkAndAwardBadges } from './badges';
 
 /**
  * Create a new project
@@ -54,6 +56,37 @@ export async function createProject(
 
   // Increment user's project count
   await incrementUserStats(userId, 'projectCount', 1);
+
+  // Get user details for activity
+  const user = await getUser(userId);
+
+  if (user) {
+    // Create activity entry
+    try {
+      await createActivity(
+        userId,
+        user.displayName || user.email,
+        user.photoURL,
+        'project_created',
+        projectId,
+        'project',
+        {
+          projectName: projectData.name,
+          status: projectData.status,
+          visibility: 'private', // New projects are private by default
+        }
+      );
+    } catch (err) {
+      console.error('Error creating project activity:', err);
+    }
+
+    // Check if user earned any badges
+    try {
+      await checkAndAwardBadges(userId);
+    } catch (err) {
+      console.error('Error checking badges:', err);
+    }
+  }
 
   return projectId;
 }
