@@ -16,6 +16,10 @@ import {
 import { db } from '@/lib/firebase/firebase';
 import { Follow } from '@/types/social';
 import { User } from '@/types/user';
+import { createNotification, createNotificationMessage, createActionUrl } from './notifications';
+import { createActivity } from './activities';
+import { checkAndAwardBadges } from './badges';
+import { getUser } from './users';
 
 /**
  * Follow a user
@@ -48,6 +52,53 @@ export async function followUser(followerId: string, followingId: string): Promi
   await updateDoc(followerUserRef, {
     'stats.followingCount': increment(1),
   });
+
+  // Get user details for notification/activity
+  const [follower, followingUser] = await Promise.all([
+    getUser(followerId),
+    getUser(followingId),
+  ]);
+
+  if (!follower || !followingUser) return;
+
+  // Create notification for the user being followed
+  try {
+    await createNotification({
+      userId: followingId,
+      type: 'follow',
+      actorId: followerId,
+      actorUsername: follower.displayName || follower.email,
+      actorPhotoURL: follower.photoURL,
+      targetId: followerId,
+      targetType: 'user',
+      targetName: follower.displayName || follower.email,
+      message: createNotificationMessage('follow', follower.displayName || follower.email),
+      actionUrl: `/users/${follower.username || followerId}`,
+    });
+
+    // Check if the followed user earned any badges
+    await checkAndAwardBadges(followingId);
+  } catch (err) {
+    console.error('Error creating follow notification:', err);
+  }
+
+  // Create activity entry
+  try {
+    await createActivity(
+      followerId,
+      follower.displayName || follower.email,
+      follower.photoURL,
+      'user_followed',
+      followingId,
+      'user',
+      {
+        targetUsername: followingUser.displayName || followingUser.email,
+        targetUserPhotoUrl: followingUser.photoURL,
+      }
+    );
+  } catch (err) {
+    console.error('Error creating follow activity:', err);
+  }
 }
 
 /**

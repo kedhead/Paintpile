@@ -15,6 +15,11 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { Like } from '@/types/social';
+import { createNotification, createNotificationMessage, createActionUrl } from './notifications';
+import { createActivity } from './activities';
+import { checkAndAwardBadges } from './badges';
+import { getProject } from './projects';
+import { getUser } from './users';
 
 /**
  * Like a project
@@ -37,6 +42,62 @@ export async function likeProject(userId: string, projectId: string): Promise<vo
   await updateDoc(projectRef, {
     likeCount: increment(1),
   });
+
+  // Get project and user details for notification/activity
+  const [project, user] = await Promise.all([
+    getProject(projectId),
+    getUser(userId),
+  ]);
+
+  if (!project || !user) return;
+
+  // Create notification for project owner (but not if they liked their own project)
+  if (project.userId !== userId) {
+    try {
+      await createNotification({
+        userId: project.userId,
+        type: 'like',
+        actorId: userId,
+        actorUsername: user.displayName || user.email,
+        actorPhotoURL: user.photoURL,
+        targetId: projectId,
+        targetType: 'project',
+        targetName: project.name,
+        message: createNotificationMessage('like', user.displayName || user.email, project.name),
+        actionUrl: createActionUrl('project', projectId),
+      });
+
+      // Increment project owner's likes received stat
+      const ownerRef = doc(db, 'users', project.userId);
+      await updateDoc(ownerRef, {
+        'stats.likesReceived': increment(1),
+      });
+
+      // Check if project owner earned any badges
+      await checkAndAwardBadges(project.userId);
+    } catch (err) {
+      console.error('Error creating like notification:', err);
+    }
+  }
+
+  // Create activity entry
+  try {
+    await createActivity(
+      userId,
+      user.displayName || user.email,
+      user.photoURL,
+      'project_liked',
+      projectId,
+      'project',
+      {
+        projectName: project.name,
+        projectPhotoUrl: project.coverPhotoUrl,
+        visibility: project.isPublic ? 'public' : 'private',
+      }
+    );
+  } catch (err) {
+    console.error('Error creating like activity:', err);
+  }
 }
 
 /**
@@ -46,6 +107,9 @@ export async function unlikeProject(userId: string, projectId: string): Promise<
   const likeId = `${userId}_${projectId}`;
   const likeRef = doc(db, 'likes', likeId);
 
+  // Get project details before deleting
+  const project = await getProject(projectId);
+
   // Delete like
   await deleteDoc(likeRef);
 
@@ -54,6 +118,18 @@ export async function unlikeProject(userId: string, projectId: string): Promise<
   await updateDoc(projectRef, {
     likeCount: increment(-1),
   });
+
+  // Decrement project owner's likes received stat (if not their own project)
+  if (project && project.userId !== userId) {
+    try {
+      const ownerRef = doc(db, 'users', project.userId);
+      await updateDoc(ownerRef, {
+        'stats.likesReceived': increment(-1),
+      });
+    } catch (err) {
+      console.error('Error updating likes received stat:', err);
+    }
+  }
 }
 
 /**
