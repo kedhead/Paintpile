@@ -21,6 +21,8 @@ export function NotificationBell() {
     if (!currentUser) return;
 
     async function loadData() {
+      if (!currentUser) return;
+
       try {
         setLoading(true);
         const [notifs, count] = await Promise.all([
