@@ -184,5 +184,39 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() &&
                                resource.data.userId == request.auth.uid;
     }
+
+    // Armies collection
+    match /armies/{armyId} {
+      // Read if army is public OR user is the owner
+      allow read: if resource.data.isPublic == true ||
+                     isOwner(resource.data.userId);
+      // Only authenticated users can create armies
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      // Only the owner can update their army
+      allow update, delete: if isOwner(resource.data.userId);
+
+      // Army members subcollection
+      match /members/{memberId} {
+        // Read if parent army is public OR user is owner
+        allow read: if get(/databases/$(database)/documents/armies/$(armyId)).data.isPublic == true ||
+                       isOwner(get(/databases/$(database)/documents/armies/$(armyId)).data.userId);
+        // Only army owner can write members
+        allow write: if isOwner(get(/databases/$(database)/documents/armies/$(armyId)).data.userId);
+      }
+
+      // Army comments subcollection
+      match /comments/{commentId} {
+        // Read if parent army is public
+        allow read: if get(/databases/$(database)/documents/armies/$(armyId)).data.isPublic == true;
+        // Create if authenticated and army is public
+        allow create: if isAuthenticated() &&
+                         get(/databases/$(database)/documents/armies/$(armyId)).data.isPublic == true &&
+                         request.resource.data.userId == request.auth.uid;
+        // Update/delete only own comments
+        allow update, delete: if isAuthenticated() &&
+                                 resource.data.userId == request.auth.uid;
+      }
+    }
   }
 }
