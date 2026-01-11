@@ -195,13 +195,19 @@ export async function addProjectToArmy(
   const membersRef = collection(db, 'armies', armyId, 'members');
   const memberRef = doc(membersRef, projectId); // Use projectId as memberId
 
-  const member: Omit<ArmyMember, 'addedAt'> & { addedAt: any } = {
+  const member: any = {
     memberId: projectId,
     projectId,
     addedAt: serverTimestamp(),
-    role,
-    notes,
   };
+
+  // Only add role and notes if they have values
+  if (role) {
+    member.role = role;
+  }
+  if (notes) {
+    member.notes = notes;
+  }
 
   batch.set(memberRef, member);
 
