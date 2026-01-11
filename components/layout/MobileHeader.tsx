@@ -3,6 +3,7 @@
 import { Menu } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface MobileHeaderProps {
     onOpen: () => void;
@@ -34,6 +35,9 @@ export function MobileHeader({ onOpen }: MobileHeaderProps) {
                     </span>
                 </Link>
             </div>
+
+            {/* Notification Bell */}
+            <NotificationBell />
         </div>
     );
 }
