@@ -20,7 +20,7 @@ import { db } from '@/lib/firebase/firebase';
 import { Army, ArmyFormData, ArmyMember } from '@/types/army';
 import { Project } from '@/types/project';
 import { getProject, updateProject } from './projects';
-import { incrementUserStats, getUser } from './users';
+import { incrementUserStats, getUserProfile } from './users';
 import { createActivity } from './activities';
 import { checkAndAwardBadges } from './badges';
 
@@ -60,7 +60,7 @@ export async function createArmy(
   await incrementUserStats(userId, 'armyCount', 1);
 
   // Get user details for activity
-  const user = await getUser(userId);
+  const user = await getUserProfile(userId);
 
   if (user) {
     // Create activity entry

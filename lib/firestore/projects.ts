@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { Project, ProjectFormData } from '@/types/project';
-import { incrementUserStats, getUser } from './users';
+import { incrementUserStats, getUserProfile } from './users';
 import { createActivity } from './activities';
 import { checkAndAwardBadges } from './badges';
 
@@ -58,7 +58,7 @@ export async function createProject(
   await incrementUserStats(userId, 'projectCount', 1);
 
   // Get user details for activity
-  const user = await getUser(userId);
+  const user = await getUserProfile(userId);
 
   if (user) {
     // Create activity entry

@@ -19,7 +19,7 @@ import { createNotification, createNotificationMessage, createActionUrl } from '
 import { createActivity } from './activities';
 import { checkAndAwardBadges } from './badges';
 import { getProject } from './projects';
-import { getUser } from './users';
+import { getUserProfile } from './users';
 
 /**
  * Like a project
@@ -46,7 +46,7 @@ export async function likeProject(userId: string, projectId: string): Promise<vo
   // Get project and user details for notification/activity
   const [project, user] = await Promise.all([
     getProject(projectId),
-    getUser(userId),
+    getUserProfile(userId),
   ]);
 
   if (!project || !user) return;

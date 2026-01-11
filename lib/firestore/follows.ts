@@ -19,7 +19,7 @@ import { User } from '@/types/user';
 import { createNotification, createNotificationMessage, createActionUrl } from './notifications';
 import { createActivity } from './activities';
 import { checkAndAwardBadges } from './badges';
-import { getUser } from './users';
+import { getUserProfile } from './users';
 
 /**
  * Follow a user
@@ -55,8 +55,8 @@ export async function followUser(followerId: string, followingId: string): Promi
 
   // Get user details for notification/activity
   const [follower, followingUser] = await Promise.all([
-    getUser(followerId),
-    getUser(followingId),
+    getUserProfile(followerId),
+    getUserProfile(followingId),
   ]);
 
   if (!follower || !followingUser) return;
