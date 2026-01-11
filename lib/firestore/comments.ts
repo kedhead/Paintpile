@@ -14,6 +14,10 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { Comment } from '@/types/social';
+import { createNotification, createNotificationMessage, createActionUrl } from './notifications';
+import { createActivity } from './activities';
+import { checkAndAwardBadges } from './badges';
+import { getProject } from './projects';
 
 /**
  * Create a new comment on a project
@@ -48,6 +52,76 @@ export async function createComment(
   await updateDoc(projectRef, {
     commentCount: increment(1),
   });
+
+  // Get project details for notification/activity
+  const project = await getProject(projectId);
+
+  if (!project) return commentId;
+
+  // Create notification for project owner (but not if they commented on their own project)
+  if (project.userId !== userId) {
+    try {
+      // Truncate comment for preview
+      const commentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
+
+      await createNotification({
+        userId: project.userId,
+        type: 'comment',
+        actorId: userId,
+        actorUsername: username,
+        actorPhotoURL: userPhotoURL,
+        targetId: projectId,
+        targetType: 'project',
+        targetName: project.name,
+        message: createNotificationMessage('comment', username, project.name),
+        actionUrl: createActionUrl('project', projectId),
+      });
+
+      // Increment project owner's comments received stat
+      const ownerRef = doc(db, 'users', project.userId);
+      await updateDoc(ownerRef, {
+        'stats.commentsReceived': increment(1),
+      });
+    } catch (err) {
+      console.error('Error creating comment notification:', err);
+    }
+  }
+
+  // Increment commenter's comment count stat
+  try {
+    const commenterRef = doc(db, 'users', userId);
+    await updateDoc(commenterRef, {
+      'stats.commentCount': increment(1),
+    });
+
+    // Check if commenter earned any badges
+    await checkAndAwardBadges(userId);
+  } catch (err) {
+    console.error('Error updating comment stats:', err);
+  }
+
+  // Create activity entry
+  try {
+    const commentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
+
+    await createActivity(
+      userId,
+      username,
+      userPhotoURL,
+      'comment_created',
+      projectId,
+      'project',
+      {
+        projectName: project.name,
+        projectPhotoUrl: project.coverPhotoUrl,
+        commentText: content,
+        commentPreview,
+        visibility: project.isPublic ? 'public' : 'private',
+      }
+    );
+  } catch (err) {
+    console.error('Error creating comment activity:', err);
+  }
 
   return commentId;
 }
@@ -97,6 +171,9 @@ export async function deleteComment(
 ): Promise<void> {
   const commentRef = doc(db, 'projects', projectId, 'comments', commentId);
 
+  // Get project details before deleting
+  const project = await getProject(projectId);
+
   await deleteDoc(commentRef);
 
   // Decrement comment count on project
@@ -104,4 +181,26 @@ export async function deleteComment(
   await updateDoc(projectRef, {
     commentCount: increment(-1),
   });
+
+  // Decrement commenter's comment count stat
+  try {
+    const commenterRef = doc(db, 'users', userId);
+    await updateDoc(commenterRef, {
+      'stats.commentCount': increment(-1),
+    });
+  } catch (err) {
+    console.error('Error updating comment stats:', err);
+  }
+
+  // Decrement project owner's comments received stat (if not their own comment)
+  if (project && project.userId !== userId) {
+    try {
+      const ownerRef = doc(db, 'users', project.userId);
+      await updateDoc(ownerRef, {
+        'stats.commentsReceived': increment(-1),
+      });
+    } catch (err) {
+      console.error('Error updating comments received stat:', err);
+    }
+  }
 }
