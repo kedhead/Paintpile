@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { NotificationPreferences } from './notification';
 
 export interface User {
   userId: string;
@@ -35,6 +36,20 @@ export interface UserSettings {
   isPublic?: boolean;
   emailNotifications?: boolean;
   theme?: 'light' | 'dark';
+  notificationPreferences?: NotificationPreferences;
+  socialLinks?: SocialLinks;
+}
+
+/**
+ * User's social media links
+ */
+export interface SocialLinks {
+  instagram?: string;
+  twitter?: string;
+  youtube?: string;
+  website?: string;
+  facebook?: string;
+  tiktok?: string;
 }
 
 export interface UserStats {
@@ -44,6 +59,14 @@ export interface UserStats {
   paintCount: number;
   followerCount: number;
   followingCount: number;
+
+  // Community stats (Phase 2)
+  armyCount: number;
+  likesReceived: number;
+  recipesCreated: number;
+  badgeCount: number;
+  commentCount: number;
+  commentsReceived: number;
 }
 
 export type UserFormData = Omit<User, 'userId' | 'createdAt' | 'stats'>;
