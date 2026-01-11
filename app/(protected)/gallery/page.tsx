@@ -134,7 +134,7 @@ export default function GalleryPage() {
       searchQuery === '' ||
       item.data.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.data.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.data.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      item.data.tags?.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
     // Status filter (only applies to projects)
     let matchesStatus = true;
