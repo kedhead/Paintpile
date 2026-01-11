@@ -30,6 +30,14 @@ export async function createUserProfile(
       photoCount: 0,
       pileCount: 0,
       paintCount: 0,
+      followerCount: 0,
+      followingCount: 0,
+      armyCount: 0,
+      likesReceived: 0,
+      recipesCreated: 0,
+      badgeCount: 0,
+      commentCount: 0,
+      commentsReceived: 0,
     },
   };
 
@@ -66,7 +74,7 @@ export async function updateUserProfile(
  */
 export async function incrementUserStats(
   userId: string,
-  field: 'projectCount' | 'photoCount' | 'pileCount' | 'paintCount',
+  field: 'projectCount' | 'photoCount' | 'pileCount' | 'paintCount' | 'armyCount' | 'likesReceived' | 'recipesCreated' | 'badgeCount' | 'commentCount' | 'commentsReceived',
   value: number = 1
 ): Promise<void> {
   const userRef = doc(db, 'users', userId);
@@ -97,6 +105,12 @@ export async function incrementUserStats(
         paintCount: field === 'paintCount' ? value : 0,
         followerCount: 0,
         followingCount: 0,
+        armyCount: field === 'armyCount' ? value : 0,
+        likesReceived: field === 'likesReceived' ? value : 0,
+        recipesCreated: field === 'recipesCreated' ? value : 0,
+        badgeCount: field === 'badgeCount' ? value : 0,
+        commentCount: field === 'commentCount' ? value : 0,
+        commentsReceived: field === 'commentsReceived' ? value : 0,
       },
     });
     return;
