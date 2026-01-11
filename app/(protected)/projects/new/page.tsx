@@ -1,21 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { projectSchema, type ProjectFormData } from '@/lib/validation/schemas';
 import { createProject } from '@/lib/firestore/projects';
+import { getUserArmies, addProjectToArmy } from '@/lib/firestore/armies';
+import { Army } from '@/types/army';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { TagInput } from '@/components/ui/TagInput';
 import { PROJECT_STATUSES } from '@/lib/utils/constants';
+import { Shield } from 'lucide-react';
 
 export default function NewProjectPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [armies, setArmies] = useState<Army[]>([]);
+  const [selectedArmyIds, setSelectedArmyIds] = useState<string[]>([]);
   const router = useRouter();
   const { currentUser } = useAuth();
 
@@ -33,6 +38,22 @@ export default function NewProjectPage() {
     },
   });
 
+  // Load user's armies
+  useEffect(() => {
+    async function loadArmies() {
+      if (!currentUser) return;
+
+      try {
+        const userArmies = await getUserArmies(currentUser.uid);
+        setArmies(userArmies);
+      } catch (err) {
+        console.error('Error loading armies:', err);
+      }
+    }
+
+    loadArmies();
+  }, [currentUser]);
+
   async function onSubmit(data: ProjectFormData) {
     if (!currentUser) {
       setError('You must be logged in to create a project');
@@ -44,6 +65,13 @@ export default function NewProjectPage() {
       setIsLoading(true);
 
       const projectId = await createProject(currentUser.uid, data);
+
+      // Add project to selected armies
+      if (selectedArmyIds.length > 0) {
+        await Promise.all(
+          selectedArmyIds.map(armyId => addProjectToArmy(armyId, projectId))
+        );
+      }
 
       // Redirect to the new project page
       router.push(`/projects/${projectId}`);
@@ -163,6 +191,53 @@ export default function NewProjectPage() {
                 setValueAs: (value) => (value ? new Date(value) : undefined),
               })}
             />
+
+            {/* Add to Armies */}
+            {armies.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Add to Armies (Optional)
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  {armies.map((army) => (
+                    <label
+                      key={army.armyId}
+                      className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedArmyIds.includes(army.armyId)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedArmyIds([...selectedArmyIds, army.armyId]);
+                          } else {
+                            setSelectedArmyIds(selectedArmyIds.filter(id => id !== army.armyId));
+                          }
+                        }}
+                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                      />
+                      <Shield className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {army.name}
+                        </div>
+                        {army.faction && (
+                          <div className="text-xs text-gray-500">
+                            {army.faction}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 whitespace-nowrap">
+                        {army.projectIds.length} {army.projectIds.length === 1 ? 'project' : 'projects'}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Select which armies this project belongs to. You can also add it to armies later.
+                </p>
+              </div>
+            )}
 
             {/* Form Actions */}
             <div className="flex gap-4">

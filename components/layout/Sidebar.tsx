@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 
@@ -37,6 +37,12 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       href: '/dashboard',
       icon: LayoutDashboard,
       current: pathname === '/dashboard' || pathname.startsWith('/projects'),
+    },
+    {
+      name: 'My Armies',
+      href: '/armies',
+      icon: Shield,
+      current: pathname === '/armies' || pathname.startsWith('/armies'),
     },
     {
       name: 'Community',
