@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
-import { ArmyList } from '@/components/armies/ArmyList';
+import { ArmyCard } from '@/components/armies/ArmyCard';
 import { getUserArmies } from '@/lib/firestore/armies';
 import { getProjectPhotos } from '@/lib/firestore/photos';
 import { getProject } from '@/lib/firestore/projects';
@@ -163,13 +163,39 @@ export default function ArmiesPage() {
           <div className="flex items-center justify-center py-20">
             <Spinner size="lg" />
           </div>
+        ) : filteredArmies.length === 0 ? (
+          <div className="text-center py-20">
+            {armies.length === 0 ? (
+              <>
+                <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Plus className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  No armies yet
+                </h3>
+                <Link
+                  href="/armies/new"
+                  className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create your first army
+                </Link>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                No armies match your filters.
+              </p>
+            )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <ArmyList
-              armies={filteredArmies}
-              coverPhotos={coverPhotos}
-              showCreateButton={false}
-            />
+            {filteredArmies.map((army) => (
+              <ArmyCard
+                key={army.armyId}
+                army={army}
+                coverPhotoUrl={coverPhotos?.get(army.armyId)}
+              />
+            ))}
 
             {/* New Army Card */}
             <Link href="/armies/new">
@@ -181,17 +207,6 @@ export default function ArmiesPage() {
                 <p className="text-sm opacity-70">Build a new collection</p>
               </div>
             </Link>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && filteredArmies.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || factionFilter !== 'all'
-                ? 'No armies match your filters.'
-                : 'No armies yet. Start your first army!'}
-            </p>
           </div>
         )}
       </div>
