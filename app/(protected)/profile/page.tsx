@@ -8,14 +8,17 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRouter } from 'next/navigation';
-import { Settings, Mail, Calendar, User as UserIcon } from 'lucide-react';
+import { Settings, Mail, Calendar, User as UserIcon, Heart, Users as UsersIcon, Award, MessageCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
+import { ProfileBadges } from '@/components/profile/ProfileBadges';
+import { ActivityFeed } from '@/components/activity/ActivityFeed';
 
 export default function ProfilePage() {
   const { currentUser } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'overview' | 'badges' | 'activity'>('overview');
 
   useEffect(() => {
     if (currentUser) {
@@ -134,26 +137,112 @@ export default function ProfilePage() {
               <p className="text-sm text-gray-600 mt-1">Projects</p>
             </div>
             <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600">
+                {profile.stats?.armyCount || 0}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">Armies</p>
+            </div>
+            <div className="text-center">
               <div className="text-3xl font-bold text-secondary-600">
                 {profile.stats?.photoCount || 0}
               </div>
               <p className="text-sm text-gray-600 mt-1">Photos</p>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gray-600">
-                {profile.stats?.pileCount || 0}
+              <div className="text-3xl font-bold text-orange-600">
+                {profile.stats?.recipesCreated || 0}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Pile Items</p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-success-600">
-                {profile.stats?.paintCount || 0}
-              </div>
-              <p className="text-sm text-gray-600 mt-1">Custom Paints</p>
+              <p className="text-sm text-gray-600 mt-1">Recipes</p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Community Stats Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Community</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <UsersIcon className="w-5 h-5 text-blue-500" />
+                <div className="text-3xl font-bold text-blue-600">
+                  {profile.stats?.followerCount || 0}
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">Followers</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <UsersIcon className="w-5 h-5 text-gray-500" />
+                <div className="text-3xl font-bold text-gray-600">
+                  {profile.stats?.followingCount || 0}
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">Following</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Heart className="w-5 h-5 text-accent-500" />
+                <div className="text-3xl font-bold text-accent-600">
+                  {profile.stats?.likesReceived || 0}
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">Likes Received</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Award className="w-5 h-5 text-yellow-500" />
+                <div className="text-3xl font-bold text-yellow-600">
+                  {profile.stats?.badgeCount || 0}
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">Badges</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-border">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            activeTab === 'overview'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('badges')}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
+            activeTab === 'badges'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Award className="w-4 h-4" />
+          Badges {profile.stats?.badgeCount ? `(${profile.stats.badgeCount})` : ''}
+        </button>
+        <button
+          onClick={() => setActiveTab('activity')}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            activeTab === 'activity'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Activity
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
 
       {/* Settings Card */}
       <Card>
@@ -208,6 +297,24 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+        </div>
+      )}
+
+      {/* Badges Tab */}
+      {activeTab === 'badges' && (
+        <Card>
+          <CardContent className="pt-6">
+            <ProfileBadges userId={currentUser!.uid} isOwnProfile={true} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Activity Tab */}
+      {activeTab === 'activity' && (
+        <div>
+          <ActivityFeed feedType="user" userId={currentUser!.uid} limitCount={50} />
+        </div>
+      )}
     </div>
   );
 }
