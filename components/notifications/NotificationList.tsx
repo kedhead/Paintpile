@@ -23,6 +23,8 @@ export function NotificationList({ limitCount = 50 }: NotificationListProps) {
     if (!currentUser) return;
 
     async function loadNotifications() {
+      if (!currentUser) return;
+
       try {
         setLoading(true);
         const notifs = await getUserNotifications(currentUser.uid, limitCount);
