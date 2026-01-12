@@ -33,10 +33,7 @@ export function PaintSetSelectionDialog({
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedSet, setSelectedSet] = useState<PaintSet | null>(null);
-  const [matchedPaints, setMatchedPaints] = useState<Paint[] | null>(null);
-  const [matchRate, setMatchRate] = useState(0);
-  const [unmatchedCount, setUnmatchedCount] = useState(0);
+  const [selectedSets, setSelectedSets] = useState<PaintSet[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -90,74 +87,72 @@ export function PaintSetSelectionDialog({
     }
   };
 
-  const handleSelectSet = async (set: PaintSet) => {
-    setSelectedSet(set);
-    setError('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/paint-sets/resolve', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          setId: set.setId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to resolve paint set');
+  const handleToggleSet = (set: PaintSet) => {
+    setSelectedSets(prev => {
+      const isSelected = prev.some(s => s.setId === set.setId);
+      if (isSelected) {
+        return prev.filter(s => s.setId !== set.setId);
+      } else {
+        return [...prev, set];
       }
-
-      setMatchedPaints(data.paints);
-      setMatchRate(data.matchRate);
-      setUnmatchedCount(data.unmatchedCount);
-
-      if (data.paints.length === 0) {
-        setError('No matching paints found in our database for this set.');
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to load paint set');
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const handleConfirm = async () => {
-    if (!matchedPaints || matchedPaints.length === 0) return;
+    if (selectedSets.length === 0) return;
 
     setIsSaving(true);
+    setError('');
+
     try {
-      const paintIds = matchedPaints.map(p => p.paintId);
-      await bulkAddToInventory(userId, paintIds);
+      // Resolve all selected sets in parallel
+      const resolvePromises = selectedSets.map(set =>
+        fetch('/api/paint-sets/resolve', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ setId: set.setId }),
+        }).then(res => res.json())
+      );
+
+      const results = await Promise.all(resolvePromises);
+
+      // Collect all unique paints from all sets
+      const allPaints = new Map<string, Paint>();
+      results.forEach(data => {
+        if (data.paints) {
+          data.paints.forEach((paint: Paint) => {
+            allPaints.set(paint.paintId, paint);
+          });
+        }
+      });
+
+      const uniquePaintIds = Array.from(allPaints.keys());
+
+      if (uniquePaintIds.length === 0) {
+        setError('No matching paints found in our database for the selected sets.');
+        return;
+      }
+
+      // Add all paints to inventory
+      await bulkAddToInventory(userId, uniquePaintIds);
 
       setOpen(false);
-      setSelectedSet(null);
-      setMatchedPaints(null);
+      setSelectedSets([]);
       setSearchQuery('');
       onImportComplete();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Failed to save inventory');
+      setError(err.message || 'Failed to save inventory');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleBack = () => {
-    setSelectedSet(null);
-    setMatchedPaints(null);
-    setError('');
-  };
-
   const handleClose = () => {
     setOpen(false);
-    setSelectedSet(null);
-    setMatchedPaints(null);
+    setSelectedSets([]);
     setSearchQuery('');
     setError('');
   };
@@ -189,11 +184,17 @@ export function PaintSetSelectionDialog({
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
-              {!selectedSet ? (
-                <div className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Select a paint set to quickly add all its paints to your inventory.
+                    Select one or more paint sets to add to your inventory.
                   </p>
+                  {selectedSets.length > 0 && (
+                    <span className="text-sm font-medium text-primary">
+                      {selectedSets.length} selected
+                    </span>
+                  )}
+                </div>
 
                   {/* Search and Filter */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -245,33 +246,49 @@ export function PaintSetSelectionDialog({
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
-                      {filteredSets.map(set => (
-                        <button
-                          key={set.setId}
-                          onClick={() => handleSelectSet(set)}
-                          className="text-left p-4 border border-border rounded-lg hover:border-primary hover:bg-accent/50 transition-all group"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">
-                                {set.setName}
-                              </h3>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {set.brand} • {set.paintCount} paints
-                                {set.isCurated && (
-                                  <span className="ml-2 text-green-600">✓ Verified</span>
+                      {filteredSets.map(set => {
+                        const isSelected = selectedSets.some(s => s.setId === set.setId);
+                        return (
+                          <button
+                            key={set.setId}
+                            onClick={() => handleToggleSet(set)}
+                            className={`text-left p-4 border rounded-lg transition-all group ${
+                              isSelected
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-primary hover:bg-accent/50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex items-center justify-center w-5 h-5 rounded border shrink-0 mt-0.5 transition-colors">
+                                {isSelected && (
+                                  <Check className="w-4 h-4 text-primary" />
                                 )}
-                              </p>
-                              {set.description && (
-                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                                  {set.description}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className={`font-medium transition-colors ${
+                                  isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                                }`}>
+                                  {set.setName}
+                                </h3>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {set.brand} • {set.paintCount} paints
+                                  {set.isCurated && (
+                                    <span className="ml-2 text-green-600">✓ Verified</span>
+                                  )}
                                 </p>
-                              )}
+                                {set.description && (
+                                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                    {set.description}
+                                  </p>
+                                )}
+                              </div>
+                              <Package className={`w-5 h-5 shrink-0 transition-colors ${
+                                isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                              }`} />
                             </div>
-                            <Package className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -298,96 +315,30 @@ export function PaintSetSelectionDialog({
                       </Button>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Selected Set Info */}
-                  <div className="bg-accent/30 border border-border rounded-lg p-4">
-                    <h3 className="font-medium text-foreground">{selectedSet.setName}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedSet.brand} • {selectedSet.paintCount} paints
-                    </p>
-                    {matchRate < 100 && unmatchedCount > 0 && (
-                      <div className="mt-2 text-sm text-amber-600">
-                        ⚠ {unmatchedCount} paint{unmatchedCount > 1 ? 's' : ''} not found in
-                        database ({matchRate}% match rate)
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Matched Paints */}
-                  {isLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Spinner />
-                    </div>
-                  ) : matchedPaints && matchedPaints.length > 0 ? (
-                    <>
-                      <div>
-                        <h4 className="font-medium text-foreground mb-3">
-                          {matchedPaints.length} Paint{matchedPaints.length > 1 ? 's' : ''} Found
-                        </h4>
-                        <div className="border border-border rounded-md max-h-[300px] overflow-y-auto divide-y divide-border">
-                          {matchedPaints.map(paint => (
-                            <div key={paint.paintId} className="p-3 flex items-center gap-3">
-                              <div
-                                className="w-6 h-6 rounded-full border border-border shrink-0"
-                                style={{ backgroundColor: paint.hexColor }}
-                              />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{paint.name}</p>
-                                <p className="text-xs text-muted-foreground">{paint.brand}</p>
-                              </div>
-                              <Check className="w-4 h-4 text-green-500" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {error && (
-                        <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                          {error}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-12">
-                      <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-3" />
-                      <p className="text-sm text-destructive">
-                        {error || 'No paints could be matched from this set'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Footer */}
             <div className="border-t border-border p-6 flex gap-2">
-              {selectedSet && matchedPaints ? (
-                <>
-                  <Button variant="outline" className="flex-1" onClick={handleBack}>
-                    Back
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={handleConfirm}
-                    disabled={isSaving || !matchedPaints || matchedPaints.length === 0}
-                  >
-                    {isSaving ? (
-                      <>
-                        <Spinner size="sm" className="mr-2" />
-                        Adding...
-                      </>
-                    ) : (
-                      `Add ${matchedPaints.length} Paint${matchedPaints.length > 1 ? 's' : ''}`
-                    )}
-                  </Button>
-                </>
-              ) : (
-                <Button variant="outline" className="w-full" onClick={handleClose}>
-                  Cancel
-                </Button>
-              )}
+              <Button variant="outline" className="flex-1" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleConfirm}
+                disabled={isSaving || selectedSets.length === 0}
+              >
+                {isSaving ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Adding Sets...
+                  </>
+                ) : selectedSets.length === 0 ? (
+                  'Select Sets to Add'
+                ) : (
+                  `Add ${selectedSets.length} Set${selectedSets.length > 1 ? 's' : ''}`
+                )}
+              </Button>
             </div>
           </div>
         </div>
