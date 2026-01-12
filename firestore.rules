@@ -41,6 +41,17 @@ service cloud.firestore {
       match /inventory/{itemId} {
         allow read, write: if isOwner(userId);
       }
+
+      // User's notifications subcollection (Phase 2)
+      match /notifications/{notificationId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+
+      // User's badges subcollection (Phase 2)
+      match /badges/{badgeId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow write: if false; // Only server can award badges
+      }
     }
 
     // Projects collection

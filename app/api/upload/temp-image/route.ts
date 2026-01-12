@@ -68,7 +68,11 @@ export async function POST(request: NextRequest) {
 
     // Make file publicly readable and get download URL
     await fileRef.makePublic();
-    const downloadURL = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+
+    // Use the Firebase Storage URL format that matches client SDK
+    const bucketName = bucket.name;
+    const encodedPath = encodeURIComponent(filename);
+    const downloadURL = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
 
     return NextResponse.json({
       success: true,
