@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase/firebase';
+import { getAdminStorage } from '@/lib/firebase/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -53,17 +52,23 @@ export async function POST(request: NextRequest) {
     const extension = file.name.split('.').pop() || 'jpg';
     const filename = `temp/${userId}/${timestamp}-${randomString}.${extension}`;
 
-    // Upload to Firebase Storage
-    const storageRef = ref(storage, filename);
+    // Upload to Firebase Storage using Admin SDK
+    const storage = getAdminStorage();
+    const bucket = storage.bucket();
+    const fileRef = bucket.file(filename);
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    await uploadBytes(storageRef, buffer, {
-      contentType: file.type,
+    await fileRef.save(buffer, {
+      metadata: {
+        contentType: file.type,
+      },
     });
 
-    // Get download URL
-    const downloadURL = await getDownloadURL(storageRef);
+    // Make file publicly readable and get download URL
+    await fileRef.makePublic();
+    const downloadURL = `https://storage.googleapis.com/${bucket.name}/${filename}`;
 
     return NextResponse.json({
       success: true,
