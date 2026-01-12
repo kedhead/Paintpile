@@ -163,10 +163,16 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     setValue('applicationTips', recipe.applicationTips || '');
 
     // Convert AI ingredients to form ingredients
-    // Note: AI ingredients have hex colors and matched paints,
-    // but form needs paintIds. For now, we'll leave ingredients empty
-    // and let user select paints manually from the matched suggestions
-    // TODO: In future, auto-select best matched paint
+    // Auto-select the best matched paint for each color
+    const formIngredients = recipe.ingredients
+      .filter(ing => ing.matchedPaints && ing.matchedPaints.length > 0)
+      .map(ing => ({
+        paintId: ing.matchedPaints![0].paintId, // Select best match
+        role: ing.role,
+        ratio: '',
+        notes: ing.notes || `AI suggested: ${ing.colorName}`,
+      }));
+    setValue('ingredients', formIngredients);
 
     // Convert AI steps to form steps
     const formSteps = recipe.steps.map((step, index) => ({
