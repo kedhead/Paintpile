@@ -470,12 +470,37 @@ Important:
         techniques: Array.isArray(parsed.techniques) ? parsed.techniques : [],
         surfaceType: parsed.surfaceType,
         estimatedTime: parsed.estimatedTime,
-        ingredients: parsed.ingredients.map((ing: any, index: number) => ({
-          hexColor: ing.hexColor?.startsWith('#') ? ing.hexColor : `#${ing.hexColor}`,
-          colorName: ing.colorName || `Color ${index + 1}`,
-          role: ing.role || 'base',
-          notes: ing.notes || '',
-        })),
+        ingredients: parsed.ingredients
+          .map((ing: any, index: number) => {
+            // Validate and normalize hex color
+            let hexColor = ing.hexColor;
+
+            // Check if hexColor is missing, null, undefined, or empty
+            if (!hexColor || typeof hexColor !== 'string' || hexColor.trim() === '') {
+              console.warn(`Invalid hex color for ingredient ${index}: ${hexColor}. Using default gray.`);
+              hexColor = '#808080'; // Default to gray if invalid
+            }
+
+            // Ensure it starts with #
+            if (!hexColor.startsWith('#')) {
+              hexColor = `#${hexColor}`;
+            }
+
+            // Validate hex format (# followed by 6 hex characters)
+            const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+            if (!hexPattern.test(hexColor)) {
+              console.warn(`Invalid hex color format for ingredient ${index}: ${hexColor}. Using default gray.`);
+              hexColor = '#808080';
+            }
+
+            return {
+              hexColor,
+              colorName: ing.colorName || `Color ${index + 1}`,
+              role: ing.role || 'base',
+              notes: ing.notes || '',
+            };
+          })
+          .filter(ing => ing.hexColor !== '#808080' || ing.colorName !== 'Color'), // Keep gray only if explicitly named
         steps: parsed.steps.map((step: any, index: number) => ({
           stepNumber: step.stepNumber || index + 1,
           title: step.title || `Step ${index + 1}`,
