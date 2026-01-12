@@ -1,0 +1,21 @@
+
+> paintpile@1.0.0 scrape:sets
+> tsx scripts/scrape-paint-sets.ts monument
+
+✅ Loaded environment variables from .env.local
+
+🎨 Paint Set Scraper
+
+📦 Scraping Monument Hobbies (ProAcryl) with AI enhancement...
+
+Fatal error: Error: ANTHROPIC_API_KEY environment variable is not set
+    at new AnthropicClient (K:\AI-Projects\paintpile\lib\ai\anthropic-client.ts:34:13)
+    at getAnthropicClient (K:\AI-Projects\paintpile\lib\ai\anthropic-client.ts:598:23)
+    at new MonumentSetScraperAI (K:\AI-Projects\paintpile\lib\scrapers\monument-set-scraper-ai.ts:16:21)
+    at main (K:\AI-Projects\paintpile\scripts\scrape-paint-sets.ts:54:23)
+    at brand (K:\AI-Projects\paintpile\scripts\scrape-paint-sets.ts:200:1)
+    at Object.<anonymous> (K:\AI-Projects\paintpile\scripts\scrape-paint-sets.ts:203:2)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object.transformer (K:\AI-Projects\paintpile\node_modules\tsx\dist\register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)

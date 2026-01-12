@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "migrate:recipes": "tsx scripts/migrate-recipes.ts"
+    "migrate:recipes": "tsx scripts/migrate-recipes.ts",
+    "scrape:sets": "tsx scripts/scrape-paint-sets.ts"
   },
   "keywords": [],
   "author": "",
