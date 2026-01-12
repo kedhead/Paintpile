@@ -23,6 +23,7 @@ export interface MonthlyUsage {
   paintSuggestions: number;
   aiCleanup: number;
   recolor: number;
+  recipeGeneration: number;
 }
 
 /**
@@ -210,6 +211,7 @@ function getDefaultMonthlyUsage(): MonthlyUsage {
     paintSuggestions: 0,
     aiCleanup: 0,
     recolor: 0,
+    recipeGeneration: 0,
   };
 }
 

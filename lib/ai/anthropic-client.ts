@@ -290,9 +290,215 @@ Important:
   }
 
   /**
+   * Generate a complete paint recipe from a miniature photo.
+   * Uses Claude 3.5 Sonnet for complex recipe generation.
+   *
+   * @param imageUrl - URL of the miniature photo to analyze
+   * @param context - Optional user context (e.g., "gem effect", "weathered armor")
+   * @returns Complete recipe with steps and ingredients
+   */
+  async generateRecipeFromPhoto(
+    imageUrl: string,
+    context?: string
+  ): Promise<import('@/types/ai-recipe').GeneratedRecipe> {
+    try {
+      // Fetch the image and convert to base64
+      const imageData = await this.fetchImageAsBase64(imageUrl);
+
+      // Build the recipe generation prompt
+      const prompt = this.buildRecipePrompt(context);
+
+      // Call Claude 3.5 Sonnet (our smartest model for complex generation)
+      const response = await this.client.messages.create({
+        model: 'claude-3-5-sonnet-20241022', // Sonnet for complex reasoning
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: imageData.mediaType,
+                  data: imageData.base64,
+                },
+              },
+              {
+                type: 'text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      });
+
+      // Extract text response
+      const textContent = response.content.find(c => c.type === 'text');
+      if (!textContent || textContent.type !== 'text') {
+        throw new Error('No text response from Claude API');
+      }
+
+      const generatedText = textContent.text;
+
+      // Parse the JSON response
+      const recipe = this.parseRecipeResponse(generatedText);
+
+      return recipe;
+    } catch (error: any) {
+      console.error('Error generating recipe from photo:', error);
+      throw new Error(`Failed to generate recipe: ${error.message}`);
+    }
+  }
+
+  /**
+   * Build the prompt for recipe generation
+   */
+  private buildRecipePrompt(context?: string): string {
+    const contextSection = context && context.trim()
+      ? `\nUser Context: "${context}"\nConsider this context when generating the recipe.`
+      : '';
+
+    return `You are an expert miniature painting instructor. Analyze this miniature photo and generate a complete, detailed paint recipe.
+
+${contextSection}
+
+Generate a comprehensive recipe with the following structure:
+
+**1. Recipe Metadata:**
+- Catchy, descriptive name (e.g., "Ethereal Spectral Glow", "Battle-Worn Armor Plate")
+- 2-3 sentence description of the overall effect
+- Category: choose from skin-tone, metallic, fabric, leather, armor, weapon, wood, stone, nmm, osl, weathering, glow-effect, gem, base-terrain, other
+- Difficulty: beginner, intermediate, or advanced
+- Techniques: array of techniques used (nmm, osl, drybrushing, layering, glazing, washing, blending, feathering, stippling, wetblending, zenithal, airbrushing, freehand, weathering, other)
+- Estimated time in minutes
+- Surface type: armor, skin, fabric, leather, metal, wood, stone, gem, other
+
+**2. Paint Colors (5-8):**
+For each color, provide:
+- Hex code (accurate to the visible color)
+- Descriptive color name (e.g., "Deep Crimson Shadow", "Bright Ice Blue Highlight")
+- Role: base, highlight, shadow, midtone, glaze, wash, layer
+- Notes on application and why this color is important
+
+**3. Step-by-Step Instructions (4-10 steps):**
+For each step, provide:
+- Title (e.g., "Base Coat Application", "First Edge Highlight")
+- Detailed instruction (2-3 sentences)
+- Paints used (by name)
+- Technique used (optional)
+- Tips array (optional, helpful hints)
+
+**4. Additional Tips:**
+- Mixing instructions (how to mix paints if needed)
+- Application tips (general advice for executing this recipe)
+
+Return your response as a JSON object with this EXACT structure:
+{
+  "name": "Recipe Name",
+  "description": "2-3 sentence description",
+  "category": "metallic",
+  "difficulty": "intermediate",
+  "techniques": ["layering", "glazing"],
+  "surfaceType": "armor",
+  "estimatedTime": 45,
+  "ingredients": [
+    {
+      "hexColor": "#1a1a2e",
+      "colorName": "Deep Midnight Blue",
+      "role": "base",
+      "notes": "Use as the base coat, applied thinly in 2-3 layers"
+    }
+  ],
+  "steps": [
+    {
+      "stepNumber": 1,
+      "title": "Prime and Base Coat",
+      "instruction": "Prime the model with black primer. Apply a thin base coat of Deep Midnight Blue, ensuring even coverage. Let dry completely between coats.",
+      "paints": ["Deep Midnight Blue"],
+      "technique": "layering",
+      "tips": ["Thin the paint with water or medium", "Use a medium-sized brush"]
+    }
+  ],
+  "mixingInstructions": "Mix paints on a wet palette to maintain consistency",
+  "applicationTips": "Work in thin layers, building up color gradually. Patience is key for this effect.",
+  "confidence": 0.85
+}
+
+Important:
+- Analyze the photo carefully to suggest realistic, achievable colors
+- Provide accurate hex codes that match visible colors
+- Give specific, actionable instructions
+- Consider the skill level needed for each technique
+- Be realistic about estimated time
+- Return ONLY the JSON object, no additional text
+- Confidence should be 0-1 (your confidence this recipe will work)`;
+  }
+
+  /**
+   * Parse Claude's recipe JSON response
+   */
+  private parseRecipeResponse(responseText: string): import('@/types/ai-recipe').GeneratedRecipe {
+    try {
+      // Extract JSON from response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No JSON found in recipe response');
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      // Validate required fields
+      if (!parsed.name || !parsed.description || !parsed.category || !parsed.difficulty) {
+        throw new Error('Missing required recipe fields');
+      }
+
+      if (!Array.isArray(parsed.ingredients) || parsed.ingredients.length === 0) {
+        throw new Error('Recipe must have at least one ingredient');
+      }
+
+      if (!Array.isArray(parsed.steps) || parsed.steps.length === 0) {
+        throw new Error('Recipe must have at least one step');
+      }
+
+      // Return validated recipe
+      return {
+        name: parsed.name,
+        description: parsed.description,
+        category: parsed.category,
+        difficulty: parsed.difficulty,
+        techniques: Array.isArray(parsed.techniques) ? parsed.techniques : [],
+        surfaceType: parsed.surfaceType,
+        estimatedTime: parsed.estimatedTime,
+        ingredients: parsed.ingredients.map((ing: any, index: number) => ({
+          hexColor: ing.hexColor?.startsWith('#') ? ing.hexColor : `#${ing.hexColor}`,
+          colorName: ing.colorName || `Color ${index + 1}`,
+          role: ing.role || 'base',
+          notes: ing.notes || '',
+        })),
+        steps: parsed.steps.map((step: any, index: number) => ({
+          stepNumber: step.stepNumber || index + 1,
+          title: step.title || `Step ${index + 1}`,
+          instruction: step.instruction || '',
+          paints: Array.isArray(step.paints) ? step.paints : [],
+          technique: step.technique,
+          tips: Array.isArray(step.tips) ? step.tips : [],
+        })),
+        mixingInstructions: parsed.mixingInstructions,
+        applicationTips: parsed.applicationTips,
+        confidence: parsed.confidence || 0.5,
+      };
+    } catch (error: any) {
+      console.error('Error parsing recipe response:', error);
+      console.error('Response text:', responseText);
+      throw new Error(`Failed to parse recipe: ${error.message}`);
+    }
+  }
+
+  /**
    * Expand a paint set description into individual paint names.
    * Uses Claude's knowledge of hobby paint products.
-   * 
+   *
    * @param description - User's description (e.g., "Speedpaint 2.0 Most Wanted Set")
    * @returns Array of paint names that match
    */

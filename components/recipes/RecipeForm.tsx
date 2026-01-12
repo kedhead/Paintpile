@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
 import { PaintSelectorModal } from '@/components/paints/PaintSelectorModal';
-import { X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { AIRecipeGenerator } from './AIRecipeGenerator';
+import { GeneratedRecipe } from '@/types/ai-recipe';
+import { X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 
 interface RecipeFormProps {
   userId: string;
@@ -23,6 +25,8 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPaintSelector, setShowPaintSelector] = useState(false);
   const [selectingIngredientIndex, setSelectingIngredientIndex] = useState<number | null>(null);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [aiGeneratedPhotoUrl, setAiGeneratedPhotoUrl] = useState<string>('');
   const [expandedSections, setExpandedSections] = useState({
     basic: true,
     ingredients: true,
@@ -143,6 +147,49 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     }));
   };
 
+  const handleAIRecipeGenerated = (recipe: GeneratedRecipe, sourcePhotoUrl: string) => {
+    // Store the source photo URL for later
+    setAiGeneratedPhotoUrl(sourcePhotoUrl);
+
+    // Pre-fill form with AI-generated data
+    setValue('name', recipe.name);
+    setValue('description', recipe.description);
+    setValue('category', recipe.category);
+    setValue('difficulty', recipe.difficulty);
+    setValue('techniques', recipe.techniques);
+    setValue('surfaceType', recipe.surfaceType);
+    setValue('estimatedTime', recipe.estimatedTime);
+    setValue('mixingInstructions', recipe.mixingInstructions || '');
+    setValue('applicationTips', recipe.applicationTips || '');
+
+    // Convert AI ingredients to form ingredients
+    // Note: AI ingredients have hex colors and matched paints,
+    // but form needs paintIds. For now, we'll leave ingredients empty
+    // and let user select paints manually from the matched suggestions
+    // TODO: In future, auto-select best matched paint
+
+    // Convert AI steps to form steps
+    const formSteps = recipe.steps.map((step, index) => ({
+      stepNumber: step.stepNumber,
+      title: step.title,
+      instruction: step.instruction,
+      photoUrl: '',
+      paints: [], // Will be filled when user adds paints
+      technique: step.technique,
+      tips: step.tips || [],
+      estimatedTime: undefined,
+    }));
+    setValue('steps', formSteps);
+
+    // Expand sections to show the populated content
+    setExpandedSections({
+      basic: true,
+      ingredients: true,
+      steps: true,
+      details: true,
+    });
+  };
+
   const onSubmit = async (data: RecipeFormData) => {
     try {
       setIsSubmitting(true);
@@ -187,6 +234,34 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
               <X className="h-6 w-6" />
             </button>
           </div>
+
+          {/* AI Generator Button (only show when creating new recipe) */}
+          {!editingRecipe && (
+            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+              <div className="flex items-start gap-4">
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground mb-1">
+                    Generate with AI
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Let AI analyze a miniature photo and create a complete paint recipe with steps
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAIGenerator(true)}
+                    className="border-primary/50 hover:bg-primary/10"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate from Photo
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -646,6 +721,14 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
             setSelectingIngredientIndex(null);
           }}
           multiSelect={false}
+        />
+      )}
+
+      {/* AI Recipe Generator Modal */}
+      {showAIGenerator && (
+        <AIRecipeGenerator
+          onClose={() => setShowAIGenerator(false)}
+          onRecipeGenerated={handleAIRecipeGenerated}
         />
       )}
     </>

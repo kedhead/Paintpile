@@ -136,6 +136,16 @@ export interface PaintRecipe {
   usedInProjects: number;            // How many times used
   likes: number;                     // Like count
 
+  // AI Generation metadata (Phase 3)
+  generatedByAI?: boolean;               // True if created by AI
+  sourcePhotoUrl?: string;               // Original photo used for generation
+  aiGenerationMetadata?: {
+    model: string;                       // AI model used (e.g., "claude-3-5-sonnet")
+    confidence: number;                  // AI confidence score (0-1)
+    creditsUsed: number;                 // Credits consumed
+    generatedAt: Timestamp;              // When AI generated this
+  };
+
   // Timestamps
   createdAt: Timestamp;
   updatedAt: Timestamp;

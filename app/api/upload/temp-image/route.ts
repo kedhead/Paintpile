@@ -1,0 +1,80 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/lib/firebase/firebase';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * POST /api/upload/temp-image
+ *
+ * Upload a temporary image for AI processing.
+ * Images are stored in temp/ folder and can be cleaned up periodically.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const userId = formData.get('userId') as string;
+
+    if (!file) {
+      return NextResponse.json(
+        { success: false, error: 'No file provided' },
+        { status: 400 }
+      );
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User ID required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json(
+        { success: false, error: 'File must be an image' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { success: false, error: 'File must be smaller than 10MB' },
+        { status: 400 }
+      );
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    const extension = file.name.split('.').pop() || 'jpg';
+    const filename = `temp/${userId}/${timestamp}-${randomString}.${extension}`;
+
+    // Upload to Firebase Storage
+    const storageRef = ref(storage, filename);
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    await uploadBytes(storageRef, buffer, {
+      contentType: file.type,
+    });
+
+    // Get download URL
+    const downloadURL = await getDownloadURL(storageRef);
+
+    return NextResponse.json({
+      success: true,
+      url: downloadURL,
+      path: filename,
+    });
+  } catch (error: any) {
+    console.error('Error uploading temp image:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Failed to upload image' },
+      { status: 500 }
+    );
+  }
+}
