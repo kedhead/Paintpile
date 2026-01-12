@@ -110,8 +110,20 @@ export function AIRecipeGenerator({
       });
 
       console.log('[AI Recipe] Response status:', response.status);
+      console.log('[AI Recipe] Response headers:', Object.fromEntries(response.headers.entries()));
 
-      const data: GenerateRecipeResponse = await response.json();
+      // Try to get the response text first
+      const responseText = await response.text();
+      console.log('[AI Recipe] Response text:', responseText.substring(0, 500));
+
+      let data: GenerateRecipeResponse;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[AI Recipe] Failed to parse JSON response:', parseError);
+        throw new Error('Invalid server response: ' + responseText.substring(0, 100));
+      }
+
       console.log('[AI Recipe] Response data:', data);
 
       if (!data.success) {
