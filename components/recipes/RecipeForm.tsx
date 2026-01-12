@@ -166,7 +166,8 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     // Auto-select the best matched paint for each color
     const formIngredients = recipe.ingredients
       .filter(ing => ing.matchedPaints && ing.matchedPaints.length > 0)
-      .map(ing => ({
+      .map((ing, index) => ({
+        order: index + 1,
         paintId: ing.matchedPaints![0].paintId, // Select best match
         role: ing.role,
         ratio: '',
