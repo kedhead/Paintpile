@@ -92,6 +92,11 @@ export function AIRecipeGenerator({
     setStep('generating');
 
     try {
+      console.log('[AI Recipe] Starting generation');
+      console.log('[AI Recipe] Image URL:', selectedImageUrl);
+      console.log('[AI Recipe] User ID:', currentUser.uid);
+      console.log('[AI Recipe] Context:', context.trim() || 'none');
+
       const response = await fetch('/api/ai/generate-recipe', {
         method: 'POST',
         headers: {
@@ -104,9 +109,17 @@ export function AIRecipeGenerator({
         }),
       });
 
+      console.log('[AI Recipe] Response status:', response.status);
+
       const data: GenerateRecipeResponse = await response.json();
+      console.log('[AI Recipe] Response data:', data);
 
       if (!data.success) {
+        // Show full error details in development
+        const errorDetails = (data as any).details || (data as any).stack;
+        if (errorDetails) {
+          console.error('[AI Recipe] Error details:', errorDetails);
+        }
         throw new Error(data.error || 'Failed to generate recipe');
       }
 
@@ -114,9 +127,11 @@ export function AIRecipeGenerator({
         throw new Error('No recipe data returned');
       }
 
+      console.log('[AI Recipe] Recipe generated:', data.data.recipe.name);
       setGeneratedRecipe(data.data.recipe);
       setStep('preview');
     } catch (err: any) {
+      console.error('[AI Recipe] Client-side error:', err);
       setError(err.message || 'Failed to generate recipe');
       setStep('add-context');
     } finally {

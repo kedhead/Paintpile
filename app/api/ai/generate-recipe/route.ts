@@ -20,6 +20,18 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
+    // Check if Anthropic API key is set
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('[AI Recipe] ANTHROPIC_API_KEY is not set');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'AI service is not configured. Please contact support.',
+        },
+        { status: 503 }
+      );
+    }
+
     // Parse request body
     const body: GenerateRecipeRequest = await request.json();
     const { userId, imageUrl, context } = body;
@@ -89,8 +101,14 @@ export async function POST(request: NextRequest) {
 
     // Generate recipe with Claude Sonnet
     console.log('[AI Recipe] Generating recipe from photo:', imageUrl.substring(0, 100));
+    console.log('[AI Recipe] User:', userId);
+    console.log('[AI Recipe] Context:', context || 'none');
+
     const anthropicClient = getAnthropicClient();
+    console.log('[AI Recipe] Anthropic client initialized');
+
     const generatedRecipe = await anthropicClient.generateRecipeFromPhoto(imageUrl, context);
+    console.log('[AI Recipe] Recipe generated successfully');
 
     // Match paints for each detected color
     console.log('[AI Recipe] Matching paints for', generatedRecipe.ingredients.length, 'colors');
@@ -141,12 +159,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
     console.error('[AI Recipe] Generation failed:', error);
-    console.error('Error stack:', error.stack);
+    console.error('[AI Recipe] Error message:', error.message);
+    console.error('[AI Recipe] Error stack:', error.stack);
+    console.error('[AI Recipe] Error name:', error.name);
+
+    // Log additional error details if available
+    if (error.response) {
+      console.error('[AI Recipe] Error response:', error.response);
+    }
 
     const response: GenerateRecipeResponse = {
       success: false,
       error: error.message || 'Failed to generate recipe',
     };
+
+    // In development, include stack trace for debugging
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json(
+        {
+          ...response,
+          stack: error.stack,
+          details: error.toString(),
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(response, { status: 500 });
   }
