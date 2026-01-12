@@ -500,7 +500,9 @@ Important:
               notes: ing.notes || '',
             };
           })
-          .filter(ing => ing.hexColor !== '#808080' || ing.colorName !== 'Color'), // Keep gray only if explicitly named
+          .filter((ing: { hexColor: string; colorName: string; role: string; notes: string }) =>
+            ing.hexColor !== '#808080' || ing.colorName !== 'Color'
+          ), // Keep gray only if explicitly named
         steps: parsed.steps.map((step: any, index: number) => ({
           stepNumber: step.stepNumber || index + 1,
           title: step.title || `Step ${index + 1}`,
