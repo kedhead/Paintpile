@@ -91,7 +91,6 @@ export async function likeProject(userId: string, projectId: string): Promise<vo
       'project',
       {
         projectName: project.name,
-        projectPhotoUrl: project.coverPhotoUrl,
         visibility: project.isPublic ? 'public' : 'private',
       }
     );

@@ -113,7 +113,6 @@ export async function createComment(
       'project',
       {
         projectName: project.name,
-        projectPhotoUrl: project.coverPhotoUrl,
         commentText: content,
         commentPreview,
         visibility: project.isPublic ? 'public' : 'private',
