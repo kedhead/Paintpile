@@ -38,7 +38,7 @@ export class AnthropicClient {
       apiKey,
     });
 
-    this.model = 'claude-3-5-haiku-20241022'; // Claude 3.5 Haiku
+    this.model = 'claude-3-5-haiku-latest'; // Claude 3.5 Haiku
   }
 
   /**
@@ -310,7 +310,7 @@ Important:
 
       // Call Claude 3.5 Sonnet (our smartest model for complex generation)
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022', // Sonnet for complex reasoning
+        model: 'claude-3-5-sonnet-latest', // Latest Sonnet for complex reasoning
         max_tokens: 4096,
         messages: [
           {
@@ -527,7 +527,7 @@ JSON Output:`;
       // Use Claude 3.5 Sonnet (Smartest 3.5 model) for deep knowledge recall
       // Haiku (this.model) is too "lazy" for full set retrieval
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-sonnet-latest',
         max_tokens: 4000,
         messages: [
           {
