@@ -89,7 +89,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate image URL (must be from Firebase Storage)
-    if (!imageUrl.startsWith('https://firebasestorage.googleapis.com/')) {
+    const isFirebaseStorage =
+      imageUrl.startsWith('https://firebasestorage.googleapis.com/') ||
+      imageUrl.startsWith('https://storage.googleapis.com/');
+
+    if (!isFirebaseStorage) {
       return NextResponse.json(
         {
           success: false,

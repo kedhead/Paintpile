@@ -60,23 +60,27 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Upload with public-read ACL
     await fileRef.save(buffer, {
       metadata: {
         contentType: file.type,
+        cacheControl: 'public, max-age=3600',
       },
+      public: true,
     });
 
-    // Make file publicly readable and get download URL
+    // Also make public to ensure accessibility
     await fileRef.makePublic();
 
-    // Use the Firebase Storage URL format that matches client SDK
-    const bucketName = bucket.name;
-    const encodedPath = encodeURIComponent(filename);
-    const downloadURL = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media`;
+    // Get the public URL directly - this format is always accessible
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+
+    console.log('[Temp Upload] File uploaded:', filename);
+    console.log('[Temp Upload] Public URL:', publicUrl);
 
     return NextResponse.json({
       success: true,
-      url: downloadURL,
+      url: publicUrl,
       path: filename,
     });
   } catch (error: any) {
