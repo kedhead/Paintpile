@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getRecipe } from '@/lib/firestore/recipes';
-import { getPaint } from '@/lib/firestore/paints';
+import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintRecipe, RECIPE_CATEGORY_LABELS, DIFFICULTY_LABELS, TECHNIQUE_LABELS, PAINT_ROLE_LABELS } from '@/types/recipe';
 import { Paint } from '@/types/paint';
 import { Spinner } from '@/components/ui/Spinner';
@@ -42,14 +42,11 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
       const paintIds = recipeData.ingredients.map(ing => ing.paintId);
       const uniquePaintIds = [...new Set(paintIds)];
 
-      const paintPromises = uniquePaintIds.map(id => getPaint(id));
-      const paintResults = await Promise.all(paintPromises);
+      const paintResults = await getPaintsByIds(uniquePaintIds);
 
       const paintMap: Record<string, Paint> = {};
       paintResults.forEach(paint => {
-        if (paint) {
-          paintMap[paint.paintId] = paint;
-        }
+        paintMap[paint.paintId] = paint;
       });
 
       setPaints(paintMap);
