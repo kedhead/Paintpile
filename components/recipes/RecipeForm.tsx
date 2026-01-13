@@ -190,12 +190,12 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     // Convert AI steps to form steps
     const formSteps = recipe.steps.map((step, index) => ({
       stepNumber: step.stepNumber,
-      title: step.title,
-      instruction: step.instruction,
+      title: step.title.substring(0, 100), // Schema max 100
+      instruction: step.instruction.substring(0, 1000), // Schema max 1000
       photoUrl: '',
       paints: [], // Will be filled when user adds paints
       technique: step.technique,
-      tips: step.tips || [],
+      tips: (step.tips || []).map(tip => tip.substring(0, 200)), // Schema max 200 per tip
       estimatedTime: undefined,
     }));
     setValue('steps', formSteps);
