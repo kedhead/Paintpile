@@ -337,7 +337,25 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
             onSubmit={(e) => {
               console.log('[Recipe Form] Form onSubmit event triggered!');
               console.log('[Recipe Form] Event:', e);
-              handleSubmit(onSubmit, onError)(e);
+
+              // Preprocess data to clean up NaN values before validation
+              handleSubmit((data) => {
+                // Remove NaN from steps estimatedTime
+                if (data.steps) {
+                  data.steps = data.steps.map(step => {
+                    const cleanedStep = { ...step };
+                    if (isNaN(cleanedStep.estimatedTime as any)) {
+                      delete cleanedStep.estimatedTime;
+                    }
+                    return cleanedStep;
+                  });
+                }
+                // Remove NaN from recipe estimatedTime
+                if (isNaN(data.estimatedTime as any)) {
+                  delete (data as any).estimatedTime;
+                }
+                return onSubmit(data);
+              }, onError)(e);
             }}
             className="space-y-6"
           >
