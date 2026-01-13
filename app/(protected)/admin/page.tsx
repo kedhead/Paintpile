@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Shield, Database, Palette, Users, Package } from 'lucide-react';
+import { Shield, Database, Palette, Users, Package, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
@@ -85,19 +85,41 @@ export default function AdminPage() {
             </div>
           </Link>
 
+          {/* Smart Import Paints */}
+          <Link href="/admin/smart-import">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Upload className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Smart Import Paints
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Import paints without duplicates - safe to run multiple times
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Smart Import →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
           {/* Manage Paint Database */}
           <Link href="/admin/manage-paints">
             <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Palette className="w-6 h-6 text-primary" />
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
+                  <Palette className="w-6 h-6 text-amber-600 dark:text-amber-500" />
                 </div>
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-foreground mb-2">
                     Manage Paint Database
                   </h2>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Clear existing paints or seed comprehensive database with 300+ paints including Army Painter Fanatic
+                    Clear existing paints or full database reset (⚠️ destructive)
                   </p>
                   <Button variant="outline" size="sm">
                     Manage Paints →
@@ -202,8 +224,10 @@ export default function AdminPage() {
             Setup Checklist
           </h3>
           <ol className="text-sm text-amber-700 dark:text-amber-300 space-y-2 list-decimal list-inside">
-            <li>Seed the paint database with 300+ paints (recommended: use "Clear and Reseed" if you have old data)</li>
-            <li>Optional: Import additional paints from CSV files (web scraping or manual data entry)</li>
+            <li><strong>New Users:</strong> Use "Manage Paints" → "Clear and Reseed" to import all 500+ paints</li>
+            <li><strong>Existing Users:</strong> Use "Smart Import" to add new paints without duplicates</li>
+            <li>Optional: Scrape paint sets from manufacturers with "Scrape Paint Sets"</li>
+            <li>Optional: Import from GitHub (2000+ paints from 34 manufacturers)</li>
             <li>Run migrations to add social fields to existing data (run once)</li>
             <li>Deploy Firestore security rules: <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">firebase deploy --only firestore:rules</code></li>
           </ol>
