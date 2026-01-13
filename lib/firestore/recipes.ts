@@ -41,14 +41,9 @@ export async function createRecipe(
     category: data.category,
     difficulty: data.difficulty,
     ingredients: data.ingredients,
-    techniques: data.techniques,
-    steps: data.steps,
-    mixingInstructions: data.mixingInstructions,
-    applicationTips: data.applicationTips,
+    techniques: data.techniques || [],
+    steps: data.steps || [],
     resultPhotos: [],
-    resultColor: data.resultColor,
-    estimatedTime: data.estimatedTime,
-    surfaceType: data.surfaceType,
     tags: data.tags || [],
     isPublic: data.isPublic,
     isGlobal: data.isGlobal,
@@ -59,11 +54,29 @@ export async function createRecipe(
     updatedAt: serverTimestamp() as any,
   };
 
+  // Add optional string fields only if they exist
+  if (data.mixingInstructions) {
+    recipe.mixingInstructions = data.mixingInstructions;
+  }
+  if (data.applicationTips) {
+    recipe.applicationTips = data.applicationTips;
+  }
+  if (data.resultColor) {
+    recipe.resultColor = data.resultColor;
+  }
+  if (data.estimatedTime !== undefined && data.estimatedTime !== null) {
+    recipe.estimatedTime = data.estimatedTime;
+  }
+  if (data.surfaceType) {
+    recipe.surfaceType = data.surfaceType;
+  }
+
   // Add sourcePhotoUrl if provided (for AI-generated recipes)
   if ((data as any).sourcePhotoUrl) {
     recipe.sourcePhotoUrl = (data as any).sourcePhotoUrl;
   }
 
+  console.log('[createRecipe] Saving recipe:', recipe);
   await setDoc(newRecipeRef, recipe);
 
   return newRecipeRef.id;
@@ -73,14 +86,24 @@ export async function createRecipe(
  * Get a single recipe by ID
  */
 export async function getRecipe(recipeId: string): Promise<PaintRecipe | null> {
-  const recipeRef = doc(db, 'paintRecipes', recipeId);
-  const recipeSnap = await getDoc(recipeRef);
+  try {
+    console.log('[getRecipe] Fetching recipe:', recipeId);
+    const recipeRef = doc(db, 'paintRecipes', recipeId);
+    const recipeSnap = await getDoc(recipeRef);
 
-  if (!recipeSnap.exists()) {
-    return null;
+    if (!recipeSnap.exists()) {
+      console.log('[getRecipe] Recipe not found');
+      return null;
+    }
+
+    console.log('[getRecipe] Recipe document exists, deserializing data');
+    const data = recipeSnap.data();
+    console.log('[getRecipe] Raw data:', data);
+    return data as PaintRecipe;
+  } catch (error) {
+    console.error('[getRecipe] Error fetching recipe:', error);
+    throw error;
   }
-
-  return recipeSnap.data() as PaintRecipe;
 }
 
 /**

@@ -29,9 +29,12 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
   const loadRecipe = async () => {
     try {
       setLoading(true);
+      console.log('[Recipe Detail] Loading recipe:', params.recipeId);
       const recipeData = await getRecipe(params.recipeId);
+      console.log('[Recipe Detail] Recipe loaded:', recipeData);
 
       if (!recipeData) {
+        console.log('[Recipe Detail] Recipe not found, redirecting');
         router.push('/recipes');
         return;
       }
@@ -41,8 +44,10 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
       // Load paint details for all ingredients
       const paintIds = recipeData.ingredients.map(ing => ing.paintId);
       const uniquePaintIds = [...new Set(paintIds)];
+      console.log('[Recipe Detail] Loading paints:', uniquePaintIds);
 
       const paintResults = await getPaintsByIds(uniquePaintIds);
+      console.log('[Recipe Detail] Paints loaded:', paintResults.length);
 
       const paintMap: Record<string, Paint> = {};
       paintResults.forEach(paint => {
@@ -52,6 +57,7 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
       setPaints(paintMap);
     } catch (error) {
       console.error('Error loading recipe:', error);
+      console.error('Error details:', error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
