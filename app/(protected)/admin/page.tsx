@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Shield, Database, Palette, Users } from 'lucide-react';
+import { Shield, Database, Palette, Users, Package } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
@@ -123,6 +123,28 @@ export default function AdminPage() {
                   </p>
                   <Button variant="outline" size="sm">
                     Import from GitHub →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Scrape Paint Sets */}
+          <Link href="/admin/scrape-sets">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                  <Package className="w-6 h-6 text-blue-600 dark:text-blue-500" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Scrape Paint Sets
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Use AI to automatically scrape paint sets from Monument, Army Painter, and Citadel websites
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Scrape Sets →
                   </Button>
                 </div>
               </div>

@@ -15,6 +15,8 @@
  */
 
 import { MonumentSetScraperAI } from '../lib/scrapers/monument-set-scraper-ai';
+import { ArmyPainterSetScraperAI } from '../lib/scrapers/army-painter-set-scraper-ai';
+import { CitadelSetScraperAI } from '../lib/scrapers/citadel-set-scraper-ai';
 import { PaintSetScraperResult } from '../lib/scrapers/paint-set-scraper-base';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -60,9 +62,27 @@ async function main() {
     }
   }
 
-  // Add more scrapers here as they're built
-  // if (brand === 'all' || brand === 'citadel') { ... }
-  // if (brand === 'all' || brand === 'vallejo') { ... }
+  if (brand === 'all' || brand === 'armypainter' || brand === 'army-painter') {
+    if (useAI) {
+      console.log('📦 Scraping Army Painter with AI enhancement...\n');
+      const scraper = new ArmyPainterSetScraperAI();
+      const result = await scraper.scrape();
+      results.push(result);
+    } else {
+      console.log('❌ Basic scraper not recommended - use AI scraper instead');
+    }
+  }
+
+  if (brand === 'all' || brand === 'citadel') {
+    if (useAI) {
+      console.log('📦 Scraping Citadel (Games Workshop) with AI enhancement...\n');
+      const scraper = new CitadelSetScraperAI();
+      const result = await scraper.scrape();
+      results.push(result);
+    } else {
+      console.log('❌ Basic scraper not recommended - use AI scraper instead');
+    }
+  }
 
   // Display results
   console.log('\n\n=== SCRAPING COMPLETE ===\n');
