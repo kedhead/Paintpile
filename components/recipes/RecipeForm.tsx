@@ -188,16 +188,24 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     setValue('ingredients', formIngredients);
 
     // Convert AI steps to form steps
-    const formSteps = recipe.steps.map((step, index) => ({
-      stepNumber: step.stepNumber,
-      title: step.title.substring(0, 100), // Schema max 100
-      instruction: step.instruction.substring(0, 1000), // Schema max 1000
-      photoUrl: '',
-      paints: [], // Will be filled when user adds paints
-      technique: step.technique,
-      tips: (step.tips || []).map(tip => tip.substring(0, 200)), // Schema max 200 per tip
-      estimatedTime: undefined,
-    }));
+    const formSteps = recipe.steps.map((step, index) => {
+      const formStep: any = {
+        stepNumber: step.stepNumber,
+        title: step.title.substring(0, 100), // Schema max 100
+        instruction: step.instruction.substring(0, 1000), // Schema max 1000
+        photoUrl: '',
+        paints: [], // Will be filled when user adds paints
+        technique: step.technique,
+        tips: (step.tips || []).map(tip => tip.substring(0, 200)), // Schema max 200 per tip
+      };
+
+      // Only include estimatedTime if it's a valid number (Zod rejects undefined as NaN)
+      if (step.estimatedTime && typeof step.estimatedTime === 'number' && step.estimatedTime > 0) {
+        formStep.estimatedTime = step.estimatedTime;
+      }
+
+      return formStep;
+    });
     setValue('steps', formSteps);
 
     // Expand sections to show the populated content
