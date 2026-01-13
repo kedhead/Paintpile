@@ -117,7 +117,15 @@ export async function getUserRecipes(userId: string): Promise<PaintRecipe[]> {
   );
 
   const querySnapshot = await getDocs(q);
-  const recipes = querySnapshot.docs.map((doc) => doc.data() as PaintRecipe);
+  const recipes = querySnapshot.docs.map((doc) => {
+    const data = doc.data() as PaintRecipe;
+    // Ensure recipeId is set (use from doc if not in data)
+    if (!data.recipeId) {
+      data.recipeId = doc.id;
+    }
+    console.log('[getUserRecipes] Recipe:', data.recipeId, data.name);
+    return data;
+  });
 
   // Sort client-side to avoid composite index requirement
   return recipes.sort((a, b) => {
@@ -147,7 +155,15 @@ export async function getPublicRecipes(
   const q = query(recipesRef, ...constraints);
   const querySnapshot = await getDocs(q);
 
-  let recipes = querySnapshot.docs.map((doc) => doc.data() as PaintRecipe);
+  let recipes = querySnapshot.docs.map((doc) => {
+    const data = doc.data() as PaintRecipe;
+    // Ensure recipeId is set (use from doc if not in data)
+    if (!data.recipeId) {
+      data.recipeId = doc.id;
+    }
+    console.log('[getPublicRecipes] Recipe:', data.recipeId, data.name);
+    return data;
+  });
 
   // Client-side filtering for all parameters
   if (searchParams?.category) {
