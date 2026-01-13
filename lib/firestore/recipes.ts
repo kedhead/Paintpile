@@ -52,6 +52,7 @@ export async function createRecipe(
     tags: data.tags || [],
     isPublic: data.isPublic,
     isGlobal: data.isGlobal,
+    sourcePhotoUrl: data.sourcePhotoUrl,
     saves: 0,
     usedInProjects: 0,
     likes: 0,
