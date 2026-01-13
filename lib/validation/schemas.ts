@@ -92,7 +92,7 @@ export const recipeStepSchema = z.object({
   stepNumber: z.number().int().min(1),
   title: z.string().min(1, 'Step title is required').max(100, 'Title is too long'),
   instruction: z.string().min(1, 'Instruction is required').max(1000, 'Instruction is too long'),
-  photoUrl: z.string().url().optional(),
+  photoUrl: z.union([z.string().url(), z.literal('')]).optional(),
   paints: z.array(z.string()).optional(),
   technique: z.enum([
     'nmm', 'osl', 'drybrushing', 'layering', 'glazing', 'washing',
@@ -125,7 +125,10 @@ export const recipeSchema = z.object({
   steps: z.array(recipeStepSchema).optional(),
   mixingInstructions: z.string().max(1000, 'Mixing instructions are too long').optional(),
   applicationTips: z.string().max(1000, 'Application tips are too long').optional(),
-  resultColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color').optional(),
+  resultColor: z.union([
+    z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color'),
+    z.literal(''),
+  ]).optional(),
   estimatedTime: z.number().int().min(0, 'Estimated time must be positive').optional(),
   surfaceType: z.enum([
     'armor', 'skin', 'fabric', 'leather', 'metal', 'wood', 'stone', 'gem', 'other'
