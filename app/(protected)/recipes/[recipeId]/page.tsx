@@ -11,9 +11,9 @@ import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Clock, Palette } from 'lucide-react';
 
 interface RecipeDetailPageProps {
-  params: {
+  params: Promise<{
     recipeId: string;
-  };
+  }>;
 }
 
 export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
@@ -21,16 +21,28 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
   const [recipe, setRecipe] = useState<PaintRecipe | null>(null);
   const [paints, setPaints] = useState<Record<string, Paint>>({});
   const [loading, setLoading] = useState(true);
+  const [recipeId, setRecipeId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadRecipe();
-  }, [params.recipeId]);
+    params.then(p => {
+      console.log('[Recipe Detail] Params resolved:', p.recipeId);
+      setRecipeId(p.recipeId);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (recipeId) {
+      loadRecipe();
+    }
+  }, [recipeId]);
 
   const loadRecipe = async () => {
+    if (!recipeId) return;
+
     try {
       setLoading(true);
-      console.log('[Recipe Detail] Loading recipe:', params.recipeId);
-      const recipeData = await getRecipe(params.recipeId);
+      console.log('[Recipe Detail] Loading recipe:', recipeId);
+      const recipeData = await getRecipe(recipeId);
       console.log('[Recipe Detail] Recipe loaded:', recipeData);
 
       if (!recipeData) {
