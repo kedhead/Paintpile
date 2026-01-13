@@ -587,6 +587,29 @@ JSON Output:`;
       throw new Error(`Failed to expand paint set: ${error.message}`);
     }
   }
+
+  /**
+   * Make a custom API call to Claude
+   * Useful for scrapers and other tools that need direct access
+   */
+  async callAPI(params: {
+    model?: string;
+    max_tokens: number;
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+  }): Promise<string> {
+    const response = await this.client.messages.create({
+      model: params.model || this.model,
+      max_tokens: params.max_tokens,
+      messages: params.messages,
+    });
+
+    const textContent = response.content.find(c => c.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text response from Claude API');
+    }
+
+    return textContent.text;
+  }
 }
 
 

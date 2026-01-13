@@ -199,7 +199,7 @@ Instructions:
 
 Paint Names (one per line):`;
 
-      const response = await this.getAIClient().client.messages.create({
+      const rawText = await this.getAIClient().callAPI({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 1000,
         messages: [
@@ -209,13 +209,6 @@ Paint Names (one per line):`;
           },
         ],
       });
-
-      const textContent = response.content.find(c => c.type === 'text');
-      if (!textContent || textContent.type !== 'text') {
-        return [];
-      }
-
-      const rawText = textContent.text.trim();
 
       if (rawText.includes('NO PAINTS LISTED')) {
         return [];
