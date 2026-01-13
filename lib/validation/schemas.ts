@@ -94,11 +94,7 @@ export const recipeStepSchema = z.object({
   instruction: z.string().min(1, 'Instruction is required').max(1000, 'Instruction is too long'),
   photoUrl: z.union([z.string().url(), z.literal('')]).optional(),
   paints: z.array(z.string()).optional(),
-  technique: z.enum([
-    'nmm', 'osl', 'drybrushing', 'layering', 'glazing', 'washing',
-    'blending', 'feathering', 'stippling', 'wetblending', 'zenithal',
-    'airbrushing', 'freehand', 'weathering', 'other'
-  ]).optional(),
+  technique: z.string().max(50).optional(),
   tips: z.array(z.string().max(200)).optional(),
   estimatedTime: z.union([
     z.number().int().min(0),
