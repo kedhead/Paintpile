@@ -33,7 +33,7 @@ export async function createRecipe(
   const recipesRef = collection(db, 'paintRecipes');
   const newRecipeRef = doc(recipesRef);
 
-  const recipe: PaintRecipe = {
+  const recipe: any = {
     recipeId: newRecipeRef.id,
     userId,
     name: data.name,
@@ -52,13 +52,17 @@ export async function createRecipe(
     tags: data.tags || [],
     isPublic: data.isPublic,
     isGlobal: data.isGlobal,
-    sourcePhotoUrl: data.sourcePhotoUrl,
     saves: 0,
     usedInProjects: 0,
     likes: 0,
     createdAt: serverTimestamp() as any,
     updatedAt: serverTimestamp() as any,
   };
+
+  // Add sourcePhotoUrl if provided (for AI-generated recipes)
+  if ((data as any).sourcePhotoUrl) {
+    recipe.sourcePhotoUrl = (data as any).sourcePhotoUrl;
+  }
 
   await setDoc(newRecipeRef, recipe);
 
