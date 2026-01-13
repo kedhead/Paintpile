@@ -157,12 +157,22 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     // Store the source photo URL for later
     setAiGeneratedPhotoUrl(sourcePhotoUrl);
 
+    // Valid technique values from schema
+    const validTechniques = [
+      'nmm', 'osl', 'drybrushing', 'layering', 'glazing', 'washing',
+      'blending', 'feathering', 'stippling', 'wetblending', 'zenithal',
+      'airbrushing', 'freehand', 'weathering', 'other'
+    ];
+
+    // Filter out invalid techniques, keep only valid ones
+    const sanitizedTechniques = (recipe.techniques || []).filter(t => validTechniques.includes(t));
+
     // Pre-fill form with AI-generated data
     setValue('name', recipe.name);
     setValue('description', recipe.description);
     setValue('category', recipe.category);
     setValue('difficulty', recipe.difficulty);
-    setValue('techniques', recipe.techniques);
+    setValue('techniques', sanitizedTechniques);
     setValue('surfaceType', recipe.surfaceType);
     setValue('estimatedTime', recipe.estimatedTime);
     setValue('mixingInstructions', recipe.mixingInstructions || '');
@@ -192,15 +202,24 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
 
     // Convert AI steps to form steps
     // Note: Don't include estimatedTime - it's optional and omitting it avoids NaN validation errors
-    const formSteps = recipe.steps.map((step, index) => ({
-      stepNumber: step.stepNumber,
-      title: step.title.substring(0, 100), // Schema max 100
-      instruction: step.instruction.substring(0, 1000), // Schema max 1000
-      photoUrl: '',
-      paints: [], // Will be filled when user adds paints
-      technique: step.technique,
-      tips: (step.tips || []).map(tip => tip.substring(0, 200)), // Schema max 200 per tip
-    }));
+    const formSteps = recipe.steps.map((step, index) => {
+      // Sanitize technique - only use if valid, otherwise omit
+      const sanitizedStep: any = {
+        stepNumber: step.stepNumber,
+        title: step.title.substring(0, 100), // Schema max 100
+        instruction: step.instruction.substring(0, 1000), // Schema max 1000
+        photoUrl: '',
+        paints: [], // Will be filled when user adds paints
+        tips: (step.tips || []).map(tip => tip.substring(0, 200)), // Schema max 200 per tip
+      };
+
+      // Only include technique if it's valid
+      if (step.technique && validTechniques.includes(step.technique)) {
+        sanitizedStep.technique = step.technique;
+      }
+
+      return sanitizedStep;
+    });
     setValue('steps', formSteps);
 
     // Expand sections to show the populated content
