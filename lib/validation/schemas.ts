@@ -101,9 +101,9 @@ export const recipeStepSchema = z.object({
   ]).optional(),
   tips: z.array(z.string().max(200)).optional(),
   estimatedTime: z.union([
-    z.literal(''),
-    z.coerce.number().int().min(0)
-  ]).optional().transform(val => val === '' ? undefined : val),
+    z.number().int().min(0),
+    z.literal('')
+  ]).optional(),
 });
 
 export const recipeSchema = z.object({
@@ -133,9 +133,9 @@ export const recipeSchema = z.object({
     z.literal(''),
   ]).optional(),
   estimatedTime: z.union([
-    z.literal(''),
-    z.coerce.number().int().min(0, 'Estimated time must be positive')
-  ]).optional().transform(val => val === '' ? undefined : val),
+    z.number().int().min(0, 'Estimated time must be positive'),
+    z.literal('')
+  ]).optional(),
   surfaceType: z.enum([
     'armor', 'skin', 'fabric', 'leather', 'metal', 'wood', 'stone', 'gem', 'other'
   ]).optional(),

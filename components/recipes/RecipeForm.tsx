@@ -227,13 +227,28 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     try {
       setIsSubmitting(true);
 
-      // Normalize data to ensure arrays are never undefined
-      const normalizedData = {
+      // Normalize data and convert empty time strings to undefined
+      const normalizedData: any = {
         ...data,
         techniques: data.techniques || [],
         steps: data.steps || [],
         tags: data.tags || [],
       };
+
+      // Remove empty estimatedTime fields
+      if (normalizedData.estimatedTime === '') {
+        delete normalizedData.estimatedTime;
+      }
+
+      if (normalizedData.steps) {
+        normalizedData.steps = normalizedData.steps.map((step: any) => {
+          const cleanedStep = { ...step };
+          if (cleanedStep.estimatedTime === '') {
+            delete cleanedStep.estimatedTime;
+          }
+          return cleanedStep;
+        });
+      }
 
       console.log('[Recipe Form] Normalized data:', normalizedData);
       console.log('[Recipe Form] User ID:', userId);
