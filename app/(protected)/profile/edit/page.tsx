@@ -187,8 +187,13 @@ export default function EditProfilePage() {
         bio: data.bio,
         photoURL,
         settings: {
-          ...profile?.settings,
+          publicProfile: profile?.settings?.publicProfile ?? true,
+          showPileStats: profile?.settings?.showPileStats ?? true,
           isPublic,
+          emailNotifications: profile?.settings?.emailNotifications,
+          theme: profile?.settings?.theme,
+          notificationPreferences: profile?.settings?.notificationPreferences,
+          socialLinks: profile?.settings?.socialLinks,
         },
       });
 
