@@ -6,7 +6,7 @@ import { getAnthropicClient } from '../ai/anthropic-client';
  * Monument Hobbies ProAcryl Paint Set Scraper (AI-Enhanced)
  * Uses Claude AI to intelligently extract paint names from product pages
  *
- * Target: https://monumenthobbies.com/collections/pro-acryl-paints
+ * Target: https://monumenthobbies.com/collections/pro-acryl-paints-paint-sets
  */
 export class MonumentSetScraperAI extends BasePaintSetScraper {
   private aiClient: ReturnType<typeof getAnthropicClient> | null = null;
@@ -45,7 +45,7 @@ export class MonumentSetScraperAI extends BasePaintSetScraper {
    */
   private async scrapeProAcrylSets(): Promise<ScrapedPaintSet[]> {
     try {
-      const url = `${this.baseUrl}/collections/pro-acryl-paints`;
+      const url = `${this.baseUrl}/collections/pro-acryl-paints-paint-sets`;
       console.log(`Fetching ${url}`);
       const html = await this.fetchHTML(url);
       const $ = cheerio.load(html);
