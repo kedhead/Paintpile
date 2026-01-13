@@ -116,11 +116,7 @@ export const recipeSchema = z.object({
     required_error: 'Please select difficulty',
   }),
   ingredients: z.array(recipeIngredientSchema).min(1, 'At least one paint ingredient is required'),
-  techniques: z.array(z.enum([
-    'nmm', 'osl', 'drybrushing', 'layering', 'glazing', 'washing',
-    'blending', 'feathering', 'stippling', 'wetblending', 'zenithal',
-    'airbrushing', 'freehand', 'weathering', 'other'
-  ])).max(10, 'Maximum 10 techniques allowed').optional(),
+  techniques: z.array(z.string().max(50)).max(10, 'Maximum 10 techniques allowed').optional(),
   steps: z.array(recipeStepSchema).optional(),
   mixingInstructions: z.string().max(1000, 'Mixing instructions are too long').optional(),
   applicationTips: z.string().max(1000, 'Application tips are too long').optional(),
