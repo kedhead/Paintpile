@@ -249,16 +249,29 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
   const onError = (validationErrors: any) => {
     console.error('[Recipe Form] Validation failed!');
     console.error('[Recipe Form] Validation errors:', validationErrors);
+    console.error('[Recipe Form] Detailed validation errors:', JSON.stringify(validationErrors, null, 2));
 
     // Build a user-friendly error message
-    const errorMessages = Object.entries(validationErrors)
-      .map(([field, error]: [string, any]) => {
-        const message = error?.message || 'Invalid value';
-        return `• ${field}: ${message}`;
-      })
-      .join('\n');
+    const errorMessages: string[] = [];
 
-    alert('Please fix the following errors before submitting:\n\n' + errorMessages);
+    Object.entries(validationErrors).forEach(([field, error]: [string, any]) => {
+      if (Array.isArray(error)) {
+        // Field array errors (like steps, ingredients)
+        error.forEach((item: any, index: number) => {
+          if (item) {
+            Object.entries(item).forEach(([subField, subError]: [string, any]) => {
+              const message = (subError as any)?.message || 'Invalid value';
+              errorMessages.push(`• ${field}[${index}].${subField}: ${message}`);
+            });
+          }
+        });
+      } else {
+        const message = error?.message || 'Invalid value';
+        errorMessages.push(`• ${field}: ${message}`);
+      }
+    });
+
+    alert('Please fix the following errors before submitting:\n\n' + errorMessages.join('\n'));
 
     // Scroll to first error
     const firstErrorField = Object.keys(validationErrors)[0];
