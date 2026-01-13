@@ -18,7 +18,7 @@ import { Upload, X, ArrowLeft, CheckCircle2, XCircle, Lock, Trash2, LogOut, Aler
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 
 export default function EditProfilePage() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, signOut } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -283,7 +283,7 @@ export default function EditProfilePage() {
 
   const handleSignOut = async () => {
     try {
-      await logout();
+      await signOut();
       router.push('/');
     } catch (err) {
       console.error('Error signing out:', err);
