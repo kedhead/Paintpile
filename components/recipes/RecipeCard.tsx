@@ -95,7 +95,14 @@ export function RecipeCard({ recipe, onEdit, onDelete, showActions = false, user
           className="h-32 w-full object-cover"
         />
       )}
-      {!recipe.resultColor && recipe.resultPhotos.length === 0 && (
+      {!recipe.resultColor && recipe.resultPhotos.length === 0 && recipe.sourcePhotoUrl && (
+        <img
+          src={recipe.sourcePhotoUrl}
+          alt={recipe.name}
+          className="h-32 w-full object-cover"
+        />
+      )}
+      {!recipe.resultColor && recipe.resultPhotos.length === 0 && !recipe.sourcePhotoUrl && (
         <div className="h-32 w-full bg-muted flex items-center justify-center">
           <span className="text-muted-foreground text-sm">No preview</span>
         </div>

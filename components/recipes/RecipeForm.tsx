@@ -349,23 +349,38 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
               console.log('[Recipe Form] Form onSubmit event triggered!');
               console.log('[Recipe Form] Event:', e);
 
-              // Preprocess data to clean up NaN values before validation
+              // Preprocess data to convert string numbers and handle empty values
               handleSubmit((data) => {
-                // Remove NaN from steps estimatedTime
-                if (data.steps) {
-                  data.steps = data.steps.map(step => {
+                // Convert and clean estimatedTime fields
+                const processedData = { ...data };
+
+                // Process recipe-level estimatedTime
+                if (typeof processedData.estimatedTime === 'string') {
+                  const time = parseInt(processedData.estimatedTime, 10);
+                  if (processedData.estimatedTime === '' || isNaN(time)) {
+                    delete (processedData as any).estimatedTime;
+                  } else {
+                    (processedData as any).estimatedTime = time;
+                  }
+                }
+
+                // Process step-level estimatedTime
+                if (processedData.steps) {
+                  processedData.steps = processedData.steps.map(step => {
                     const cleanedStep = { ...step };
-                    if (isNaN(cleanedStep.estimatedTime as any)) {
-                      delete cleanedStep.estimatedTime;
+                    if (typeof cleanedStep.estimatedTime === 'string') {
+                      const time = parseInt(cleanedStep.estimatedTime as string, 10);
+                      if (cleanedStep.estimatedTime === '' || isNaN(time)) {
+                        delete cleanedStep.estimatedTime;
+                      } else {
+                        cleanedStep.estimatedTime = time as any;
+                      }
                     }
                     return cleanedStep;
                   });
                 }
-                // Remove NaN from recipe estimatedTime
-                if (isNaN(data.estimatedTime as any)) {
-                  delete (data as any).estimatedTime;
-                }
-                return onSubmit(data);
+
+                return onSubmit(processedData);
               }, onError)(e);
             }}
             className="space-y-6"
@@ -608,7 +623,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
                         <Input
                           type="number"
                           min="0"
-                          {...register(`steps.${index}.estimatedTime` as const, { valueAsNumber: true })}
+                          {...register(`steps.${index}.estimatedTime` as const)}
                           placeholder="15"
                         />
                       </div>
@@ -716,7 +731,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
                         id="estimatedTime"
                         type="number"
                         min="0"
-                        {...register('estimatedTime', { valueAsNumber: true })}
+                        {...register('estimatedTime')}
                         placeholder="60"
                       />
                     </div>
