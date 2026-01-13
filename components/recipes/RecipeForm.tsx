@@ -629,12 +629,18 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
                       Result Color
                     </label>
                     <div className="flex gap-2 items-center">
-                      <Input
-                        id="resultColor"
-                        type="color"
-                        {...register('resultColor')}
-                        className="w-20 h-10 p-1"
-                      />
+                      {watch('resultColor') && /^#[0-9A-Fa-f]{6}$/.test(watch('resultColor')) ? (
+                        <Input
+                          id="resultColor"
+                          type="color"
+                          {...register('resultColor')}
+                          className="w-20 h-10 p-1"
+                        />
+                      ) : (
+                        <div className="w-20 h-10 bg-muted border border-border rounded flex items-center justify-center text-xs text-muted-foreground">
+                          N/A
+                        </div>
+                      )}
                       <Input
                         {...register('resultColor')}
                         placeholder="#FF6600"
