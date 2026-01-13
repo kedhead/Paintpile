@@ -59,6 +59,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
       tags: [],
       isPublic: false,
       isGlobal: false,
+      sourcePhotoUrl: '',
     },
   });
 
@@ -151,6 +152,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     console.log('[Recipe Form] AI recipe generated:', recipe);
     console.log('[Recipe Form] Number of ingredients:', recipe.ingredients.length);
     console.log('[Recipe Form] Ingredients with matched paints:', recipe.ingredients.filter(ing => ing.matchedPaints && ing.matchedPaints.length > 0).length);
+    console.log('[Recipe Form] Source photo URL:', sourcePhotoUrl);
 
     // Store the source photo URL for later
     setAiGeneratedPhotoUrl(sourcePhotoUrl);
@@ -165,6 +167,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     setValue('estimatedTime', recipe.estimatedTime);
     setValue('mixingInstructions', recipe.mixingInstructions || '');
     setValue('applicationTips', recipe.applicationTips || '');
+    setValue('sourcePhotoUrl', sourcePhotoUrl);
 
     // Convert AI ingredients to form ingredients
     // Auto-select the best matched paint for each color

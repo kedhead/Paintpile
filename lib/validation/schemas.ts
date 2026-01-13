@@ -136,6 +136,7 @@ export const recipeSchema = z.object({
   tags: z.array(z.string().min(1).max(20)).max(10, 'Maximum 10 tags allowed').optional(),
   isPublic: z.boolean(),
   isGlobal: z.boolean(),
+  sourcePhotoUrl: z.union([z.string().url(), z.literal('')]).optional(),
 });
 
 // Type exports for TypeScript
