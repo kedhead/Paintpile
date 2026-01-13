@@ -249,7 +249,6 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
   const onError = (validationErrors: any) => {
     console.error('[Recipe Form] Validation failed!');
     console.error('[Recipe Form] Validation errors:', validationErrors);
-    console.error('[Recipe Form] Detailed validation errors:', JSON.stringify(validationErrors, null, 2));
 
     // Build a user-friendly error message
     const errorMessages: string[] = [];
@@ -259,8 +258,10 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
         // Field array errors (like steps, ingredients)
         error.forEach((item: any, index: number) => {
           if (item) {
+            console.error(`[Recipe Form] Error in ${field}[${index}]:`, item);
             Object.entries(item).forEach(([subField, subError]: [string, any]) => {
               const message = (subError as any)?.message || 'Invalid value';
+              console.error(`[Recipe Form]   - ${subField}: ${message}`);
               errorMessages.push(`• ${field}[${index}].${subField}: ${message}`);
             });
           }
@@ -271,7 +272,11 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
       }
     });
 
-    alert('Please fix the following errors before submitting:\n\n' + errorMessages.join('\n'));
+    console.error('[Recipe Form] Total errors:', errorMessages.length);
+    console.error('[Recipe Form] Error summary:', errorMessages);
+
+    alert('Please fix the following errors before submitting:\n\n' + errorMessages.slice(0, 10).join('\n') +
+      (errorMessages.length > 10 ? `\n\n... and ${errorMessages.length - 10} more errors` : ''));
 
     // Scroll to first error
     const firstErrorField = Object.keys(validationErrors)[0];
