@@ -345,44 +345,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
 
           {/* Form */}
           <form
-            onSubmit={(e) => {
-              console.log('[Recipe Form] Form onSubmit event triggered!');
-              console.log('[Recipe Form] Event:', e);
-
-              // Preprocess data to convert string numbers and handle empty values
-              handleSubmit((data) => {
-                // Convert and clean estimatedTime fields
-                const processedData = { ...data };
-
-                // Process recipe-level estimatedTime
-                if (typeof processedData.estimatedTime === 'string') {
-                  const time = parseInt(processedData.estimatedTime, 10);
-                  if (processedData.estimatedTime === '' || isNaN(time)) {
-                    delete (processedData as any).estimatedTime;
-                  } else {
-                    (processedData as any).estimatedTime = time;
-                  }
-                }
-
-                // Process step-level estimatedTime
-                if (processedData.steps) {
-                  processedData.steps = processedData.steps.map(step => {
-                    const cleanedStep = { ...step };
-                    if (typeof cleanedStep.estimatedTime === 'string') {
-                      const time = parseInt(cleanedStep.estimatedTime as string, 10);
-                      if (cleanedStep.estimatedTime === '' || isNaN(time)) {
-                        delete cleanedStep.estimatedTime;
-                      } else {
-                        cleanedStep.estimatedTime = time as any;
-                      }
-                    }
-                    return cleanedStep;
-                  });
-                }
-
-                return onSubmit(processedData);
-              }, onError)(e);
-            }}
+            onSubmit={handleSubmit(onSubmit, onError)}
             className="space-y-6"
           >
             {/* Basic Info Section */}

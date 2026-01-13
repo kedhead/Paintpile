@@ -100,7 +100,10 @@ export const recipeStepSchema = z.object({
     'airbrushing', 'freehand', 'weathering', 'other'
   ]).optional(),
   tips: z.array(z.string().max(200)).optional(),
-  estimatedTime: z.number().int().min(0).optional(),
+  estimatedTime: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().int().min(0).optional()
+  ),
 });
 
 export const recipeSchema = z.object({
@@ -129,7 +132,10 @@ export const recipeSchema = z.object({
     z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color'),
     z.literal(''),
   ]).optional(),
-  estimatedTime: z.number().int().min(0, 'Estimated time must be positive').optional(),
+  estimatedTime: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().int().min(0, 'Estimated time must be positive').optional()
+  ),
   surfaceType: z.enum([
     'armor', 'skin', 'fabric', 'leather', 'metal', 'wood', 'stone', 'gem', 'other'
   ]).optional(),
