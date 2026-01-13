@@ -210,6 +210,14 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
       steps: true,
       details: true,
     });
+
+    // Scroll to top of modal to show the filled form
+    setTimeout(() => {
+      const modalContent = document.querySelector('.max-h-\\[90vh\\]');
+      if (modalContent) {
+        modalContent.scrollTop = 0;
+      }
+    }, 100);
   };
 
   const onSubmit = async (data: RecipeFormData) => {
@@ -292,8 +300,8 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-card rounded-lg max-w-4xl w-full p-6 my-8" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-card rounded-lg max-w-4xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-foreground">
