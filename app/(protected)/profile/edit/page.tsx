@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserProfile, updateUserProfile, getUserByUsername } from '@/lib/firestore/users';
+import { getUserProfile, updateUserProfile, getUserByUsername, deleteUserAccount } from '@/lib/firestore/users';
 import { uploadProfilePhoto } from '@/lib/firebase/storage';
 import { User } from '@/types/user';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -14,10 +14,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema } from '@/lib/validation/schemas';
 import { ProfileFormData } from '@/lib/validation/schemas';
-import { Upload, X, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { Upload, X, ArrowLeft, CheckCircle2, XCircle, Lock, Trash2, LogOut, AlertTriangle } from 'lucide-react';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
 
 export default function EditProfilePage() {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,21 @@ export default function EditProfilePage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [usernameCheckStatus, setUsernameCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [usernameCheckTimer, setUsernameCheckTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isPublic, setIsPublic] = useState(true);
+
+  // Change password modal
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Delete account modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const {
     register,
@@ -63,6 +79,9 @@ export default function EditProfilePage() {
       if (userProfile.photoURL) {
         setAvatarPreview(userProfile.photoURL);
       }
+
+      // Set public profile toggle
+      setIsPublic(userProfile.settings?.isPublic ?? true);
     } catch (err) {
       console.error('Error loading profile:', err);
     } finally {
@@ -167,6 +186,10 @@ export default function EditProfilePage() {
         usernameLower: data.username?.toLowerCase(),
         bio: data.bio,
         photoURL,
+        settings: {
+          ...profile?.settings,
+          isPublic,
+        },
       });
 
       router.push('/profile');
@@ -176,6 +199,95 @@ export default function EditProfilePage() {
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+
+      // Re-authenticate user before password change
+      const credential = EmailAuthProvider.credential(
+        currentUser!.email!,
+        currentPassword
+      );
+      await reauthenticateWithCredential(currentUser!, credential);
+
+      // Update password
+      await updatePassword(currentUser!, newPassword);
+
+      alert('Password changed successfully!');
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error('Error changing password:', err);
+      if (err.code === 'auth/wrong-password') {
+        setPasswordError('Current password is incorrect');
+      } else {
+        setPasswordError('Failed to change password. Please try again.');
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      alert('Please type DELETE to confirm');
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+
+      // Re-authenticate before deletion
+      const credential = EmailAuthProvider.credential(
+        currentUser!.email!,
+        deleteConfirmPassword
+      );
+      await reauthenticateWithCredential(currentUser!, credential);
+
+      // Delete user data from Firestore
+      await deleteUserAccount(currentUser!.uid);
+
+      // Delete Firebase Auth user
+      await deleteUser(currentUser!);
+
+      // Redirect to home
+      router.push('/');
+    } catch (err: any) {
+      console.error('Error deleting account:', err);
+      if (err.code === 'auth/wrong-password') {
+        alert('Incorrect password');
+      } else {
+        alert('Failed to delete account. Please try again.');
+      }
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      router.push('/');
+    } catch (err) {
+      console.error('Error signing out:', err);
+      alert('Failed to sign out');
     }
   };
 
@@ -381,17 +493,85 @@ export default function EditProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Settings Card */}
+        {/* Account Settings */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Privacy & Preferences</CardTitle>
+            <CardTitle>Privacy & Visibility</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Privacy and notification settings will be
-                available in a future update.
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">Public Profile</p>
+                <p className="text-sm text-gray-500">
+                  Allow others to view your profile and public projects
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPublic(!isPublic)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  isPublic ? 'bg-primary-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isPublic ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security Settings */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Security</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full justify-start"
+            >
+              <Lock className="h-4 w-4 mr-2" />
+              Change Password
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSignOut}
+              className="w-full justify-start"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Danger Zone */}
+        <Card className="mt-6 border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Danger Zone
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm text-destructive mb-3">
+                Once you delete your account, there is no going back. This action cannot be undone.
               </p>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowDeleteModal(true)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Account
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -417,6 +597,147 @@ export default function EditProfilePage() {
           </Button>
         </div>
       </form>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <CardTitle>Change Password</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Current Password
+                </label>
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password
+                </label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 characters)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm New Password
+                </label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
+              </div>
+              {passwordError && (
+                <p className="text-sm text-destructive">{passwordError}</p>
+              )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={isChangingPassword}
+                  isLoading={isChangingPassword}
+                  className="flex-1"
+                >
+                  Change Password
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordError('');
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                  disabled={isChangingPassword}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="max-w-md w-full border-destructive">
+            <CardHeader>
+              <CardTitle className="text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Delete Account
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <p className="text-sm text-destructive font-medium mb-2">
+                  Warning: This action cannot be undone!
+                </p>
+                <p className="text-sm text-gray-700">
+                  All your projects, photos, recipes, and data will be permanently deleted.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Enter your password to confirm
+                </label>
+                <Input
+                  type="password"
+                  value={deleteConfirmPassword}
+                  onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+                  placeholder="Enter your password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type DELETE to confirm
+                </label>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeletingAccount || deleteConfirmText !== 'DELETE'}
+                  isLoading={isDeletingAccount}
+                  variant="ghost"
+                  className="flex-1 bg-destructive text-white hover:bg-destructive/90"
+                >
+                  Delete My Account
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmPassword('');
+                    setDeleteConfirmText('');
+                  }}
+                  disabled={isDeletingAccount}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

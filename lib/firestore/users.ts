@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp, increment, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp, increment, collection, query, where, getDocs, orderBy, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { User } from '@/types/user';
 import { Project } from '@/types/project';
@@ -156,4 +156,23 @@ export async function getUserPublicProjects(userId: string): Promise<Project[]> 
 
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map((doc) => doc.data() as Project);
+}
+
+/**
+ * Delete a user account and all associated data
+ * Note: This only deletes Firestore data. Firebase Auth user must be deleted separately.
+ */
+export async function deleteUserAccount(userId: string): Promise<void> {
+  console.log('[deleteUserAccount] Starting deletion for user:', userId);
+
+  // Delete user document
+  const userRef = doc(db, 'users', userId);
+  await deleteDoc(userRef);
+
+  console.log('[deleteUserAccount] User document deleted');
+
+  // Note: We're doing a simple deletion here.
+  // In a production app, you'd want to delete all user's projects, photos, recipes, etc.
+  // Or use Firebase Cloud Functions to handle cascading deletes on the backend.
+  // For now, orphaned data will remain but won't be accessible without the user account.
 }

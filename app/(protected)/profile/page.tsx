@@ -242,62 +242,13 @@ export default function ProfilePage() {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="space-y-6">
-
-      {/* Settings Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Preferences</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
-              <div>
-                <p className="font-medium text-gray-900">Public Profile</p>
-                <p className="text-sm text-gray-500">
-                  Allow others to view your profile and public projects
-                </p>
-              </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                profile.settings?.isPublic
-                  ? 'bg-success-100 text-success-700'
-                  : 'bg-gray-100 text-gray-700'
-              }`}>
-                {profile.settings?.isPublic ? 'Public' : 'Private'}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
-              <div>
-                <p className="font-medium text-gray-900">Email Notifications</p>
-                <p className="text-sm text-gray-500">
-                  Receive updates about your projects and activity
-                </p>
-              </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                profile.settings?.emailNotifications
-                  ? 'bg-success-100 text-success-700'
-                  : 'bg-gray-100 text-gray-700'
-              }`}>
-                {profile.settings?.emailNotifications ? 'On' : 'Off'}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Theme</p>
-                <p className="text-sm text-gray-500">
-                  Choose your preferred color scheme
-                </p>
-              </div>
-              <div className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 capitalize">
-                {profile.settings?.theme || 'Light'}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-        </div>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground">
+              Your profile overview. Visit other tabs to see badges and activity.
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Badges Tab */}
