@@ -148,6 +148,10 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
   };
 
   const handleAIRecipeGenerated = (recipe: GeneratedRecipe, sourcePhotoUrl: string) => {
+    console.log('[Recipe Form] AI recipe generated:', recipe);
+    console.log('[Recipe Form] Number of ingredients:', recipe.ingredients.length);
+    console.log('[Recipe Form] Ingredients with matched paints:', recipe.ingredients.filter(ing => ing.matchedPaints && ing.matchedPaints.length > 0).length);
+
     // Store the source photo URL for later
     setAiGeneratedPhotoUrl(sourcePhotoUrl);
 
@@ -173,6 +177,14 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
         ratio: '',
         notes: ing.notes || `AI suggested: ${ing.colorName}`,
       }));
+
+    console.log('[Recipe Form] Form ingredients created:', formIngredients.length);
+
+    if (formIngredients.length === 0) {
+      console.warn('[Recipe Form] WARNING: No ingredients with matched paints!');
+      alert('Warning: Could not match any paints for the detected colors. You will need to add paints manually before saving the recipe.');
+    }
+
     setValue('ingredients', formIngredients);
 
     // Convert AI steps to form steps
@@ -198,6 +210,9 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
   };
 
   const onSubmit = async (data: RecipeFormData) => {
+    console.log('[Recipe Form] onSubmit called');
+    console.log('[Recipe Form] Form data:', data);
+
     try {
       setIsSubmitting(true);
 
@@ -209,19 +224,48 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
         tags: data.tags || [],
       };
 
+      console.log('[Recipe Form] Normalized data:', normalizedData);
+      console.log('[Recipe Form] User ID:', userId);
+
       if (editingRecipe) {
+        console.log('[Recipe Form] Updating recipe:', editingRecipe.recipeId);
         await updateRecipe(editingRecipe.recipeId, normalizedData);
       } else {
+        console.log('[Recipe Form] Creating new recipe');
         await createRecipe(userId, normalizedData);
       }
 
+      console.log('[Recipe Form] Recipe saved successfully');
       onSuccess?.();
       onClose();
     } catch (err) {
-      console.error('Error saving recipe:', err);
-      alert('Failed to save recipe');
+      console.error('[Recipe Form] Error saving recipe:', err);
+      alert('Failed to save recipe: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const onError = (validationErrors: any) => {
+    console.error('[Recipe Form] Validation failed!');
+    console.error('[Recipe Form] Validation errors:', validationErrors);
+
+    // Build a user-friendly error message
+    const errorMessages = Object.entries(validationErrors)
+      .map(([field, error]: [string, any]) => {
+        const message = error?.message || 'Invalid value';
+        return `• ${field}: ${message}`;
+      })
+      .join('\n');
+
+    alert('Please fix the following errors before submitting:\n\n' + errorMessages);
+
+    // Scroll to first error
+    const firstErrorField = Object.keys(validationErrors)[0];
+    const element = document.getElementById(firstErrorField);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
     }
   };
 
@@ -271,7 +315,14 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              console.log('[Recipe Form] Form onSubmit event triggered!');
+              console.log('[Recipe Form] Event:', e);
+              handleSubmit(onSubmit, onError)(e);
+            }}
+            className="space-y-6"
+          >
             {/* Basic Info Section */}
             <div className="border border-border rounded-lg">
               <button
@@ -713,6 +764,11 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
                 isLoading={isSubmitting}
                 disabled={isSubmitting}
                 className="flex-1"
+                onClick={(e) => {
+                  console.log('[Recipe Form] Submit button clicked!');
+                  console.log('[Recipe Form] Event:', e);
+                  console.log('[Recipe Form] Button type:', e.currentTarget.type);
+                }}
               >
                 {editingRecipe ? 'Save Changes' : 'Create Recipe'}
               </Button>
