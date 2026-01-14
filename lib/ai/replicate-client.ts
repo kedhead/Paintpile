@@ -40,17 +40,18 @@ export class ReplicateClient {
   private textGenerationModel: string;
 
   constructor() {
-    // Feature flag determines which keys to use
+    // Note: 1min.ai (MIN_API_KEY) only supports Anthropic, not Replicate
+    // Always use REPLICATE_API_KEY (or MIN_REPLICATE_API_KEY if set)
     const use1minai = process.env.USE_1MINAI_KEYS === 'true';
 
     let apiKey: string | undefined;
 
-    if (use1minai && process.env.MIN_API_KEY) {
-      // Use MIN_API_KEY if feature is enabled (1min.ai may support Replicate too)
-      apiKey = process.env.MIN_API_KEY;
-      console.log('[ReplicateClient] Using MIN_API_KEY');
+    if (use1minai && process.env.MIN_REPLICATE_API_KEY) {
+      // Use MIN_REPLICATE_API_KEY if you have a separate Replicate key from 1min.ai
+      apiKey = process.env.MIN_REPLICATE_API_KEY;
+      console.log('[ReplicateClient] Using MIN_REPLICATE_API_KEY');
     } else {
-      // Fallback to original REPLICATE_API_KEY
+      // Use regular REPLICATE_API_KEY (1min.ai doesn't provide Replicate access)
       apiKey = process.env.REPLICATE_API_KEY;
       console.log('[ReplicateClient] Using REPLICATE_API_KEY');
     }
@@ -86,6 +87,10 @@ export class ReplicateClient {
 
   /**
    * Make Replicate API call with automatic failover
+   *
+   * Note: 1min.ai (MIN_API_KEY) only supports Anthropic API, not Replicate.
+   * If USE_1MINAI_KEYS is true but no MIN_REPLICATE_API_KEY is set,
+   * we'll use REPLICATE_API_KEY directly (no failover needed).
    */
   private async runWithFailover(model: string, input: any): Promise<any> {
     const use1minai = process.env.USE_1MINAI_KEYS === 'true';
@@ -95,25 +100,29 @@ export class ReplicateClient {
       return await this.client.run(model as any, { input });
     }
 
-    // Feature flag ON - try MIN_API_KEY first, fallback to REPLICATE_API_KEY
-    const primaryKey = process.env.MIN_API_KEY;
+    // Feature flag ON - check if there's a separate Replicate key for 1min.ai
+    const minReplicateKey = process.env.MIN_REPLICATE_API_KEY;
     const backupKey = process.env.REPLICATE_API_KEY;
 
-    if (!primaryKey) {
+    // If no MIN_REPLICATE_API_KEY, just use regular REPLICATE_API_KEY
+    // (1min.ai doesn't provide Replicate access with MIN_API_KEY)
+    if (!minReplicateKey) {
+      console.log('[ReplicateClient] No MIN_REPLICATE_API_KEY found, using REPLICATE_API_KEY directly');
       return await this.client.run(model as any, { input });
     }
 
+    // If MIN_REPLICATE_API_KEY exists, try it first with failover
     try {
-      console.log('[ReplicateClient] Trying MIN_API_KEY...');
-      const client = new Replicate({ auth: primaryKey });
+      console.log('[ReplicateClient] Trying MIN_REPLICATE_API_KEY...');
+      const client = new Replicate({ auth: minReplicateKey });
       const response = await client.run(model as any, { input });
-      console.log('[ReplicateClient] ✅ MIN_API_KEY succeeded');
+      console.log('[ReplicateClient] ✅ MIN_REPLICATE_API_KEY succeeded');
       return response;
     } catch (error: any) {
-      console.warn('[ReplicateClient] ⚠️  MIN_API_KEY failed:', error.message);
+      console.warn('[ReplicateClient] ⚠️  MIN_REPLICATE_API_KEY failed:', error.message);
 
       if (!backupKey) {
-        throw new Error('MIN_API_KEY failed and no REPLICATE_API_KEY backup available');
+        throw new Error('MIN_REPLICATE_API_KEY failed and no REPLICATE_API_KEY backup available');
       }
 
       console.log('[ReplicateClient] Falling back to REPLICATE_API_KEY...');
