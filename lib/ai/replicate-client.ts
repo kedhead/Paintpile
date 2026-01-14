@@ -7,6 +7,7 @@
  */
 
 import Replicate from 'replicate';
+import { OneMinClient } from './onemin-client';
 
 export type ReplicateOperation = 'enhancement' | 'upscaling' | 'aiCleanup';
 
@@ -361,7 +362,33 @@ export class ReplicateClient {
   async generateText(prompt: string): Promise<string> {
     const startTime = Date.now();
     try {
-      console.log('[Replicate] Starting text generation with Llama 3...');
+      console.log('[Replicate] Starting text generation...');
+
+      const use1minai = process.env.USE_1MINAI_KEYS === 'true';
+      const oneMinKey = process.env.MIN_API_KEY;
+
+      // Try 1min.ai first if enabled
+      if (use1minai && oneMinKey) {
+        try {
+          console.log('[ReplicateClient] Trying 1min.ai (Llama 3)...');
+          const oneMinClient = new OneMinClient(oneMinKey);
+
+          // Use 1min.ai chat endpoint with mapped model
+          const text = await oneMinClient.chat({
+            model: this.textGenerationModel, // Will be mapped to 'llama-3-70b' inside OneMinClient
+            prompt: prompt,
+            maxTokens: 1024,
+          });
+
+          console.log('[ReplicateClient] ✅ 1min.ai API succeeded');
+          return text;
+        } catch (error: any) {
+          console.warn('[ReplicateClient] ⚠️  1min.ai API failed:', error.message);
+          console.log('[ReplicateClient] Falling back to Replicate...');
+        }
+      }
+
+      console.log('[Replicate] Using Replicate Llama 3...');
 
       const output = await this.runWithFailover(
         this.textGenerationModel,

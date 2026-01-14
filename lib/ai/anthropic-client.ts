@@ -6,6 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { OneMinClient } from './onemin-client';
 
 export interface ColorAnalysisResult {
   colors: DetectedColor[];
@@ -55,7 +56,60 @@ export class AnthropicClient {
   }
 
   /**
+   * Convert Anthropic message params to prompt string and extract image if present
+   */
+  private extractPromptAndImage(params: Anthropic.MessageCreateParams): {
+    prompt: string;
+    imageBase64?: string;
+    imageMediaType?: string;
+  } {
+    const messages = params.messages;
+    let prompt = '';
+    let imageBase64: string | undefined;
+    let imageMediaType: string | undefined;
+
+    for (const message of messages) {
+      if (message.role === 'user') {
+        if (typeof message.content === 'string') {
+          prompt += message.content;
+        } else if (Array.isArray(message.content)) {
+          for (const block of message.content) {
+            if (block.type === 'text') {
+              prompt += block.text;
+            } else if (block.type === 'image' && block.source.type === 'base64') {
+              imageBase64 = block.source.data;
+              imageMediaType = block.source.media_type;
+            }
+          }
+        }
+      }
+    }
+
+    return { prompt, imageBase64, imageMediaType };
+  }
+
+  /**
+   * Convert 1min.ai response to Anthropic Message format
+   */
+  private createAnthropicResponse(text: string): Anthropic.Message {
+    return {
+      id: `1min-${Date.now()}`,
+      type: 'message',
+      role: 'assistant',
+      content: [{ type: 'text', text }],
+      model: this.model,
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      usage: { input_tokens: 0, output_tokens: 0 },
+    };
+  }
+
+  /**
    * Make API call with automatic failover to backup key
+   *
+   * When USE_1MINAI_KEYS=true:
+   * 1. First tries 1min.ai native API (https://api.1min.ai)
+   * 2. Falls back to Anthropic API with ANTHROPIC_API_KEY if 1min.ai fails
    */
   private async callAPIWithFailover(params: Anthropic.MessageCreateParams): Promise<Anthropic.Message> {
     const use1minai = process.env.USE_1MINAI_KEYS === 'true';
@@ -63,33 +117,58 @@ export class AnthropicClient {
     // Ensure we're not using streaming (our code doesn't use it)
     const nonStreamParams = { ...params, stream: false } as const;
 
-    // If feature flag is OFF, use original key only (no failover needed)
+    // If feature flag is OFF, use original Anthropic key only (no failover needed)
     if (!use1minai) {
       return await this.client.messages.create(nonStreamParams) as Anthropic.Message;
     }
 
-    // Feature flag ON - try MIN_API_KEY first, fallback to ANTHROPIC_API_KEY
-    const primaryKey = process.env.MIN_API_KEY;
+    // Feature flag ON - try 1min.ai first, fallback to ANTHROPIC_API_KEY
+    const oneMinKey = process.env.MIN_API_KEY;
     const backupKey = process.env.ANTHROPIC_API_KEY;
 
-    if (!primaryKey) {
+    if (!oneMinKey) {
       // No 1min.ai key set, use original
       return await this.client.messages.create(nonStreamParams) as Anthropic.Message;
     }
 
+    // Try 1min.ai native API first
     try {
-      console.log('[AnthropicClient] Trying MIN_API_KEY...');
-      const client = new Anthropic({ apiKey: primaryKey });
-      const response = await client.messages.create(nonStreamParams) as Anthropic.Message;
-      console.log('[AnthropicClient] ✅ MIN_API_KEY succeeded');
-      return response;
-    } catch (error: any) {
-      console.warn('[AnthropicClient] ⚠️  MIN_API_KEY failed:', error.message);
+      console.log('[AnthropicClient] Trying 1min.ai API...');
+      const oneMinClient = new OneMinClient(oneMinKey);
 
-      if (!backupKey) {
-        throw new Error('MIN_API_KEY failed and no ANTHROPIC_API_KEY backup available');
+      // Extract prompt and image from Anthropic params
+      const { prompt, imageBase64, imageMediaType } = this.extractPromptAndImage(params);
+
+      let responseText: string;
+
+      if (imageBase64 && imageMediaType) {
+        // Use image chat endpoint
+        responseText = await oneMinClient.chatWithImage({
+          model: params.model,
+          prompt,
+          imageBase64,
+          imageMediaType,
+          maxTokens: params.max_tokens,
+        });
+      } else {
+        // Use regular chat endpoint
+        responseText = await oneMinClient.chat({
+          model: params.model,
+          prompt,
+          maxTokens: params.max_tokens,
+        });
       }
 
+      console.log('[AnthropicClient] ✅ 1min.ai API succeeded');
+      return this.createAnthropicResponse(responseText);
+    } catch (error: any) {
+      console.warn('[AnthropicClient] ⚠️  1min.ai API failed:', error.message);
+
+      if (!backupKey) {
+        throw new Error('1min.ai API failed and no ANTHROPIC_API_KEY backup available');
+      }
+
+      // Fall back to Anthropic API
       console.log('[AnthropicClient] Falling back to ANTHROPIC_API_KEY...');
       const client = new Anthropic({ apiKey: backupKey });
       const response = await client.messages.create(nonStreamParams) as Anthropic.Message;
