@@ -28,10 +28,23 @@ export class AnthropicClient {
   private model: string;
 
   constructor() {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    // Feature flag determines which keys to use
+    const use1minai = process.env.USE_1MINAI_KEYS === 'true';
+
+    let apiKey: string | undefined;
+
+    if (use1minai && process.env.MIN_API_KEY) {
+      // Use 1min.ai key if feature is enabled
+      apiKey = process.env.MIN_API_KEY;
+      console.log('[AnthropicClient] Using MIN_API_KEY');
+    } else {
+      // Fallback to original key
+      apiKey = process.env.ANTHROPIC_API_KEY;
+      console.log('[AnthropicClient] Using ANTHROPIC_API_KEY');
+    }
 
     if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is not set');
+      throw new Error('No Anthropic API key found');
     }
 
     this.client = new Anthropic({
@@ -39,6 +52,47 @@ export class AnthropicClient {
     });
 
     this.model = 'claude-sonnet-4-5-20250929'; // Claude Sonnet 4.5
+  }
+
+  /**
+   * Make API call with automatic failover to backup key
+   */
+  private async callAPIWithFailover(params: Anthropic.MessageCreateParams): Promise<Anthropic.Message> {
+    const use1minai = process.env.USE_1MINAI_KEYS === 'true';
+
+    // If feature flag is OFF, use original key only (no failover needed)
+    if (!use1minai) {
+      return await this.client.messages.create(params);
+    }
+
+    // Feature flag ON - try MIN_API_KEY first, fallback to ANTHROPIC_API_KEY
+    const primaryKey = process.env.MIN_API_KEY;
+    const backupKey = process.env.ANTHROPIC_API_KEY;
+
+    if (!primaryKey) {
+      // No 1min.ai key set, use original
+      return await this.client.messages.create(params);
+    }
+
+    try {
+      console.log('[AnthropicClient] Trying MIN_API_KEY...');
+      const client = new Anthropic({ apiKey: primaryKey });
+      const response = await client.messages.create(params);
+      console.log('[AnthropicClient] ✅ MIN_API_KEY succeeded');
+      return response;
+    } catch (error: any) {
+      console.warn('[AnthropicClient] ⚠️  MIN_API_KEY failed:', error.message);
+
+      if (!backupKey) {
+        throw new Error('MIN_API_KEY failed and no ANTHROPIC_API_KEY backup available');
+      }
+
+      console.log('[AnthropicClient] Falling back to ANTHROPIC_API_KEY...');
+      const client = new Anthropic({ apiKey: backupKey });
+      const response = await client.messages.create(params);
+      console.log('[AnthropicClient] ✅ ANTHROPIC_API_KEY succeeded');
+      return response;
+    }
   }
 
   /**
@@ -58,8 +112,8 @@ export class AnthropicClient {
       // Build the prompt
       const prompt = this.buildAnalysisPrompt(context);
 
-      // Call Claude Vision API
-      const response = await this.client.messages.create({
+      // Call Claude Vision API with failover
+      const response = await this.callAPIWithFailover({
         model: this.model,
         max_tokens: 2000,
         messages: [
@@ -308,8 +362,8 @@ Important:
       // Build the recipe generation prompt
       const prompt = this.buildRecipePrompt(context);
 
-      // Call Claude Sonnet 4.5 (our smartest model for complex generation)
-      const response = await this.client.messages.create({
+      // Call Claude Sonnet 4.5 (our smartest model for complex generation) with failover
+      const response = await this.callAPIWithFailover({
         model: 'claude-sonnet-4-5-20250929', // Sonnet 4.5 for complex reasoning
         max_tokens: 4096,
         messages: [
@@ -551,9 +605,9 @@ Example Output:
 
 JSON Output:`;
 
-      // Use Claude Sonnet 4.5 (Smartest model) for deep knowledge recall
+      // Use Claude Sonnet 4.5 (Smartest model) for deep knowledge recall with failover
       // More capable than Haiku for full set retrieval
-      const response = await this.client.messages.create({
+      const response = await this.callAPIWithFailover({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 4000,
         messages: [
@@ -589,7 +643,7 @@ JSON Output:`;
   }
 
   /**
-   * Make a custom API call to Claude
+   * Make a custom API call to Claude with failover
    * Useful for scrapers and other tools that need direct access
    */
   async callAPI(params: {
@@ -597,7 +651,7 @@ JSON Output:`;
     max_tokens: number;
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
   }): Promise<string> {
-    const response = await this.client.messages.create({
+    const response = await this.callAPIWithFailover({
       model: params.model || this.model,
       max_tokens: params.max_tokens,
       messages: params.messages,

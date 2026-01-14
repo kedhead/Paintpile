@@ -40,10 +40,23 @@ export class ReplicateClient {
   private textGenerationModel: string;
 
   constructor() {
-    const apiKey = process.env.REPLICATE_API_KEY;
+    // Feature flag determines which keys to use
+    const use1minai = process.env.USE_1MINAI_KEYS === 'true';
+
+    let apiKey: string | undefined;
+
+    if (use1minai && process.env.MIN_API_KEY) {
+      // Use MIN_API_KEY if feature is enabled (1min.ai may support Replicate too)
+      apiKey = process.env.MIN_API_KEY;
+      console.log('[ReplicateClient] Using MIN_API_KEY');
+    } else {
+      // Fallback to original REPLICATE_API_KEY
+      apiKey = process.env.REPLICATE_API_KEY;
+      console.log('[ReplicateClient] Using REPLICATE_API_KEY');
+    }
 
     if (!apiKey) {
-      throw new Error('REPLICATE_API_KEY environment variable is not set');
+      throw new Error('No Replicate API key found');
     }
 
     this.client = new Replicate({
@@ -69,6 +82,46 @@ export class ReplicateClient {
 
     // Meta Llama 3 70B Instruct for better knowledge retrieval (specifically for paint sets)
     this.textGenerationModel = 'meta/meta-llama-3-70b-instruct';
+  }
+
+  /**
+   * Make Replicate API call with automatic failover
+   */
+  private async runWithFailover(model: string, input: any): Promise<any> {
+    const use1minai = process.env.USE_1MINAI_KEYS === 'true';
+
+    // If feature flag is OFF, use original key only
+    if (!use1minai) {
+      return await this.client.run(model as any, { input });
+    }
+
+    // Feature flag ON - try MIN_API_KEY first, fallback to REPLICATE_API_KEY
+    const primaryKey = process.env.MIN_API_KEY;
+    const backupKey = process.env.REPLICATE_API_KEY;
+
+    if (!primaryKey) {
+      return await this.client.run(model as any, { input });
+    }
+
+    try {
+      console.log('[ReplicateClient] Trying MIN_API_KEY...');
+      const client = new Replicate({ auth: primaryKey });
+      const response = await client.run(model as any, { input });
+      console.log('[ReplicateClient] ✅ MIN_API_KEY succeeded');
+      return response;
+    } catch (error: any) {
+      console.warn('[ReplicateClient] ⚠️  MIN_API_KEY failed:', error.message);
+
+      if (!backupKey) {
+        throw new Error('MIN_API_KEY failed and no REPLICATE_API_KEY backup available');
+      }
+
+      console.log('[ReplicateClient] Falling back to REPLICATE_API_KEY...');
+      const client = new Replicate({ auth: backupKey });
+      const response = await client.run(model as any, { input });
+      console.log('[ReplicateClient] ✅ REPLICATE_API_KEY succeeded');
+      return response;
+    }
   }
 
   /**
@@ -174,15 +227,13 @@ export class ReplicateClient {
 
       // google/nano-banana uses image_input as an array and prompt as a string
       // It returns a single URL string directly.
-      const output = await this.client.run(
-        this.recolorModel as any,
+      const output = await this.runWithFailover(
+        this.recolorModel,
         {
-          input: {
-            prompt: prompt,
-            image_input: [image],
-            aspect_ratio: "match_input_image",
-            output_format: "jpg"
-          },
+          prompt: prompt,
+          image_input: [image],
+          aspect_ratio: "match_input_image",
+          output_format: "jpg"
         }
       );
 
@@ -205,15 +256,13 @@ export class ReplicateClient {
 
       const enhancementPrompt = prompt || "enhance image clarity, sharpen details, improve lighting, remove noise, keep original colors";
 
-      const output = await this.client.run(
-        this.enhancementModel as any,
+      const output = await this.runWithFailover(
+        this.enhancementModel,
         {
-          input: {
-            prompt: enhancementPrompt,
-            image_input: [imageUrl],
-            aspect_ratio: "match_input_image",
-            output_format: "jpg"
-          }
+          prompt: enhancementPrompt,
+          image_input: [imageUrl],
+          aspect_ratio: "match_input_image",
+          output_format: "jpg"
         }
       );
       return this._handleReplicateOutput(output, startTime);
@@ -235,12 +284,10 @@ export class ReplicateClient {
       console.log('[Replicate] Image URL:', imageUrl);
 
       // Use rembg for clean background removal
-      const output = await this.client.run(
-        this.aiCleanupModel as any,
+      const output = await this.runWithFailover(
+        this.aiCleanupModel,
         {
-          input: {
-            image: imageUrl,
-          },
+          image: imageUrl,
         }
       );
 
@@ -266,14 +313,12 @@ export class ReplicateClient {
     try {
       console.log(`[Replicate] Starting ${scale}x upscaling...`);
 
-      const output = await this.client.run(
-        this.upscaleModel as any,
+      const output = await this.runWithFailover(
+        this.upscaleModel,
         {
-          input: {
-            image: imageUrl,
-            scale,
-            face_enhance: false,  // Don't enhance faces (for miniatures)
-          },
+          image: imageUrl,
+          scale,
+          face_enhance: false,  // Don't enhance faces (for miniatures)
         }
       );
 
@@ -309,15 +354,13 @@ export class ReplicateClient {
     try {
       console.log('[Replicate] Starting text generation with Llama 3...');
 
-      const output = await this.client.run(
-        this.textGenerationModel as any,
+      const output = await this.runWithFailover(
+        this.textGenerationModel,
         {
-          input: {
-            prompt,
-            max_tokens: 1024,
-            temperature: 0.2, // Low temperature for deterministic output (good for JSON)
-            top_p: 0.9,
-          }
+          prompt,
+          max_tokens: 1024,
+          temperature: 0.2, // Low temperature for deterministic output (good for JSON)
+          top_p: 0.9,
         }
       );
 
