@@ -60,9 +60,12 @@ export class AnthropicClient {
   private async callAPIWithFailover(params: Anthropic.MessageCreateParams): Promise<Anthropic.Message> {
     const use1minai = process.env.USE_1MINAI_KEYS === 'true';
 
+    // Ensure we're not using streaming (our code doesn't use it)
+    const nonStreamParams = { ...params, stream: false } as const;
+
     // If feature flag is OFF, use original key only (no failover needed)
     if (!use1minai) {
-      return await this.client.messages.create(params);
+      return await this.client.messages.create(nonStreamParams) as Anthropic.Message;
     }
 
     // Feature flag ON - try MIN_API_KEY first, fallback to ANTHROPIC_API_KEY
@@ -71,13 +74,13 @@ export class AnthropicClient {
 
     if (!primaryKey) {
       // No 1min.ai key set, use original
-      return await this.client.messages.create(params);
+      return await this.client.messages.create(nonStreamParams) as Anthropic.Message;
     }
 
     try {
       console.log('[AnthropicClient] Trying MIN_API_KEY...');
       const client = new Anthropic({ apiKey: primaryKey });
-      const response = await client.messages.create(params);
+      const response = await client.messages.create(nonStreamParams) as Anthropic.Message;
       console.log('[AnthropicClient] ✅ MIN_API_KEY succeeded');
       return response;
     } catch (error: any) {
@@ -89,7 +92,7 @@ export class AnthropicClient {
 
       console.log('[AnthropicClient] Falling back to ANTHROPIC_API_KEY...');
       const client = new Anthropic({ apiKey: backupKey });
-      const response = await client.messages.create(params);
+      const response = await client.messages.create(nonStreamParams) as Anthropic.Message;
       console.log('[AnthropicClient] ✅ ANTHROPIC_API_KEY succeeded');
       return response;
     }
