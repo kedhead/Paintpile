@@ -329,7 +329,21 @@ Important:
   private parseAnalysisResponse(responseText: string): ColorAnalysisResult {
     try {
       // Clean markdown code blocks first
-      const cleanText = responseText
+      // Handle array-wrapped response from some models ["```json..."]
+      let textToParse = responseText;
+      try {
+        if (responseText.trim().startsWith('[')) {
+          const possibleArray = JSON.parse(responseText);
+          if (Array.isArray(possibleArray) && possibleArray.length === 1 && typeof possibleArray[0] === 'string') {
+            textToParse = possibleArray[0];
+            console.log('[AnthropicClient] Unwrapped array response');
+          }
+        }
+      } catch (e) {
+        // Not a JSON array, proceed with original text
+      }
+
+      const cleanText = textToParse
         .replace(/```json/g, '')
         .replace(/```/g, '')
         .trim();
@@ -602,8 +616,22 @@ Important:
    */
   private parseRecipeResponse(responseText: string): import('@/types/ai-recipe').GeneratedRecipe {
     try {
+      // Handle array-wrapped response from some models ["```json..."]
+      let textToParse = responseText;
+      try {
+        if (responseText.trim().startsWith('[')) {
+          const possibleArray = JSON.parse(responseText);
+          if (Array.isArray(possibleArray) && possibleArray.length === 1 && typeof possibleArray[0] === 'string') {
+            textToParse = possibleArray[0];
+            console.log('[AnthropicClient] Unwrapped array response');
+          }
+        }
+      } catch (e) {
+        // Not a JSON array, proceed with original text
+      }
+
       // Clean markdown code blocks first
-      const cleanText = responseText
+      const cleanText = textToParse
         .replace(/```json/g, '')
         .replace(/```/g, '')
         .trim();
