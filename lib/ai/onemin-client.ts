@@ -39,6 +39,7 @@ const MODEL_MAP: Record<string, string> = {
   'claude-3-sonnet-20240229': 'claude-3-sonnet',
   'claude-3-haiku-20240307': 'claude-3-haiku',
   'meta/meta-llama-3-70b-instruct': 'llama-3-70b',
+  'gpt-4o': 'gpt-4o',
 };
 
 /**
@@ -98,7 +99,14 @@ export class OneMinClient {
     imageMediaType: string;
     maxTokens?: number;
   }): Promise<string> {
-    const model = this.mapModel(options.model);
+    let model = this.mapModel(options.model);
+
+    // FIX: 1min.ai currently returns UNSUPPORTED_MODEL for claude-sonnet-4-5 with vision.
+    // Fallback to gpt-4o for vision tasks as it is reliable on 1min.ai
+    if (model === 'claude-sonnet-4-5' || model.includes('claude')) {
+      console.log(`[1min.ai] Swapping ${model} to gpt-4o for vision support`);
+      model = 'gpt-4o';
+    }
 
     console.log(`[1min.ai] Sending image chat request with model: ${model}`);
 
