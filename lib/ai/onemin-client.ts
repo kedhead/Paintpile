@@ -368,16 +368,8 @@ export class OneMinClient {
         return JSON.stringify(result);
       }
 
-      // If result looks like a relative path/key (e.g. "images/..."), prepend 1min.ai content URL
-      // Verified from logs: returns "images/2026_...png"
-      if (!result.startsWith('http') && (result.startsWith('images/') || result.startsWith('files/'))) {
-        // Construct assumed asset URL (removing /api from base path if present in mind)
-        // Try https://api.1min.ai/assets/{key}
-        const constructedUrl = `https://api.1min.ai/assets/${result}`;
-        console.log(`[1min.ai] Constructed asset URL from path: ${constructedUrl}`);
-        return constructedUrl;
-      }
-
+      // If result looks like a relative path/key (e.g. "images/..."), return it as is
+      // ReplicateClient will handle downloading it via OneMinClient
       return result;
     }
 
@@ -389,6 +381,48 @@ export class OneMinClient {
     console.error('[1min.ai] Unexpected response structure:', JSON.stringify(response).substring(0, 500));
     throw new Error('Unexpected response format from 1min.ai');
   }
+
+  /**
+   * Download an asset from 1min.ai
+   * Tries multiple endpoint patterns since documentation is scarce.
+   */
+  async downloadAsset(path: string): Promise<Buffer> {
+    // Try 1: Direct path (most likely for API-managed assets)
+    // /api/assets/images/...
+    const endpoints = [
+      `/assets/${path}`,
+      `/assets?path=${encodeURIComponent(path)}`,
+      `/${path}` // maybe it's treated as relative to root?
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        const url = `${this.baseUrl}${endpoint}`;
+        console.log(`[1min.ai] Attempting download from: ${url}`);
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'API-KEY': this.apiKey,
+          },
+        });
+
+        if (response.ok) {
+          console.log(`[1min.ai] Download successful from: ${url}`);
+          const arrayBuffer = await response.arrayBuffer();
+          return Buffer.from(arrayBuffer);
+        } else {
+          console.warn(`[1min.ai] Download failed from ${url}: ${response.status}`);
+        }
+      } catch (error) {
+        console.warn(`[1min.ai] Download error from ${endpoint}:`, error);
+      }
+    }
+
+    throw new Error(`Failed to download asset: ${path}`);
+  }
+
+
 
   /**
    * Health check - verify API key works

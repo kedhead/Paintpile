@@ -302,20 +302,30 @@ export class ReplicateClient {
         const mediaType = 'image/png';
 
         // Call 1min.ai generateVariation (DALL-E 2)
-        const outputUrl = await oneMinClient.generateVariation({
+        const outputResult = await oneMinClient.generateVariation({
           imageBase64: imageBase64,
           imageMediaType: mediaType,
           n: 1,
           size: '512x512' // Matching the input size
         });
 
-        console.log('[ReplicateClient] ✅ 1min.ai Image Variation (DALL-E 2) succeeded');
+        console.log('[ReplicateClient] ✅ 1min.ai Image Variation (DALL-E 2) succeeded, result:', outputResult);
+
+        // If result is a path (e.g. "images/..."), download it using the authenticated client
+        if (outputResult && !outputResult.startsWith('http') && (outputResult.startsWith('images/') || outputResult.startsWith('files/'))) {
+          console.log(`[ReplicateClient] Downloading asset from 1min.ai path: ${outputResult}`);
+          const downloadedBuffer = await oneMinClient.downloadAsset(outputResult);
+          return {
+            imageBuffer: downloadedBuffer,
+            outputUrl: undefined, // No public URL available
+            processingTime: Date.now() - startTime
+          };
+        }
+
         return {
-          outputUrl: outputUrl,
+          outputUrl: outputResult,
           processingTime: Date.now() - startTime
         };
-
-
 
       } catch (error: any) {
         console.warn('[ReplicateClient] ⚠️  1min.ai Image Generation failed:', error.message);
