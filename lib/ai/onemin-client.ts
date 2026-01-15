@@ -110,8 +110,17 @@ export class OneMinClient {
 
     console.log(`[1min.ai] Sending image chat request with model: ${model}`);
 
-    // 1min.ai expects images as data URLs or URLs
-    const imageDataUrl = `data:${options.imageMediaType};base64,${options.imageBase64}`;
+    // 1min.ai expects images to be uploaded as assets first
+    // Step 1: Upload the image
+    let imageKey: string;
+    try {
+      console.log('[1min.ai] Uploading image asset...');
+      imageKey = await this.uploadAsset(options.imageBase64, options.imageMediaType);
+      console.log(`[1min.ai] Image uploaded successfully, key: ${imageKey}`);
+    } catch (error: any) {
+      console.error('[1min.ai] Asset upload failed:', error);
+      throw new Error(`Failed to upload image to 1min.ai: ${error.message}`);
+    }
 
     const request: OneMinChatRequest = {
       type: 'CHAT_WITH_IMAGE',
@@ -120,12 +129,73 @@ export class OneMinClient {
         prompt: options.prompt,
         isMixed: false,
         webSearch: false,
-        imageList: [imageDataUrl],
+        imageList: [imageKey], // Use the provided key/path
       },
     };
 
     const response = await this.makeRequest('/features', request);
     return this.extractTextResponse(response);
+  }
+
+  /**
+   * Upload an image asset to 1min.ai
+   */
+  private async uploadAsset(base64Data: string, mediaType: string): Promise<string> {
+    const url = `${this.baseUrl}/assets`;
+
+    // Construct FormData with the file
+    const formData = new FormData();
+
+    // Convert base64 to Blob
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: mediaType });
+
+    formData.append('asset', blob, 'image.png'); // Filename is required by some APIs
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          // Do NOT set Content-Type here, let fetch set it with boundary
+          'API-KEY': this.apiKey,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Asset upload error (${response.status}): ${errorText}`);
+      }
+
+      const data: any = await response.json();
+      // The API returns the path or key in a specific field. 
+      // Based on common 1min.ai patterns, it might be 'url', 'path', or 'key'.
+      // Search result said "image_key" or "path".
+      // Let's assume it returns an object and try to find the key.
+      // If it returns { url: "..." } or { path: "..." }
+
+      // Log the response structure for debugging if it fails later
+      // console.log('[1min.ai] Asset upload response:', JSON.stringify(data).substring(0, 200));
+
+      if (data.url) return data.url;
+      if (data.path) return data.path;
+      if (data.key) return data.key;
+      if (typeof data === 'string') return data;
+
+      // If nested (like features API)
+      if (data.aiRecord?.aiRecordDetail?.url) return data.aiRecord?.aiRecordDetail?.url;
+
+      // Fallback: return the whole thing if it looks like a string path?
+      throw new Error('Could not parse image key from asset upload response');
+
+    } catch (error: any) {
+      throw error;
+    }
   }
 
   /**
