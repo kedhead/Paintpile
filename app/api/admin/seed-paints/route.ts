@@ -13,11 +13,25 @@ export const dynamic = 'force-dynamic';
  * Security: Add authorization check in production!
  */
 export async function GET(request: NextRequest) {
-  return NextResponse.json({
-    message: 'Paint seeding endpoint ready',
-    instructions: 'Send a POST request to this endpoint to seed the paint database with 235 paints',
-    endpoint: '/api/admin/seed-paints',
-  });
+  try {
+    const { getAllPaints } = await import('@/lib/firestore/paints');
+    const allPaints = await getAllPaints();
+
+    // Group by brand
+    const brandCounts: Record<string, number> = {};
+    allPaints.forEach(p => {
+      brandCounts[p.brand] = (brandCounts[p.brand] || 0) + 1;
+    });
+
+    return NextResponse.json({
+      message: 'Paint database status',
+      totalPaints: allPaints.length,
+      brandCounts,
+      endpoint: '/api/admin/seed-paints',
+    });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch paint stats' }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

@@ -29,6 +29,7 @@ const BRAND_COLORS: Record<string, string> = {
     'Army Painter': '#b91c1c', // red-700
     'Vallejo': '#15803d', // green-700
     'Pro Acryl': '#7e22ce', // purple-700
+    'ProAcryl': '#7e22ce', // purple-700 (handle missing space variation)
     'Monument': '#7e22ce', // purple-700
     'Other': '#64748b', // slate-500
 };
@@ -72,11 +73,14 @@ export function AnalyticsDashboard() {
                         const normalizedBrand = brand.includes('Army Painter') ? 'Army Painter' :
                             brand.includes('Citadel') ? 'Citadel' :
                                 brand.includes('Vallejo') ? 'Vallejo' :
-                                    brand.includes('Pro Acryl') ? 'Pro Acryl' :
+                                    (brand.includes('Pro Acryl') || brand.includes('ProAcryl')) ? 'Pro Acryl' :
                                         brand;
 
                         brandCounts[normalizedBrand] = (brandCounts[normalizedBrand] || 0) + 1;
                     } else {
+                        // Paint ID exists in inventory but not in global database
+                        console.warn(`[Analytics] Orphaned paint found in inventory: ${item.paintId}`);
+
                         // Count unmatched paints as "Other"
                         brandCounts['Other'] = (brandCounts['Other'] || 0) + 1;
                     }

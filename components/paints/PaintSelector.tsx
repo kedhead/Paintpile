@@ -46,6 +46,14 @@ export function PaintSelector({
         : await getAllPaints();
       setAllPaints(paints);
       setFilteredPaints(paints);
+
+      // Debug: Log available brands
+      const brandCounts: Record<string, number> = {};
+      paints.forEach(p => {
+        brandCounts[p.brand] = (brandCounts[p.brand] || 0) + 1;
+      });
+      console.log('[PaintSelector] Loaded paints by brand:', brandCounts);
+
     } catch (err) {
       console.error('Error loading paints:', err);
     } finally {
@@ -58,7 +66,20 @@ export function PaintSelector({
 
     // Filter by brand
     if (selectedBrand !== 'all') {
-      filtered = filtered.filter((paint) => paint.brand === selectedBrand);
+      filtered = filtered.filter((paint) => {
+        // Exact match
+        if (paint.brand === selectedBrand) return true;
+
+        // Special case: "Army Painter" should include "Army Painter Fanatic" etc
+        if (selectedBrand === 'Army Painter' && paint.brand.includes('Army Painter')) return true;
+
+        // Special case: ProAcryl normalization
+        if (selectedBrand === 'ProAcryl' || selectedBrand === 'Pro Acryl') {
+          return paint.brand === 'ProAcryl' || paint.brand === 'Pro Acryl';
+        }
+
+        return false;
+      });
     }
 
     // Filter by search term
@@ -118,11 +139,10 @@ export function PaintSelector({
         <div className="flex gap-2 overflow-x-auto pb-2">
           <button
             onClick={() => setSelectedBrand('all')}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${
-              selectedBrand === 'all'
+            className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === 'all'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
+              }`}
           >
             All Brands
           </button>
@@ -130,11 +150,10 @@ export function PaintSelector({
             <button
               key={brand}
               onClick={() => setSelectedBrand(brand)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${
-                selectedBrand === brand
+              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === brand
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              }`}
+                }`}
             >
               {brand}
             </button>
@@ -199,9 +218,8 @@ export function PaintSelector({
                 <button
                   key={paint.paintId}
                   onClick={() => togglePaint(paint)}
-                  className={`w-full flex items-center gap-3 p-3 hover:bg-accent/50 transition text-left ${
-                    isSelected ? 'bg-primary/10' : ''
-                  }`}
+                  className={`w-full flex items-center gap-3 p-3 hover:bg-accent/50 transition text-left ${isSelected ? 'bg-primary/10' : ''
+                    }`}
                 >
                   <div
                     className="w-8 h-8 rounded-full border-2 border-border flex-shrink-0"
