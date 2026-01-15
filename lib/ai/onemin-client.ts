@@ -371,11 +371,11 @@ export class OneMinClient {
       // If result looks like a relative path/key (e.g. "images/..."), prepend 1min.ai content URL
       // Verified from logs: returns "images/2026_...png"
       if (!result.startsWith('http') && (result.startsWith('images/') || result.startsWith('files/'))) {
-        // Construct standard 1min.ai asset URL
-        // Usually https://api.1min.ai/api/assets/{key} or similar?
-        // Actually, for downloaded content, it's often https://api.1min.ai/assets/{key}
-        // Let's trying the standard asset download endpoint.
-        return `https://api.1min.ai/api/assets/${result}`;
+        // Construct assumed asset URL (removing /api from base path if present in mind)
+        // Try https://api.1min.ai/assets/{key}
+        const constructedUrl = `https://api.1min.ai/assets/${result}`;
+        console.log(`[1min.ai] Constructed asset URL from path: ${constructedUrl}`);
+        return constructedUrl;
       }
 
       return result;
