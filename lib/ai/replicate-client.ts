@@ -266,23 +266,22 @@ export class ReplicateClient {
           throw new Error('Unsupported image format for 1min.ai conversion');
         }
 
-        // Call 1min.ai generateImage (img2img)
-        // Use 'stable-diffusion-xl-1024-v1-0' (SDXL Base) as generic fallback
-        const model = 'stable-diffusion-xl-1024-v1-0';
-
-        const outputUrl = await oneMinClient.generateImage({
-          prompt: prompt,
-          model: model,
+        // Call 1min.ai generateVariation (DALL-E 2)
+        // User reported DALL-E 2 Variator is supported while others failed.
+        const outputUrl = await oneMinClient.generateVariation({
           imageBase64: imageBase64,
           imageMediaType: mediaType,
-          aspectRatio: '1:1'
+          n: 1,
+          size: '1024x1024'
         });
 
-        console.log('[ReplicateClient] ✅ 1min.ai Image Generation succeeded');
+        console.log('[ReplicateClient] ✅ 1min.ai Image Variation (DALL-E 2) succeeded');
         return {
           outputUrl: outputUrl,
           processingTime: Date.now() - startTime
         };
+
+
 
       } catch (error: any) {
         console.warn('[ReplicateClient] ⚠️  1min.ai Image Generation failed:', error.message);

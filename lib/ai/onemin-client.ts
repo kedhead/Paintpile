@@ -19,13 +19,15 @@ export interface OneMinResponse {
 }
 
 export interface OneMinChatRequest {
-  type: 'CHAT_WITH_AI' | 'CHAT_WITH_IMAGE' | 'IMAGE_GENERATOR';
+  type: 'CHAT_WITH_AI' | 'CHAT_WITH_IMAGE' | 'IMAGE_GENERATOR' | 'IMAGE_VARIATOR';
   model: string;
   promptObject: {
-    prompt: string;
+    prompt?: string;
     isMixed?: boolean;
     webSearch?: boolean;
     imageList?: string[];  // For CHAT_WITH_IMAGE type
+    n?: number;
+    size?: string;
   };
 }
 
@@ -190,6 +192,43 @@ export class OneMinClient {
 
     // Extract image URL from response
     // Typically returns a URL to the generated image
+    return this.extractTextResponse(response);
+  }
+
+  /**
+   * Generate an image variation (e.g. using DALL-E 2)
+   */
+  async generateVariation(options: {
+    imageBase64: string;
+    imageMediaType: string;
+    n?: number;
+    size?: string;
+  }): Promise<string> {
+    console.log('[1min.ai] Sending image variation request with model: dalle2-image-variator');
+
+    // Upload asset first
+    let imageKey: string;
+    try {
+      console.log('[1min.ai] Uploading image for variation...');
+      imageKey = await this.uploadAsset(options.imageBase64, options.imageMediaType);
+    } catch (error: any) {
+      console.error('[1min.ai] Asset upload for variation failed:', error);
+      throw error;
+    }
+
+    const request: any = {
+      type: 'IMAGE_VARIATOR',
+      model: 'dalle2-image-variator', // Explicitly requested model
+      promptObject: {
+        imageList: [imageKey],
+        n: options.n || 1,
+        size: options.size || '1024x1024',
+        // DALL-E 2 variation typically doesn't accept a text prompt, 
+        // it strictly does variations of the input image.
+      },
+    };
+
+    const response = await this.makeRequest('/features', request);
     return this.extractTextResponse(response);
   }
 
