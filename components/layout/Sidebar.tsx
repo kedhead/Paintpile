@@ -86,6 +86,12 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       icon: Camera,
       current: pathname.startsWith('/tools/color-match'),
     },
+    {
+      name: 'Paint Diary',
+      href: '/diary',
+      icon: Book,
+      current: pathname.startsWith('/diary'),
+    },
   ];
 
   return (
