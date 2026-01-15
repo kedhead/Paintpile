@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { isUserAdmin } from '@/lib/auth/admin-check';
+import { OrphanedPaintCleanup } from '@/components/admin/OrphanedPaintCleanup';
 
 export default function AdminPage() {
   const { currentUser } = useAuth();
@@ -216,6 +217,9 @@ export default function AdminPage() {
               </div>
             </div>
           </Link>
+
+          {/* Orphaned Paint Cleanup */}
+          <OrphanedPaintCleanup />
         </div>
 
         {/* Info */}
