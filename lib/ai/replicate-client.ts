@@ -235,52 +235,8 @@ export class ReplicateClient {
     const use1minai = process.env.USE_1MINAI_KEYS === 'true';
     const oneMinKey = process.env.MIN_API_KEY;
 
-    // Try 1min.ai first if enabled
-    if (use1minai && oneMinKey) {
-      try {
-        console.log('[ReplicateClient] Trying 1min.ai for image generation...');
-        const oneMinClient = new OneMinClient(oneMinKey);
-
-        // User requested switch to Gemini 3 Pro (Text-to-Image)
-        // This generates a high-quality concept instead of a low-quality variation.
-        const model = 'gemini-3-pro-image-preview';
-
-        console.log(`[ReplicateClient] Trying 1min.ai with model: ${model}...`);
-
-        // Gemini 3 Pro is a Text-to-Image model, so we don't process the input image.
-        // We just send the prompt.
-        const outputResult = await oneMinClient.generateImage({
-          prompt: prompt,
-          model: model,
-          aspectRatio: '1:1', // Default
-          imageSize: '1K', // Required for Gemini 3 Pro (1K, 2K, 4K)
-        });
-
-        console.log(`[ReplicateClient] ✅ 1min.ai Image Generation (${model}) succeeded, result:`, outputResult);
-
-
-
-        // If result is a path (e.g. "images/..."), download it using the authenticated client
-        if (outputResult && !outputResult.startsWith('http') && (outputResult.startsWith('images/') || outputResult.startsWith('files/'))) {
-          console.log(`[ReplicateClient] Downloading asset from 1min.ai path: ${outputResult}`);
-          const downloadedBuffer = await oneMinClient.downloadAsset(outputResult);
-          return {
-            imageBuffer: downloadedBuffer,
-            outputUrl: undefined, // No public URL available
-            processingTime: Date.now() - startTime
-          };
-        }
-
-        return {
-          outputUrl: outputResult,
-          processingTime: Date.now() - startTime
-        };
-
-      } catch (error: any) {
-        console.warn('[ReplicateClient] ⚠️  1min.ai Image Generation failed:', error.message);
-        console.log('[ReplicateClient] Falling back to Replicate...');
-      }
-    }
+    // 1min.ai integration removed for Visualize Scheme as per user request (wasting credits/poor quality)
+    // Falling back strictly to Replicate API below.
 
     try {
       console.log('[Replicate] Starting image recolor with google/nano-banana...');
