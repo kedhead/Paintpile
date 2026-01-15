@@ -328,13 +328,33 @@ Important:
    */
   private parseAnalysisResponse(responseText: string): ColorAnalysisResult {
     try {
+      // Clean markdown code blocks first
+      const cleanText = responseText
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
       // Extract JSON from response (Claude sometimes includes markdown)
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No JSON found in response');
+        // Fallback: search in original text if clean search failed
+        const rawMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!rawMatch) throw new Error('No JSON found in response');
+        // Try to parse raw match
+        try {
+          const parsed = JSON.parse(rawMatch[0]);
+          // If parsed is a string (code block content), try to parse it again
+          // (Similar to expandPaintSet logic, just in case)
+          if (typeof parsed === 'string') {
+            // But for this response structure we expect an object.
+          }
+          // Proceed to validation
+        } catch (e) {
+          throw new Error('No JSON found in response');
+        }
       }
 
-      const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch![0]);
 
       // Validate structure
       if (!parsed.colors || !Array.isArray(parsed.colors)) {
@@ -582,10 +602,24 @@ Important:
    */
   private parseRecipeResponse(responseText: string): import('@/types/ai-recipe').GeneratedRecipe {
     try {
+      // Clean markdown code blocks first
+      const cleanText = responseText
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
       // Extract JSON from response
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No JSON found in recipe response');
+        // Fallback: search in original text if clean search failed
+        const rawMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!rawMatch) throw new Error('No JSON found in recipe response');
+        // Try to parse raw match
+        try {
+          return JSON.parse(rawMatch[0]);
+        } catch (e) {
+          throw new Error('No JSON found in recipe response');
+        }
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
