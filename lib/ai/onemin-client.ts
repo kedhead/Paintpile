@@ -243,8 +243,18 @@ export class OneMinClient {
       if (data.key) return data.key;
 
       // Check nested fields based on user logs
-      if (data.fileContent?.path) return data.fileContent.path;
-      if (data.asset?.key) return data.asset.key;
+      // The user logs show: {"asset":{...},"fileContent":{...}}
+      // Check fileContent.path first
+      if (data.fileContent && data.fileContent.path) {
+        console.log(`[1min.ai] Found asset key in fileContent.path: ${data.fileContent.path}`);
+        return data.fileContent.path;
+      }
+      // Check asset.key
+      if (data.asset && data.asset.key) {
+        console.log(`[1min.ai] Found asset key in asset.key: ${data.asset.key}`);
+        return data.asset.key;
+      }
+
       if (data.asset?.location) return data.asset.location;
 
       // If result is just a string
