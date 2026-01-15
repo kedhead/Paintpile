@@ -391,24 +391,27 @@ export class OneMinClient {
    * Tries multiple endpoint patterns since documentation is scarce.
    */
   async downloadAsset(path: string): Promise<Buffer> {
-    // Try 1: Direct path (most likely for API-managed assets)
-    // /api/assets/images/...
+    // Try 1: S3 Bucket (Found from debug logs: https://asset.1min.ai.s3.us-east-1.amazonaws.com/...)
+    // This seems to be where they host all assets.
+    const s3Base = 'https://asset.1min.ai.s3.us-east-1.amazonaws.com';
+
     const endpoints = [
-      `/assets/${path}`,
-      `/assets?path=${encodeURIComponent(path)}`,
-      `/${path}` // maybe it's treated as relative to root?
+      { base: s3Base, path: `/${path}` },
+      { base: this.baseUrl, path: `/assets/${path}` },
+      { base: this.baseUrl, path: `/assets?path=${encodeURIComponent(path)}` },
     ];
 
-    for (const endpoint of endpoints) {
+    for (const { base, path: endpointPath } of endpoints) {
       try {
-        const url = `${this.baseUrl}${endpoint}`;
+        const url = `${base}${endpointPath}`;
         console.log(`[1min.ai] Attempting download from: ${url}`);
 
+        // For S3, we probably don't need the API key in headers, but it doesn't hurt usually.
+        // However, if it's a signed URL or public bucket, standard fetch is fine.
         const response = await fetch(url, {
           method: 'GET',
-          headers: {
-            'API-KEY': this.apiKey,
-          },
+          // Only add API key if hitting the API endpoint
+          headers: base === this.baseUrl ? { 'API-KEY': this.apiKey } : undefined,
         });
 
         if (response.ok) {
@@ -419,7 +422,7 @@ export class OneMinClient {
           console.warn(`[1min.ai] Download failed from ${url}: ${response.status}`);
         }
       } catch (error) {
-        console.warn(`[1min.ai] Download error from ${endpoint}:`, error);
+        console.warn(`[1min.ai] Download error from ${endpointPath}:`, error);
       }
     }
 
