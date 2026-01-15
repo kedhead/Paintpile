@@ -171,6 +171,9 @@ export class OneMinClient {
         // Common parameters for image generation
         aspectRatio: options.aspectRatio || '1:1',
         negativePrompt: 'blurry, low quality, distorted',
+        // Required for Midjourney models
+        mode: 'fast',
+        n: 1,
       },
     };
 
@@ -229,19 +232,24 @@ export class OneMinClient {
       // Let's assume it returns an object and try to find the key.
       // If it returns { url: "..." } or { path: "..." }
 
-      // Log the response structure for debugging if it fails later
+      // Log the response structure for debugging
       // console.log('[1min.ai] Asset upload response:', JSON.stringify(data).substring(0, 200));
 
+      // Check common fields
       if (data.url) return data.url;
+      if (data.fileUrl) return data.fileUrl; // Some endpoints like this
+      if (data.id) return data.id; // Scenario.com style returns ID
       if (data.path) return data.path;
       if (data.key) return data.key;
+
+      // If result is just a string
       if (typeof data === 'string') return data;
 
       // If nested (like features API)
       if (data.aiRecord?.aiRecordDetail?.url) return data.aiRecord?.aiRecordDetail?.url;
 
-      // Fallback: return the whole thing if it looks like a string path?
-      throw new Error('Could not parse image key from asset upload response');
+      console.error('[1min.ai] Failed to parse asset key. Response keys:', Object.keys(data));
+      throw new Error(`Could not parse image key from asset upload response: ${JSON.stringify(data)}`);
 
     } catch (error: any) {
       throw error;
