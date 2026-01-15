@@ -242,6 +242,11 @@ export class OneMinClient {
       if (data.path) return data.path;
       if (data.key) return data.key;
 
+      // Check nested fields based on user logs
+      if (data.fileContent?.path) return data.fileContent.path;
+      if (data.asset?.key) return data.asset.key;
+      if (data.asset?.location) return data.asset.location;
+
       // If result is just a string
       if (typeof data === 'string') return data;
 
