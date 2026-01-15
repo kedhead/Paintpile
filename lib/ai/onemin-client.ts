@@ -220,7 +220,7 @@ export class OneMinClient {
       type: 'IMAGE_VARIATOR',
       model: 'dall-e-2', // Corrected from curl example
       promptObject: {
-        imageList: [imageKey],
+        imageUrl: imageKey, // Changed from imageList: [imageKey] to match curl example
         n: options.n || 1,
         size: options.size || '1024x1024',
         // DALL-E 2 variation typically doesn't accept a text prompt, 
