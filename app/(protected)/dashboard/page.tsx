@@ -12,6 +12,7 @@ import { Search, Plus, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -108,6 +109,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6 md:p-10 -mt-8 relative z-10">
+
+        {/* Analytics Dashboard */}
+        <div className="mb-10">
+          <AnalyticsDashboard />
+        </div>
+
         {/* Controls */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
@@ -159,6 +166,17 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="font-display font-bold text-lg">New Project</h3>
                 <p className="text-sm opacity-70">Start a new journey</p>
+              </div>
+            </Link>
+
+            {/* Snap & Match Tool Card */}
+            <Link href="/tools/color-match">
+              <div className="block h-full min-h-[300px] border border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6 bg-card">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">📸</span>
+                </div>
+                <h3 className="font-display font-bold text-lg">Snap & Match</h3>
+                <p className="text-sm opacity-70">Match real colors to your paints</p>
               </div>
             </Link>
           </div>
