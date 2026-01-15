@@ -31,7 +31,7 @@ export interface OneMinChatRequest {
 
 // Map Anthropic model names to 1min.ai model names
 const MODEL_MAP: Record<string, string> = {
-  'claude-sonnet-4-5-20250929': 'claude-sonnet-4-5',
+  'claude-sonnet-4-5-20250929': 'claude-3-5-sonnet',
   'claude-sonnet-4-20250514': 'claude-sonnet-4',
   'claude-3-5-sonnet-20241022': 'claude-3-5-sonnet',
   'claude-3-5-haiku-20241022': 'claude-3-5-haiku',
