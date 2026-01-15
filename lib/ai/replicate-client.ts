@@ -7,6 +7,7 @@
  */
 
 import Replicate from 'replicate';
+import sharp from 'sharp';
 import { OneMinClient } from './onemin-client';
 
 export type ReplicateOperation = 'enhancement' | 'upscaling' | 'aiCleanup';
@@ -240,31 +241,40 @@ export class ReplicateClient {
         console.log('[ReplicateClient] Trying 1min.ai for image generation...');
         const oneMinClient = new OneMinClient(oneMinKey);
 
-        // Convert image to base64
-        let imageBase64: string;
-        let mediaType = 'image/jpeg'; // Default
+        // Process image with Sharp:
+        // 1. Ensure it's a Buffer
+        // 2. Resize to 1024x1024 (Square required by DALL-E 2)
+        // 3. Convert to PNG (Required by DALL-E 2)
+        let inputBuffer: Buffer;
 
         if (Buffer.isBuffer(image)) {
-          imageBase64 = image.toString('base64');
+          inputBuffer = image;
         } else if (typeof image === 'string' && image.startsWith('http')) {
-          // Fetch URL
           const resp = await fetch(image);
-          const buf = await resp.arrayBuffer();
-          imageBase64 = Buffer.from(buf).toString('base64');
-          const contentType = resp.headers.get('content-type');
-          if (contentType) mediaType = contentType;
+          const ab = await resp.arrayBuffer();
+          inputBuffer = Buffer.from(ab);
         } else if (typeof image === 'string' && image.startsWith('data:')) {
-          // Parse data URL
           const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
           if (matches && matches.length === 3) {
-            mediaType = matches[1];
-            imageBase64 = matches[2];
+            inputBuffer = Buffer.from(matches[2], 'base64');
           } else {
             throw new Error('Invalid data URL format');
           }
         } else {
           throw new Error('Unsupported image format for 1min.ai conversion');
         }
+
+        console.log('[ReplicateClient] Processing image with Sharp (Resize 1024x1024 + PNG)...');
+        const processedBuffer = await sharp(inputBuffer)
+          .resize(1024, 1024, {
+            fit: 'contain',
+            background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent padding if aspect ratio differs
+          })
+          .png() // Force PNG
+          .toBuffer();
+
+        const imageBase64 = processedBuffer.toString('base64');
+        const mediaType = 'image/png'; // Now guaranteed PNG
 
         // Call 1min.ai generateVariation (DALL-E 2)
         // User reported DALL-E 2 Variator is supported while others failed.
