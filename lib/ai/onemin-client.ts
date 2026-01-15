@@ -171,11 +171,14 @@ export class OneMinClient {
         // Common parameters for image generation
         aspectRatio: options.aspectRatio || '1:1',
         negativePrompt: 'blurry, low quality, distorted',
-        // Required for Midjourney models
-        mode: 'fast',
-        n: 1,
       },
     };
+
+    // Add Midjourney-specific parameters only if using Midjourney
+    if (model.includes('midjourney')) {
+      request.promptObject.mode = 'fast';
+      request.promptObject.n = 1;
+    }
 
     if (imageKey) {
       request.promptObject.imageList = [imageKey];

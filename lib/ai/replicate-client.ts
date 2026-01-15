@@ -267,8 +267,8 @@ export class ReplicateClient {
         }
 
         // Call 1min.ai generateImage (img2img)
-        // Use 'midjourney' or 'stable-diffusion-xl-lightning'
-        const model = 'midjourney';
+        // Use 'stable-diffusion-xl-lightning' as generic fallback (Midjourney often strictly text-to-image or has strict limits)
+        const model = 'stable-diffusion-xl-lightning';
 
         const outputUrl = await oneMinClient.generateImage({
           prompt: prompt,
