@@ -268,12 +268,31 @@ export class ReplicateClient {
         const processedBuffer = await sharp(inputBuffer)
           .resize(1024, 1024, {
             fit: 'contain',
-            background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent padding if aspect ratio differs
+            background: { r: 255, g: 255, b: 255, alpha: 1 } // White background (no alpha)
           })
-          .png() // Force PNG
+          .flatten({ background: { r: 255, g: 255, b: 255 } }) // Ensure no alpha channel
+          .toFormat('png', {
+            compressionLevel: 9, // Max compression to stay under 4MB
+            palette: false, // 24-bit RGB
+          })
+          .withMetadata({ density: 72 }) // minimal metadata
           .toBuffer();
 
-        const imageBase64 = processedBuffer.toString('base64');
+        // Check size
+        const mbSize = processedBuffer.length / (1024 * 1024);
+        console.log(`[ReplicateClient] Processed image size: ${mbSize.toFixed(2)} MB`);
+
+        let finalBuffer = processedBuffer;
+
+        if (mbSize > 3.9) { // Safety margin below 4MB
+          console.warn('[ReplicateClient] Image > 3.9MB even after compression. Resizing to 512x512...');
+          // Emergency fallback resize
+          finalBuffer = await sharp(processedBuffer)
+            .resize(512, 512)
+            .toBuffer();
+        }
+
+        const imageBase64 = finalBuffer.toString('base64');
         const mediaType = 'image/png'; // Now guaranteed PNG
 
         // Call 1min.ai generateVariation (DALL-E 2)
