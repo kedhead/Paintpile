@@ -67,15 +67,37 @@ export function PaintSelector({
     // Filter by brand
     if (selectedBrand !== 'all') {
       filtered = filtered.filter((paint) => {
-        // Exact match
-        if (paint.brand === selectedBrand) return true;
+        // Normalization helper (remove spaces, lowercase)
+        const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+        const pBrand = normalize(paint.brand);
+        const sBrand = normalize(selectedBrand);
 
-        // Special case: "Army Painter" should include "Army Painter Fanatic" etc
-        if (selectedBrand === 'Army Painter' && paint.brand.includes('Army Painter')) return true;
+        // 1. Exact Name/Normalized Match
+        if (pBrand === sBrand) return true;
 
-        // Special case: ProAcryl normalization
-        if (selectedBrand === 'ProAcryl' || selectedBrand === 'Pro Acryl') {
-          return paint.brand === 'ProAcryl' || paint.brand === 'Pro Acryl';
+        // 2. Specific Aliases & Fuzzy Matching
+
+        // Citadel: "Citadel Colour" -> "Citadel"
+        if (selectedBrand === 'Citadel' && pBrand.includes('citadel')) return true;
+
+        // Army Painter: "Army  Painter" (double space), "Fanatic" -> "Army Painter"
+        if (selectedBrand === 'Army Painter' && pBrand.includes('armypainter')) return true;
+
+        // AK Interactive: "A K" -> "AK Interactive"
+        if (selectedBrand === 'AK Interactive' && (pBrand.includes('ak') || pBrand === 'ak')) return true;
+
+        // Pro Acryl: "ProAcryl" vs "Pro Acryl"
+        if ((selectedBrand === 'ProAcryl' || selectedBrand === 'Pro Acryl') &&
+          (pBrand.includes('proacryl') || pBrand.includes('monument'))) return true;
+
+        // Vallejo: "Vallejo Model Color" etc -> "Vallejo" (broad matching)
+        if (selectedBrand.startsWith('Vallejo') && pBrand.includes('vallejo')) {
+          // If user selected specific Vallejo line, try to match it
+          if (selectedBrand.includes('Model') && pBrand.includes('model')) return true;
+          if (selectedBrand.includes('Game') && pBrand.includes('game')) return true;
+          // If just general matching or imperfect data, maybe just return true if it's broadly Vallejo seems unsafe?
+          // Better keeping strict sub-brand check if the data supports it, but here data might be just "Vallejo"
+          if (pBrand === 'vallejo') return true;
         }
 
         return false;
@@ -140,8 +162,8 @@ export function PaintSelector({
           <button
             onClick={() => setSelectedBrand('all')}
             className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === 'all'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`}
           >
             All Brands
@@ -151,8 +173,8 @@ export function PaintSelector({
               key={brand}
               onClick={() => setSelectedBrand(brand)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === brand
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }`}
             >
               {brand}
