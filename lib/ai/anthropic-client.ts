@@ -738,13 +738,13 @@ JSON Output:`;
           try {
             // Attempt to parse the inner string
             // But first check if it looks like a JSON array
-            if (parsed[0].trim().startsWith('[')) {
+            const cleanInner = parsed[0]
+              .replace(/```json/g, '')
+              .replace(/```/g, '')
+              .trim();
+
+            if (cleanInner.startsWith('[')) {
               console.log('[Claude] Detected nested JSON string, unpacking...');
-              // Clean inner string too just in case
-              const cleanInner = parsed[0]
-                .replace(/```json/g, '')
-                .replace(/```/g, '')
-                .trim();
               parsed = JSON.parse(cleanInner);
             }
           } catch (e) {
