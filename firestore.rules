@@ -47,15 +47,17 @@ service cloud.firestore {
         allow read, write: if isAuthenticated() && isOwner(userId);
       }
 
-      // User's badges subcollection (Phase 2)
+      // User's badges subcollection
       match /badges/{badgeId} {
         allow read: if isAuthenticated() && isOwner(userId);
-        allow write: if false; // Only server can award badges
+        // Allow owner to write (needed for client-side badge awarding until server functions are ready)
+        allow write: if isAuthenticated() && isOwner(userId);
       }
     }
 
     // Projects collection
     match /projects/{projectId} {
+      // ... (existing rules)
       // Read if project is public OR user is the owner
       allow read: if resource.data.isPublic == true ||
                      isOwner(resource.data.userId);
@@ -67,79 +69,73 @@ service cloud.firestore {
 
       // Project photos subcollection
       match /photos/{photoId} {
-        // Read if parent project is public OR user is owner
         allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        // Only project owner can write photos
         allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project paints subcollection
       match /paints/{paintId} {
-        // Read if parent project is public OR user is owner
         allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        // Only project owner can write paints
         allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project paint recipes subcollection
       match /paintRecipes/{recipeId} {
-        // Read if parent project is public OR user is owner
         allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        // Only project owner can write recipes
         allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project techniques subcollection
       match /techniques/{techniqueId} {
-        // Read if parent project is public OR user is owner
         allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        // Only project owner can write techniques
         allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project timeline subcollection
       match /timeline/{eventId} {
-        // Read if parent project is public OR user is owner
         allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        // Only project owner can write timeline events
         allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project comments subcollection
       match /comments/{commentId} {
-        // Read if parent project is public
         allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true;
-        // Create if authenticated and project is public
         allow create: if isAuthenticated() &&
                          get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true &&
                          request.resource.data.userId == request.auth.uid;
-        // Update/delete only own comments
         allow update, delete: if isAuthenticated() &&
                                  resource.data.userId == request.auth.uid;
       }
 
       // Project recipe usages subcollection
       match /recipeUsages/{usageId} {
-        // Read if parent project is public OR user is owner
         allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        // Only project owner can write recipe usages
         allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
+    }
+
+    // Activities Collection (Root)
+    match /activities/{activityId} {
+      // Anyone can read activities (filter by visibility in query usually, but rules must allow)
+      allow read: if true;
+      // Allow authenticated users to create activities for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Allow owner to update/delete
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     // Global paints database
     match /paints/{paintId} {
       allow read: if true;
-      // Allow authenticated users to write (for seeding)
-      // In production, you may want to restrict this to specific admin users
       allow write: if isAuthenticated();
     }
+
 
     // Custom paints (user-created paints)
     match /customPaints/{paintId} {
