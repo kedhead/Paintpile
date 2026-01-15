@@ -231,6 +231,65 @@ export class ReplicateClient {
   async recolorImage(image: string | Buffer, prompt: string): Promise<EnhancementResult> {
     const startTime = Date.now();
 
+    const use1minai = process.env.USE_1MINAI_KEYS === 'true';
+    const oneMinKey = process.env.MIN_API_KEY;
+
+    // Try 1min.ai first if enabled
+    if (use1minai && oneMinKey) {
+      try {
+        console.log('[ReplicateClient] Trying 1min.ai for image generation...');
+        const oneMinClient = new OneMinClient(oneMinKey);
+
+        // Convert image to base64
+        let imageBase64: string;
+        let mediaType = 'image/jpeg'; // Default
+
+        if (Buffer.isBuffer(image)) {
+          imageBase64 = image.toString('base64');
+        } else if (typeof image === 'string' && image.startsWith('http')) {
+          // Fetch URL
+          const resp = await fetch(image);
+          const buf = await resp.arrayBuffer();
+          imageBase64 = Buffer.from(buf).toString('base64');
+          const contentType = resp.headers.get('content-type');
+          if (contentType) mediaType = contentType;
+        } else if (typeof image === 'string' && image.startsWith('data:')) {
+          // Parse data URL
+          const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            mediaType = matches[1];
+            imageBase64 = matches[2];
+          } else {
+            throw new Error('Invalid data URL format');
+          }
+        } else {
+          throw new Error('Unsupported image format for 1min.ai conversion');
+        }
+
+        // Call 1min.ai generateImage (img2img)
+        // Use 'midjourney' or 'stable-diffusion-xl-lightning'
+        const model = 'midjourney';
+
+        const outputUrl = await oneMinClient.generateImage({
+          prompt: prompt,
+          model: model,
+          imageBase64: imageBase64,
+          imageMediaType: mediaType,
+          aspectRatio: '1:1'
+        });
+
+        console.log('[ReplicateClient] ✅ 1min.ai Image Generation succeeded');
+        return {
+          outputUrl: outputUrl,
+          processingTime: Date.now() - startTime
+        };
+
+      } catch (error: any) {
+        console.warn('[ReplicateClient] ⚠️  1min.ai Image Generation failed:', error.message);
+        console.log('[ReplicateClient] Falling back to Replicate...');
+      }
+    }
+
     try {
       console.log('[Replicate] Starting image recolor with google/nano-banana...');
       console.log(`[Replicate] Prompt: "${prompt}"`);

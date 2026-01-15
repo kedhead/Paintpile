@@ -19,7 +19,7 @@ export interface OneMinResponse {
 }
 
 export interface OneMinChatRequest {
-  type: 'CHAT_WITH_AI' | 'CHAT_WITH_IMAGE';
+  type: 'CHAT_WITH_AI' | 'CHAT_WITH_IMAGE' | 'IMAGE_GENERATOR';
   model: string;
   promptObject: {
     prompt: string;
@@ -134,6 +134,56 @@ export class OneMinClient {
     };
 
     const response = await this.makeRequest('/features', request);
+    return this.extractTextResponse(response);
+  }
+
+  /**
+   * Generate an image based on a prompt (and optional input image for img2img)
+   */
+  async generateImage(options: {
+    prompt: string;
+    model?: string;
+    aspectRatio?: string;
+    imageBase64?: string;
+    imageMediaType?: string;
+  }): Promise<string> {
+    // Default to a good image model if not specified
+    const model = options.model || 'midjourney';
+
+    console.log(`[1min.ai] Sending image generation request with model: ${model}`);
+
+    // If input image is provided, upload it first
+    let imageKey: string | undefined;
+    if (options.imageBase64 && options.imageMediaType) {
+      try {
+        console.log('[1min.ai] Uploading input image for generation...');
+        imageKey = await this.uploadAsset(options.imageBase64, options.imageMediaType);
+      } catch (error: any) {
+        console.warn('[1min.ai] Input image upload failed, proceeding with text-to-image only:', error.message);
+      }
+    }
+
+    const request: any = {
+      type: 'IMAGE_GENERATOR',
+      model,
+      promptObject: {
+        prompt: options.prompt,
+        // Common parameters for image generation
+        aspectRatio: options.aspectRatio || '1:1',
+        negativePrompt: 'blurry, low quality, distorted',
+      },
+    };
+
+    if (imageKey) {
+      request.promptObject.imageList = [imageKey];
+      // Some models might expect specific parameters for img2img, 
+      // but typically presence of imageList signals it.
+    }
+
+    const response = await this.makeRequest('/features', request);
+
+    // Extract image URL from response
+    // Typically returns a URL to the generated image
     return this.extractTextResponse(response);
   }
 
