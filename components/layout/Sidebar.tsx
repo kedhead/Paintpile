@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss } from 'lucide-react';
+import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss, FlaskConical, Camera } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 
@@ -73,6 +73,18 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       href: '/recipes/browse',
       icon: BookOpen,
       current: pathname.startsWith('/recipes/browse'),
+    },
+    {
+      name: 'Smart Mixer',
+      href: '/tools/paint-mixer',
+      icon: FlaskConical,
+      current: pathname.startsWith('/tools/paint-mixer'),
+    },
+    {
+      name: 'Snap & Match',
+      href: '/tools/color-match',
+      icon: Camera,
+      current: pathname.startsWith('/tools/color-match'),
     },
   ];
 
