@@ -31,10 +31,10 @@ export interface OneMinChatRequest {
 
 // Map Anthropic model names to 1min.ai model names
 const MODEL_MAP: Record<string, string> = {
-  'claude-sonnet-4-5-20250929': 'claude-3-5-sonnet',
-  'claude-sonnet-4-20250514': 'claude-sonnet-4',
-  'claude-3-5-sonnet-20241022': 'claude-3-5-sonnet',
-  'claude-3-5-haiku-20241022': 'claude-3-5-haiku',
+  'claude-sonnet-4-5-20250929': 'gpt-4o', // Fallback to GPT-4o due to Claude issues on 1min.ai
+  'claude-sonnet-4-20250514': 'gpt-4o',
+  'claude-3-5-sonnet-20241022': 'gpt-4o',
+  'claude-3-5-haiku-20241022': 'claude-3-haiku', // Keep Haiku if possible, or fallback generally
   'claude-3-opus-20240229': 'claude-3-opus',
   'claude-3-sonnet-20240229': 'claude-3-sonnet',
   'claude-3-haiku-20240307': 'claude-3-haiku',
