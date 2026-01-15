@@ -339,6 +339,12 @@ export class OneMinClient {
       }
 
       const data = await response.json();
+
+      // DEBUG: Log every API response to find hidden URLs
+      if (endpoint === '/features') {
+        console.log(`[1min.ai] FEATURE RESPONSE (${body.type}):`, JSON.stringify(data, null, 2));
+      }
+
       return data as OneMinResponse;
     } catch (error: any) {
       console.error('[1min.ai] Request failed:', error.message);
