@@ -38,6 +38,7 @@ export default function ScrapePaintSetsPage() {
     { id: 'Monument', name: 'Monument Hobbies (ProAcryl)', icon: '🎨' },
     { id: 'Army Painter', name: 'The Army Painter', icon: '🖌️' },
     { id: 'Citadel', name: 'Citadel (Games Workshop)', icon: '⚔️' },
+    { id: 'Vallejo', name: 'Vallejo', icon: '💧' },
   ];
 
   useEffect(() => {
@@ -182,8 +183,8 @@ export default function ScrapePaintSetsPage() {
                 key={brand.id}
                 onClick={() => toggleBrand(brand.id)}
                 className={`p-4 border rounded-lg transition-all ${selectedBrands.includes(brand.id)
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:border-primary/50'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-primary/50'
                   }`}
               >
                 <div className="text-2xl mb-2">{brand.icon}</div>
