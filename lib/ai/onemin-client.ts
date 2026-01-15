@@ -391,9 +391,10 @@ export class OneMinClient {
    * Tries multiple endpoint patterns since documentation is scarce.
    */
   async downloadAsset(path: string): Promise<Buffer> {
-    // Try 1: S3 Bucket (Found from debug logs: https://asset.1min.ai.s3.us-east-1.amazonaws.com/...)
-    // This seems to be where they host all assets.
-    const s3Base = 'https://asset.1min.ai.s3.us-east-1.amazonaws.com';
+    // Try 1: S3 Bucket (Path-Style)
+    // Virtual-hosted style (asset.1min.ai.s3...) fails SSL because of dots in bucket name.
+    // We must use path-style: https://s3.us-east-1.amazonaws.com/asset.1min.ai/{path}
+    const s3Base = 'https://s3.us-east-1.amazonaws.com/asset.1min.ai';
 
     const endpoints = [
       { base: s3Base, path: `/${path}` },
