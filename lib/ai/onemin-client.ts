@@ -161,14 +161,23 @@ export class OneMinClient {
    * Extract text response from 1min.ai response format
    */
   private extractTextResponse(response: OneMinResponse): string {
+    let result: string | undefined;
+
     // Try the nested aiRecord structure first
     if (response.aiRecord?.aiRecordDetail?.resultObject) {
-      return response.aiRecord.aiRecordDetail.resultObject;
+      result = response.aiRecord.aiRecordDetail.resultObject;
+    }
+    // Try direct result field
+    else if (response.result) {
+      result = response.result;
     }
 
-    // Try direct result field
-    if (response.result) {
-      return response.result;
+    if (result !== undefined) {
+      // Ensure it is a string (e.g. if API returns a JSON object or number)
+      if (typeof result !== 'string') {
+        return JSON.stringify(result);
+      }
+      return result;
     }
 
     // Check for error
