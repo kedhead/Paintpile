@@ -89,63 +89,52 @@ export default function ScrapePaintSetsPage() {
     }
   };
 
-  const downloadAsTypeScript = () => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState('');
+
+  const handleSaveToDB = async () => {
     if (results.length === 0) return;
+    setIsSaving(true);
+    setSaveSuccess('');
+    setError('');
 
-    let tsCode = '// Scraped Paint Sets\n';
-    tsCode += `// Generated: ${new Date().toISOString()}\n`;
-    tsCode += '// Brands: ' + results.map(r => r.brand).join(', ') + '\n\n';
-    tsCode += 'import { PaintSet } from "@/types/paint-set";\n\n';
-    tsCode += 'export const SCRAPED_PAINT_SETS: PaintSet[] = [\n';
-
-    results.forEach(result => {
-      result.sets.forEach(set => {
-        const setId = `${set.brand.toLowerCase().replace(/\s+/g, '-')}-${set.setName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-
-        tsCode += '  {\n';
-        tsCode += `    setId: '${setId}',\n`;
-        tsCode += `    setName: '${set.setName.replace(/'/g, "\\'")}',\n`;
-        tsCode += `    brand: '${set.brand}',\n`;
-        tsCode += `    paintCount: ${set.paintCount},\n`;
-        tsCode += `    isCurated: false, // Scraped - needs verification\n`;
-
-        if (set.description) {
-          tsCode += `    description: '${set.description.replace(/'/g, "\\'")}',\n`;
-        }
-
-        if (set.sourceUrl) {
-          tsCode += `    sourceUrl: '${set.sourceUrl}',\n`;
-        }
-
-        if (set.imageUrl) {
-          tsCode += `    imageUrl: '${set.imageUrl}',\n`;
-        }
-
-        if (set.paintNames.length > 0) {
-          tsCode += '    paintNames: [\n';
-          set.paintNames.forEach(name => {
-            tsCode += `      '${name.replace(/'/g, "\\'")}',\n`;
+    try {
+      const setsToSave: unknown[] = [];
+      results.forEach(r => {
+        r.sets.forEach(set => {
+          const setId = `${set.brand.toLowerCase().replace(/\s+/g, '-')}-${set.setName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          setsToSave.push({
+            setId,
+            setName: set.setName,
+            brand: set.brand,
+            paintCount: set.paintCount,
+            isCurated: false,
+            description: set.description,
+            sourceUrl: set.sourceUrl,
+            imageUrl: set.imageUrl,
+            paintNames: set.paintNames
           });
-          tsCode += '    ],\n';
-        } else {
-          tsCode += '    paintNames: [],\n';
-        }
-
-        tsCode += '  },\n';
+        });
       });
-    });
 
-    tsCode += '];\n';
+      const response = await fetch('/api/admin/save-paint-set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sets: setsToSave }),
+      });
 
-    const blob = new Blob([tsCode], { type: 'text/typescript' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `scraped-paint-sets-${new Date().toISOString().split('T')[0]}.ts`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+
+      setSaveSuccess(`Successfully saved ${setsToSave.length} sets to database!`);
+      // Clear results after successful save to prevent duplicates
+      setTimeout(() => setResults([]), 2000);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to save sets');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (adminCheckLoading) {
@@ -192,11 +181,10 @@ export default function ScrapePaintSetsPage() {
               <button
                 key={brand.id}
                 onClick={() => toggleBrand(brand.id)}
-                className={`p-4 border rounded-lg transition-all ${
-                  selectedBrands.includes(brand.id)
+                className={`p-4 border rounded-lg transition-all ${selectedBrands.includes(brand.id)
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:border-primary/50'
-                }`}
+                  }`}
               >
                 <div className="text-2xl mb-2">{brand.icon}</div>
                 <div className="font-medium">{brand.name}</div>
@@ -236,15 +224,31 @@ export default function ScrapePaintSetsPage() {
           </Card>
         )}
 
+        {/* Success Display */}
+        {saveSuccess && (
+          <Card className="p-4 mb-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-green-800 dark:text-green-200 mb-1">Success</h3>
+                <p className="text-sm text-green-700 dark:text-green-300">{saveSuccess}</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Results */}
         {results.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Scraping Results</h2>
-              <Button onClick={downloadAsTypeScript} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Download TypeScript
-              </Button>
+              <div className="flex gap-2">
+                {/* Keep download as backup option if needed, or remove. I'll remove for now as requested */}
+                <Button onClick={handleSaveToDB} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
+                  Save to Database
+                </Button>
+              </div>
             </div>
 
             {results.map((result, idx) => (
@@ -319,9 +323,9 @@ export default function ScrapePaintSetsPage() {
           <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-2 list-decimal list-inside">
             <li>Click "Start Scraping" to fetch paint sets from selected manufacturers</li>
             <li>AI will extract paint names from product descriptions (takes 2-5 minutes)</li>
-            <li>Click "Download TypeScript" to save the results as a .ts file</li>
-            <li>Copy the generated code into <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">lib/data/paint-sets.ts</code></li>
-            <li>Review and manually verify paint names before marking as curated</li>
+            <li>Review the results in the list above</li>
+            <li>Click "Save to Database" to publish the new sets immediately</li>
+            <li>Use the Paint Sets management page to make further edits if needed</li>
           </ol>
         </Card>
       </div>

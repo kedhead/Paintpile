@@ -848,7 +848,24 @@ JSON Output:`;
       throw new Error('No text response from Claude API');
     }
 
-    return textContent.text;
+    let text = textContent.text;
+
+    // Fix: Sometimes 1min.ai/AI returns the response wrapped in a JSON array string
+    // e.g. ["Actual response text..."]
+    try {
+      const trimmed = text.trim();
+      if (trimmed.startsWith('["') && trimmed.endsWith('"]')) {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed) && parsed.length === 1 && typeof parsed[0] === 'string') {
+          console.log('[AnthropicClient] Unwrapped double-encoded response in callAPI');
+          text = parsed[0];
+        }
+      }
+    } catch (e) {
+      // Not JSON or parse failed, return original text
+    }
+
+    return text;
   }
 }
 

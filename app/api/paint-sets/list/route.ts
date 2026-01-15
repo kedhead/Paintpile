@@ -5,38 +5,63 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getAdminFirestore } from '@/lib/firebase/admin';
 import {
   CURATED_PAINT_SETS,
-  getPaintSetBrands,
-  getPaintSetsByBrand,
-  searchPaintSets,
 } from '@/lib/data/paint-sets';
+import { PaintSet } from '@/types/paint-set';
 
 export const runtime = 'nodejs';
+export const revalidate = 60; // Cache for 1 minute
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const brand = searchParams.get('brand');
-    const query = searchParams.get('query');
+    const brandParam = searchParams.get('brand');
+    const queryParam = searchParams.get('query');
 
-    let paintSets = CURATED_PAINT_SETS;
+    let paintSets: PaintSet[] = [];
 
-    // Filter by brand if specified
-    if (brand) {
-      paintSets = getPaintSetsByBrand(brand);
+    // 1. Try to fetch from Firestore
+    try {
+      const db = getAdminFirestore();
+      const snapshot = await db.collection('paint-sets').get();
+
+      if (!snapshot.empty) {
+        paintSets = snapshot.docs.map(doc => doc.data() as PaintSet);
+      } else {
+        console.warn('[Paint Sets List] DB empty, using static fallback');
+        paintSets = [...CURATED_PAINT_SETS];
+      }
+    } catch (dbError) {
+      console.error('[Paint Sets List] DB fetch failed, using fallback:', dbError);
+      paintSets = [...CURATED_PAINT_SETS];
     }
 
-    // Search if query provided
-    if (query) {
-      paintSets = searchPaintSets(query);
+    // 2. Filter by brand
+    if (brandParam) {
+      paintSets = paintSets.filter(set =>
+        set.brand.toLowerCase() === brandParam.toLowerCase()
+      );
     }
 
-    // Get all available brands
-    const brands = getPaintSetBrands();
+    // 3. Search query
+    if (queryParam) {
+      const lowerQuery = queryParam.toLowerCase();
+      paintSets = paintSets.filter(set =>
+        set.setName.toLowerCase().includes(lowerQuery) ||
+        set.brand.toLowerCase().includes(lowerQuery) ||
+        set.description?.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    // 4. Extract metadata
+    // Get all available brands from the dataset
+    const brandsSet = new Set(paintSets.map(set => set.brand));
+    const brands = Array.from(brandsSet).sort();
 
     // Group sets by brand
-    const setsByBrand: Record<string, typeof CURATED_PAINT_SETS> = {};
+    const setsByBrand: Record<string, PaintSet[]> = {};
     paintSets.forEach(set => {
       if (!setsByBrand[set.brand]) {
         setsByBrand[set.brand] = [];
@@ -54,6 +79,7 @@ export async function GET(request: NextRequest) {
         description: set.description,
         isCurated: set.isCurated,
         releaseYear: set.releaseYear,
+        imageUrl: set.imageUrl,
       })),
       setsByBrand,
       brands,
