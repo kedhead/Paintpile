@@ -264,44 +264,49 @@ export class ReplicateClient {
           throw new Error('Unsupported image format for 1min.ai conversion');
         }
 
-        console.log('[ReplicateClient] Processing image with Sharp (Resize 1024x1024 + PNG)...');
-        const processedBuffer = await sharp(inputBuffer)
-          .resize(1024, 1024, {
+        console.log('[ReplicateClient] Processing image with Sharp (Resize 512x512 + PNG + sRGB)...');
+
+        // DALL-E 2 Variation requirements:
+        // - < 4MB
+        // - Valid PNG
+        // - Square
+        // - RGB (no alpha for variations usually, though some sources say RGBA is ok, RGB is safer)
+
+        const pipeline = sharp(inputBuffer)
+          .resize(512, 512, { // 512x512 is safer and cheaper than 1024
             fit: 'contain',
-            background: { r: 255, g: 255, b: 255, alpha: 1 } // White background (no alpha)
+            background: { r: 255, g: 255, b: 255, alpha: 1 } // White opaque background
           })
-          .flatten({ background: { r: 255, g: 255, b: 255 } }) // Ensure no alpha channel
+          .flatten({ background: { r: 255, g: 255, b: 255 } }) // Remove alpha channel
+          .toColorspace('srgb') // Ensure consistent color space
           .toFormat('png', {
-            compressionLevel: 9, // Max compression to stay under 4MB
-            palette: false, // 24-bit RGB
+            compressionLevel: 9,
+            palette: false,
           })
-          .withMetadata({ density: 72 }) // minimal metadata
-          .toBuffer();
+          .withMetadata({ density: 72 });
 
-        // Check size
-        const mbSize = processedBuffer.length / (1024 * 1024);
-        console.log(`[ReplicateClient] Processed image size: ${mbSize.toFixed(2)} MB`);
+        const processedBuffer = await pipeline.toBuffer();
 
-        let finalBuffer = processedBuffer;
+        // Log metadata for debugging
+        const meta = await sharp(processedBuffer).metadata();
+        console.log(`[ReplicateClient] Processed Image Stats:`, {
+          size: (processedBuffer.length / 1024 / 1024).toFixed(2) + ' MB',
+          format: meta.format,
+          channels: meta.channels, // Should be 3 (RGB)
+          width: meta.width,
+          height: meta.height,
+          space: meta.space
+        });
 
-        if (mbSize > 3.9) { // Safety margin below 4MB
-          console.warn('[ReplicateClient] Image > 3.9MB even after compression. Resizing to 512x512...');
-          // Emergency fallback resize
-          finalBuffer = await sharp(processedBuffer)
-            .resize(512, 512)
-            .toBuffer();
-        }
-
-        const imageBase64 = finalBuffer.toString('base64');
-        const mediaType = 'image/png'; // Now guaranteed PNG
+        const imageBase64 = processedBuffer.toString('base64');
+        const mediaType = 'image/png';
 
         // Call 1min.ai generateVariation (DALL-E 2)
-        // User reported DALL-E 2 Variator is supported while others failed.
         const outputUrl = await oneMinClient.generateVariation({
           imageBase64: imageBase64,
           imageMediaType: mediaType,
           n: 1,
-          size: '1024x1024'
+          size: '512x512' // Matching the input size
         });
 
         console.log('[ReplicateClient] ✅ 1min.ai Image Variation (DALL-E 2) succeeded');
