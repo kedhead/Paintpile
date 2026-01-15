@@ -77,14 +77,28 @@ export async function getUserNotifications(
 ): Promise<Notification[]> {
   const notificationsRef = collection(db, 'users', userId, 'notifications');
 
-  const q = query(
-    notificationsRef,
-    orderBy('createdAt', 'desc'),
-    limit(limitCount)
-  );
-
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => doc.data() as Notification);
+  try {
+    const q = query(
+      notificationsRef,
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => doc.data() as Notification);
+  } catch (error: any) {
+    // Fallback: If index is missing or error occurs, try basic query without sort
+    console.warn('Notification sort failed, falling back to unsorted:', error);
+    const fallbackQ = query(notificationsRef, limit(limitCount));
+    const fallbackSnap = await getDocs(fallbackQ);
+    // Sort in memory as fallback
+    const notifications = fallbackSnap.docs.map((doc) => doc.data() as Notification);
+    return notifications.sort((a, b) => {
+      // Handle potential missing createdAt
+      const timeA = a.createdAt?.toMillis?.() || 0;
+      const timeB = b.createdAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
+  }
 }
 
 /**
