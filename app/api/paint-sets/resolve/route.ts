@@ -2,6 +2,7 @@
  * POST /api/paint-sets/resolve
  *
  * Resolve a paint set to actual Paint objects from the database
+ * Returns matched paints and stats.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
