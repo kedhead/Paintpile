@@ -275,4 +275,5 @@ export const PAINT_ROLE_LABELS: Record<PaintRole, string> = {
   glaze: 'Glaze',
   wash: 'Wash',
   layer: 'Layer',
+  accent: 'Accent',
 };
