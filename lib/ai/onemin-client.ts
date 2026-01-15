@@ -358,10 +358,26 @@ export class OneMinClient {
     }
 
     if (result !== undefined) {
-      // Ensure it is a string (e.g. if API returns a JSON object or number)
+      // Handle array result (e.g. from IMAGE_VARIATOR)
+      if (Array.isArray(result) && result.length > 0) {
+        result = result[0];
+      }
+
+      // Ensure it is a string
       if (typeof result !== 'string') {
         return JSON.stringify(result);
       }
+
+      // If result looks like a relative path/key (e.g. "images/..."), prepend 1min.ai content URL
+      // Verified from logs: returns "images/2026_...png"
+      if (!result.startsWith('http') && (result.startsWith('images/') || result.startsWith('files/'))) {
+        // Construct standard 1min.ai asset URL
+        // Usually https://api.1min.ai/api/assets/{key} or similar?
+        // Actually, for downloaded content, it's often https://api.1min.ai/assets/{key}
+        // Let's trying the standard asset download endpoint.
+        return `https://api.1min.ai/api/assets/${result}`;
+      }
+
       return result;
     }
 
