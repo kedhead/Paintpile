@@ -715,14 +715,50 @@ JSON Output:`;
       const rawOutput = textContent.text;
       console.log('[Claude] Raw output:', rawOutput.substring(0, 200));
 
-      // Parse JSON array
-      const jsonMatch = rawOutput.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        console.warn('[Claude] No JSON array found in response');
+      let parsed: any;
+      try {
+        // First try to parse the raw output directly (sometimes it's a valid JSON string)
+        // Clean markdown code blocks first
+        const cleanOutput = rawOutput
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+
+        const jsonMatch = cleanOutput.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+          console.warn('[Claude] No JSON array found in response');
+          return { paints: [], rawOutput };
+        }
+
+        parsed = JSON.parse(jsonMatch[0]);
+
+        // Fix: Sometimes the AI returns an array containing a single string which IS the JSON
+        // e.g. ["[\"Paint A\", \"Paint B\"]"]
+        if (Array.isArray(parsed) && parsed.length === 1 && typeof parsed[0] === 'string') {
+          try {
+            // Attempt to parse the inner string
+            // But first check if it looks like a JSON array
+            if (parsed[0].trim().startsWith('[')) {
+              console.log('[Claude] Detected nested JSON string, unpacking...');
+              // Clean inner string too just in case
+              const cleanInner = parsed[0]
+                .replace(/```json/g, '')
+                .replace(/```/g, '')
+                .trim();
+              parsed = JSON.parse(cleanInner);
+            }
+          } catch (e) {
+            // If it fails, assume it's just a paint name
+            console.log('[Claude] Inner string was not JSON, keeping as is');
+          }
+        }
+
+      } catch (e) {
+        console.warn('[Claude] JSON parse failed', e);
         return { paints: [], rawOutput };
       }
 
-      const paints = JSON.parse(jsonMatch[0]) as string[];
+      const paints = parsed as string[];
       return { paints, rawOutput };
     } catch (error: any) {
       console.error('[Claude] Error expanding paint set:', error);
