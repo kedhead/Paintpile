@@ -22,7 +22,7 @@ export const SUGGESTED_TAGS = [
   'competition',
   'tutorial',
   'showcase',
-  
+
   // Game System Tags  
   'warhammer',
   'warhammer-40k',
@@ -32,14 +32,14 @@ export const SUGGESTED_TAGS = [
   'historical',
   'star-wars',
   'board-game',
-  
+
   // Model Type Tags
   'infantry',
   'vehicle',
   'monster',
   'terrain',
   'character',
-  
+
   // Other
   'custom',
   'kitbash',
@@ -68,7 +68,6 @@ export const PAINT_BRANDS = [
   'Vallejo Model Color',
   'Vallejo Game Color',
   'Army Painter',
-  'Army Painter Fanatic',
   'Reaper MSP',
   'Scale75',
   'ProAcryl',

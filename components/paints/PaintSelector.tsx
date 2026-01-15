@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getAllPaints } from '@/lib/firestore/paints';
 import { getAllPaintsForUser } from '@/lib/firestore/custom-paints';
 import { Paint, CustomPaint } from '@/types/paint';
@@ -168,18 +168,48 @@ export function PaintSelector({
           >
             All Brands
           </button>
-          {PAINT_BRANDS.filter((b) => b !== 'Custom').map((brand) => (
-            <button
-              key={brand}
-              onClick={() => setSelectedBrand(brand)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === brand
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
-            >
-              {brand}
-            </button>
-          ))}
+          {PAINT_BRANDS.filter((brand) => brand !== 'Custom').map((brand) => {
+            // Check if this brand has any paints available
+            const hasPaints = allPaints.some(paint => {
+              const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+              const pBrand = normalize(paint.brand);
+              const sBrand = normalize(brand);
+
+              // Exact/Normalized Match
+              if (pBrand === sBrand) return true;
+
+              // Citadel
+              if (brand === 'Citadel' && pBrand.includes('citadel')) return true;
+              // Army Painter
+              if (brand === 'Army Painter' && pBrand.includes('armypainter')) return true;
+              // AK Interactive
+              if (brand === 'AK Interactive' && (pBrand.includes('ak') || pBrand === 'ak')) return true;
+              // Pro Acryl
+              if ((brand === 'ProAcryl' || brand === 'Pro Acryl') && (pBrand.includes('proacryl') || pBrand.includes('monument'))) return true;
+              // Vallejo
+              if (brand.startsWith('Vallejo') && pBrand.includes('vallejo')) {
+                if (brand.includes('Model') && pBrand.includes('model')) return true;
+                if (brand.includes('Game') && pBrand.includes('game')) return true;
+                if (pBrand === 'vallejo') return true;
+              }
+              return false;
+            });
+
+            if (!hasPaints) return null;
+
+            return (
+              <button
+                key={brand}
+                onClick={() => setSelectedBrand(brand)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === brand
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`}
+              >
+                {brand}
+              </button>
+            );
+          })}
         </div>
       </div>
 
