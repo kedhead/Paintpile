@@ -40,10 +40,10 @@ export class ArmyPainterSetScraperAI extends BasePaintSetScraper {
   private async scrapeArmyPainterSets(): Promise<ScrapedPaintSet[]> {
     try {
       const collectionUrls = [
-        `https://thearmypainter.com/collections/paint-sets`,
-        `https://thearmypainter.com/collections/warpaints-fanatic`,
-        `https://thearmypainter.com/collections/warpaints-air`,
-        `https://thearmypainter.com/collections/speedpaint`,
+        `https://thearmypainter.com/collections/all-paint-sets`,
+        `https://thearmypainter.com/collections/warpaints-fanatic-boxed-sets`,
+        `https://thearmypainter.com/collections/warpaints-air-sets`,
+        `https://thearmypainter.com/collections/speedpaint-sets`,
       ];
 
       let sets: ScrapedPaintSet[] = [];

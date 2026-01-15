@@ -40,9 +40,10 @@ export class CitadelSetScraperAI extends BasePaintSetScraper {
   private async scrapeCitadelSets(): Promise<ScrapedPaintSet[]> {
     try {
       const collectionUrls = [
-        // Warhammer.com (new official site)
-        `https://www.warhammer.com/en-US/shop/painting-modelling/paints/citadel-colour-paint-sets`,
-        `https://www.warhammer.com/en-US/shop/painting-modelling/paints`,
+        // Warhammer.com (new official site structure)
+        `https://www.warhammer.com/en-US/plp?productCategory=painting-modelling-paints-citadel-colour-paint-sets`,
+        `https://www.warhammer.com/en-US/plp?productCategory=painting-modelling-paints`,
+        `https://www.warhammer.com/en-GB/plp?productCategory=painting-modelling-paints-citadel-colour-paint-sets`,
       ];
 
       let sets: ScrapedPaintSet[] = [];
