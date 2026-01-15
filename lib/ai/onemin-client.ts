@@ -268,6 +268,10 @@ export class OneMinClient {
       }
 
       const data: any = await response.json();
+
+      // DEBUG: Log the full response to find the correct URL field
+      console.log('[1min.ai] FULL ASSET UPLOAD RESPONSE:', JSON.stringify(data, null, 2));
+
       // The API returns the path or key in a specific field. 
       // Based on common 1min.ai patterns, it might be 'url', 'path', or 'key'.
       // Search result said "image_key" or "path".
