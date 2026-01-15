@@ -267,8 +267,8 @@ export class ReplicateClient {
         }
 
         // Call 1min.ai generateImage (img2img)
-        // Use 'stable-diffusion-xl-lightning' as generic fallback (Midjourney often strictly text-to-image or has strict limits)
-        const model = 'stable-diffusion-xl-lightning';
+        // Use 'stable-diffusion-xl-1024-v1-0' (SDXL Base) as generic fallback
+        const model = 'stable-diffusion-xl-1024-v1-0';
 
         const outputUrl = await oneMinClient.generateImage({
           prompt: prompt,
