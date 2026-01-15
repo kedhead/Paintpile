@@ -218,7 +218,7 @@ export class OneMinClient {
 
     const request: any = {
       type: 'IMAGE_VARIATOR',
-      model: 'dalle2-image-variator', // Explicitly requested model
+      model: 'dall-e-2', // Corrected from curl example
       promptObject: {
         imageList: [imageKey],
         n: options.n || 1,
