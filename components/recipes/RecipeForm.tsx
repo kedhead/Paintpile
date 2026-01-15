@@ -243,16 +243,26 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
         tags: data.tags || [],
       };
 
-      // Remove empty estimatedTime fields
-      if (normalizedData.estimatedTime === '') {
+      // Remove empty estimatedTime fields and convert strings to numbers
+      if (normalizedData.estimatedTime === '' || normalizedData.estimatedTime === null || normalizedData.estimatedTime === undefined) {
         delete normalizedData.estimatedTime;
+      } else {
+        // Force conversion to number if it's a valid numeric string
+        normalizedData.estimatedTime = Number(normalizedData.estimatedTime);
+      }
+
+      // Handle surfaceType empty string
+      if (normalizedData.surfaceType === '') {
+        delete normalizedData.surfaceType;
       }
 
       if (normalizedData.steps) {
         normalizedData.steps = normalizedData.steps.map((step: any) => {
           const cleanedStep = { ...step };
-          if (cleanedStep.estimatedTime === '') {
+          if (cleanedStep.estimatedTime === '' || cleanedStep.estimatedTime === null || cleanedStep.estimatedTime === undefined) {
             delete cleanedStep.estimatedTime;
+          } else {
+            cleanedStep.estimatedTime = Number(cleanedStep.estimatedTime);
           }
           return cleanedStep;
         });
@@ -652,11 +662,10 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
                           key={value}
                           type="button"
                           onClick={() => toggleTechnique(value)}
-                          className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                            selectedTechniques.includes(value as any)
+                          className={`px-3 py-1 rounded-full text-sm transition-colors ${selectedTechniques.includes(value as any)
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                          }`}
+                            }`}
                         >
                           {label}
                         </button>
