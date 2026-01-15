@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Sparkles, Wand2, Sparkle, ArrowUpCircle, Download, ExternalLink, Lock, Palette } from 'lucide-react';
 import { OPERATION_COSTS } from '@/lib/ai/constants';
 import { useRouter } from 'next/navigation';
+import { DonationButton } from '@/components/DonationButton';
 
 interface AIProcessingPanelProps {
   photo: Photo;
@@ -26,7 +27,7 @@ export function AIProcessingPanel({
   projectId,
   userId,
   onUpdate,
-  isPro = false,
+  // isPro prop is deprecated
 }: AIProcessingPanelProps) {
   const router = useRouter();
   const [paintSuggestions, setPaintSuggestions] = useState<ColorSuggestion[] | null>(null);
@@ -39,32 +40,8 @@ export function AIProcessingPanel({
   const [aiCleanedUrl, setAiCleanedUrl] = useState<string | null>(null);
   const [recolorUrl, setRecolorUrl] = useState<string | null>(null);
 
-  // Check if user has Pro access
-  if (!isPro) {
-    return (
-      <div className="bg-card rounded-xl border border-border p-6 mt-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Lock className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-foreground mb-1">
-              AI Features - Pro Only
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Unlock AI-powered paint suggestions, image enhancement, and upscaling
-            </p>
-            <Button
-              size="sm"
-              onClick={() => router.push('/settings/subscription')}
-            >
-              Upgrade to Pro
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Check if user has Pro access - DEPRECATED: All users have access with limits
+  // if (!isPro) { ... }
 
   // Handle paint suggestions
   const handleSuggestPaints = async () => {
@@ -177,10 +154,15 @@ export function AIProcessingPanel({
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 mt-4 space-y-4">
+
+      // ... inside component ...
       {/* Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-border">
-        <Sparkles className="h-5 w-5 text-primary" />
-        <h3 className="font-semibold text-foreground">AI Tools</h3>
+      <div className="flex items-center justify-between pb-2 border-b border-border">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-foreground">AI Tools</h3>
+        </div>
+        <DonationButton />
       </div>
 
       {/* Action buttons */}

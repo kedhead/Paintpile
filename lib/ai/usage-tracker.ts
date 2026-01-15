@@ -44,16 +44,12 @@ export async function checkQuota(
       return { allowed: false, reason: 'User not found' };
     }
 
-    // Check if user has Pro subscription (or AI enabled flag for testing)
-    const hasPro = user.subscription?.tier === 'pro' && user.subscription?.status === 'active';
-    const hasAIEnabled = user.features?.aiEnabled === true;
+    // Check if user has Pro subscription (for higher limits later) or AI enabled
+    // const hasPro = user.subscription?.tier === 'pro' && user.subscription?.status === 'active';
+    // const hasAIEnabled = user.features?.aiEnabled === true;
 
-    if (!hasPro && !hasAIEnabled) {
-      return {
-        allowed: false,
-        reason: 'AI features require Pro subscription. Upgrade to continue.',
-      };
-    }
+    // Allow all users, but respect the quota limit below
+    // if (!hasPro && !hasAIEnabled) ...
 
     // Get or create usage document
     const usageDoc = await getOrCreateUsageDoc(userId);
@@ -220,7 +216,7 @@ function getDefaultMonthlyUsage(): MonthlyUsage {
  */
 function getDefaultQuotaLimit(): number {
   const envLimit = process.env.AI_QUOTA_LIMIT_CENTS;
-  return envLimit ? parseInt(envLimit, 10) : 20000; // Default: 20,000 credits = $20
+  return envLimit ? parseInt(envLimit, 10) : 20000; // Default: 20,000 credits = $20 (approx 50-100 operations)
 }
 
 /**
