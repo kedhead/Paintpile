@@ -29,13 +29,12 @@ export async function POST(request: NextRequest) {
     const { getAllPaints } = await import('@/lib/firestore/paints');
     const existingPaints = await getAllPaints();
 
+    // We now allow syncing (appending) so we don't block if paints exist.
+    // However, we can log it.
     if (existingPaints.length > 0) {
-      console.log(`Database already has ${existingPaints.length} paints. Skipping seed.`);
-      return NextResponse.json({
-        success: false,
-        error: `Database already contains ${existingPaints.length} paints. Please delete existing paints before seeding again.`,
-        existingCount: existingPaints.length,
-      }, { status: 400 });
+      console.log(`Database already has ${existingPaints.length} paints. Syncing new paints...`);
+    } else {
+      console.log('Database empty. Performing full seed...');
     }
 
     const count = await seedPaintDatabase();

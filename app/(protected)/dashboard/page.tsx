@@ -179,6 +179,17 @@ export default function DashboardPage() {
                 <p className="text-sm opacity-70">Match real colors to your paints</p>
               </div>
             </Link>
+
+            {/* Smart Mixer Tool Card */}
+            <Link href="/tools/paint-mixer">
+              <div className="block h-full min-h-[300px] border border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6 bg-card">
+                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <span className="text-2xl">🧪</span>
+                </div>
+                <h3 className="font-display font-bold text-lg">Smart Mixer</h3>
+                <p className="text-sm opacity-70">AI mixing recipes</p>
+              </div>
+            </Link>
           </div>
         )}
 

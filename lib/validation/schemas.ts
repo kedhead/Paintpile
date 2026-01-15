@@ -80,7 +80,7 @@ export const customPaintSchema = z.object({
 // Recipe Schemas
 export const recipeIngredientSchema = z.object({
   paintId: z.string().min(1, 'Paint is required'),
-  role: z.enum(['base', 'highlight', 'shadow', 'midtone', 'glaze', 'wash', 'layer'], {
+  role: z.enum(['base', 'highlight', 'shadow', 'midtone', 'glaze', 'wash', 'layer', 'accent'], {
     required_error: 'Paint role is required',
   }),
   ratio: z.string().max(50, 'Ratio description is too long').optional(),

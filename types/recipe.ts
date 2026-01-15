@@ -13,7 +13,8 @@ export type PaintRole =
   | 'midtone'
   | 'glaze'
   | 'wash'
-  | 'layer';
+  | 'layer'
+  | 'accent';
 
 // Recipe categories
 export type RecipeCategory =

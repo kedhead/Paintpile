@@ -73,15 +73,35 @@ export async function getPaintsByIds(paintIds: string[]): Promise<Paint[]> {
  */
 export async function seedPaintDatabase(): Promise<number> {
   const paintsRef = collection(db, 'paints');
+
+  // 1. Load existing paints to prevent duplicates
+  const existingSnapshot = await getDocs(paintsRef);
+  const existingMap = new Set<string>();
+
+  existingSnapshot.docs.forEach(doc => {
+    const data = doc.data() as Paint;
+    // Create unique key for brand+name
+    if (data.brand && data.name) {
+      existingMap.add(`${data.brand.toLowerCase()}:${data.name.toLowerCase()}`);
+    }
+  });
+
+  console.log(`[Seed] Found ${existingMap.size} existing paints.`);
+
   let count = 0;
 
+  // 2. Add only missing paints
   for (const paint of COMPREHENSIVE_PAINTS) {
-    const paintRef = doc(paintsRef);
-    await setDoc(paintRef, {
-      paintId: paintRef.id,
-      ...paint,
-    });
-    count++;
+    const key = `${paint.brand.toLowerCase()}:${paint.name.toLowerCase()}`;
+
+    if (!existingMap.has(key)) {
+      const paintRef = doc(paintsRef);
+      await setDoc(paintRef, {
+        paintId: paintRef.id,
+        ...paint,
+      });
+      count++;
+    }
   }
 
   return count;
