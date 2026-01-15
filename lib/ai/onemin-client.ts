@@ -34,10 +34,10 @@ const MODEL_MAP: Record<string, string> = {
   'claude-sonnet-4-5-20250929': 'gpt-4o', // Fallback to GPT-4o due to Claude issues on 1min.ai
   'claude-sonnet-4-20250514': 'gpt-4o',
   'claude-3-5-sonnet-20241022': 'gpt-4o',
-  'claude-3-5-haiku-20241022': 'claude-3-haiku', // Keep Haiku if possible, or fallback generally
-  'claude-3-opus-20240229': 'claude-3-opus',
-  'claude-3-sonnet-20240229': 'claude-3-sonnet',
-  'claude-3-haiku-20240307': 'claude-3-haiku',
+  'claude-3-5-haiku-20241022': 'gpt-4o-mini', // Fallback to GPT-4o-mini for speed/cost
+  'claude-3-opus-20240229': 'gpt-4o',
+  'claude-3-sonnet-20240229': 'gpt-4o',
+  'claude-3-haiku-20240307': 'claude-3-haiku', // Keep original Haiku if it works, otherwise swap to gpt-4o-mini
   'meta/meta-llama-3-70b-instruct': 'llama-3-70b',
   'gpt-4o': 'gpt-4o',
 };
