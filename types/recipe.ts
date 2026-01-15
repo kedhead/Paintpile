@@ -6,15 +6,7 @@ import { Timestamp } from 'firebase/firestore';
  */
 
 // Paint role in a recipe (from original paint-recipe.ts)
-export type PaintRole =
-  | 'base'
-  | 'highlight'
-  | 'shadow'
-  | 'midtone'
-  | 'glaze'
-  | 'wash'
-  | 'layer'
-  | 'accent';
+export type PaintRole = string;
 
 // Recipe categories
 export type RecipeCategory =
@@ -267,7 +259,7 @@ export const SURFACE_TYPE_LABELS: Record<SurfaceType, string> = {
   other: 'Other',
 };
 
-export const PAINT_ROLE_LABELS: Record<PaintRole, string> = {
+export const PAINT_ROLE_LABELS: Record<string, string> = {
   base: 'Base Coat',
   highlight: 'Highlight',
   shadow: 'Shadow',
