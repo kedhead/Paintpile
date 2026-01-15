@@ -12,7 +12,7 @@ export class CitadelSetScraperAI extends BasePaintSetScraper {
   private aiClient: ReturnType<typeof getAnthropicClient> | null = null;
 
   constructor() {
-    super('Citadel', 'https://www.games-workshop.com');
+    super('Citadel', 'https://www.warhammer.com');
   }
 
   private getAIClient(): ReturnType<typeof getAnthropicClient> {
@@ -40,8 +40,9 @@ export class CitadelSetScraperAI extends BasePaintSetScraper {
   private async scrapeCitadelSets(): Promise<ScrapedPaintSet[]> {
     try {
       const collectionUrls = [
-        `${this.baseUrl}/en-US/Citadel-Paints`,
-        `${this.baseUrl}/en-US/Painting-Modelling`,
+        // Warhammer.com (new official site)
+        `https://www.warhammer.com/en-US/shop/painting-modelling/paints/citadel-colour-paint-sets`,
+        `https://www.warhammer.com/en-US/shop/painting-modelling/paints`,
       ];
 
       let sets: ScrapedPaintSet[] = [];

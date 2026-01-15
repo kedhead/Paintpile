@@ -12,7 +12,7 @@ export class ArmyPainterSetScraperAI extends BasePaintSetScraper {
   private aiClient: ReturnType<typeof getAnthropicClient> | null = null;
 
   constructor() {
-    super('Army Painter', 'https://www.thearmypainter.com');
+    super('Army Painter', 'https://thearmypainter.com');
   }
 
   private getAIClient(): ReturnType<typeof getAnthropicClient> {
@@ -40,8 +40,10 @@ export class ArmyPainterSetScraperAI extends BasePaintSetScraper {
   private async scrapeArmyPainterSets(): Promise<ScrapedPaintSet[]> {
     try {
       const collectionUrls = [
-        `${this.baseUrl}/shop/us/paint-sets`,
-        `${this.baseUrl}/shop/us/paints`,
+        `https://thearmypainter.com/collections/paint-sets`,
+        `https://thearmypainter.com/collections/warpaints-fanatic`,
+        `https://thearmypainter.com/collections/warpaints-air`,
+        `https://thearmypainter.com/collections/speedpaint`,
       ];
 
       let sets: ScrapedPaintSet[] = [];
