@@ -241,75 +241,24 @@ export class ReplicateClient {
         console.log('[ReplicateClient] Trying 1min.ai for image generation...');
         const oneMinClient = new OneMinClient(oneMinKey);
 
-        // Process image with Sharp:
-        // 1. Ensure it's a Buffer
-        // 2. Resize to 1024x1024 (Square required by DALL-E 2)
-        // 3. Convert to PNG (Required by DALL-E 2)
-        let inputBuffer: Buffer;
+        // User requested switch to Gemini 3 Pro (Text-to-Image)
+        // This generates a high-quality concept instead of a low-quality variation.
+        const model = 'gemini-3-pro-image-preview';
 
-        if (Buffer.isBuffer(image)) {
-          inputBuffer = image;
-        } else if (typeof image === 'string' && image.startsWith('http')) {
-          const resp = await fetch(image);
-          const ab = await resp.arrayBuffer();
-          inputBuffer = Buffer.from(ab);
-        } else if (typeof image === 'string' && image.startsWith('data:')) {
-          const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-          if (matches && matches.length === 3) {
-            inputBuffer = Buffer.from(matches[2], 'base64');
-          } else {
-            throw new Error('Invalid data URL format');
-          }
-        } else {
-          throw new Error('Unsupported image format for 1min.ai conversion');
-        }
+        console.log(`[ReplicateClient] Trying 1min.ai with model: ${model}...`);
 
-        console.log('[ReplicateClient] Processing image with Sharp (Resize 512x512 + PNG + sRGB)...');
-
-        // DALL-E 2 Variation requirements:
-        // - < 4MB
-        // - Valid PNG
-        // - Square
-        // - RGB (no alpha for variations usually, though some sources say RGBA is ok, RGB is safer)
-
-        const pipeline = sharp(inputBuffer)
-          .resize(512, 512, { // 512x512 is safer and cheaper than 1024
-            fit: 'contain',
-            background: { r: 255, g: 255, b: 255, alpha: 1 } // White opaque background
-          })
-          .flatten({ background: { r: 255, g: 255, b: 255 } }) // Remove alpha channel
-          .toColorspace('srgb') // Ensure consistent color space
-          .toFormat('png', {
-            compressionLevel: 9,
-            palette: false,
-          })
-          .withMetadata({ density: 72 });
-
-        const processedBuffer = await pipeline.toBuffer();
-
-        // Log metadata for debugging
-        const meta = await sharp(processedBuffer).metadata();
-        console.log(`[ReplicateClient] Processed Image Stats:`, {
-          size: (processedBuffer.length / 1024 / 1024).toFixed(2) + ' MB',
-          format: meta.format,
-          channels: meta.channels, // Should be 3 (RGB)
-          width: meta.width,
-          height: meta.height,
-          space: meta.space
+        // Gemini 3 Pro is a Text-to-Image model, so we don't process the input image.
+        // We just send the prompt.
+        const outputResult = await oneMinClient.generateImage({
+          prompt: prompt,
+          model: model,
+          aspectRatio: '1:1', // Default
+          imageSize: '1K', // Required for Gemini 3 Pro (1K, 2K, 4K)
         });
 
-        const imageBase64 = processedBuffer.toString('base64');
-        const mediaType = 'image/png';
+        console.log(`[ReplicateClient] ✅ 1min.ai Image Generation (${model}) succeeded, result:`, outputResult);
 
-        // Call 1min.ai generateVariation (DALL-E 2)
-        const outputResult = await oneMinClient.generateVariation({
-          imageBase64: imageBase64,
-          imageMediaType: mediaType,
-          n: 1,
-          size: '512x512' // Matching the input size
-        });
 
-        console.log('[ReplicateClient] ✅ 1min.ai Image Variation (DALL-E 2) succeeded, result:', outputResult);
 
         // If result is a path (e.g. "images/..."), download it using the authenticated client
         if (outputResult && !outputResult.startsWith('http') && (outputResult.startsWith('images/') || outputResult.startsWith('files/'))) {

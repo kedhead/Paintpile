@@ -146,6 +146,7 @@ export class OneMinClient {
     prompt: string;
     model?: string;
     aspectRatio?: string;
+    imageSize?: string; // e.g. "1K", "2K" (Required for Gemini 3 Pro)
     imageBase64?: string;
     imageMediaType?: string;
   }): Promise<string> {
@@ -172,6 +173,7 @@ export class OneMinClient {
         prompt: options.prompt,
         // Common parameters for image generation
         aspectRatio: options.aspectRatio || '1:1',
+        imageSize: options.imageSize, // Pass through if provided
         negativePrompt: 'blurry, low quality, distorted',
       },
     };
