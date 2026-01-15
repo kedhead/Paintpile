@@ -74,8 +74,39 @@ export function PaintSetSelectionDialog({
       const data = await response.json();
 
       if (data.success) {
-        setPaintSets(data.sets);
-        setFilteredSets(data.sets);
+        // Normalize brand names to prevent duplicates
+        const normalizedSets = data.sets.map((set: PaintSet) => {
+          let brand = set.brand;
+
+          // Army Painter Normalization
+          if (brand === 'The Army Painter' || brand === 'Army Painter Fanatic') {
+            brand = 'Army Painter';
+          }
+
+          // Citadel Normalization
+          if (brand === 'Citadel (Games Workshop)' || brand === 'Games Workshop') {
+            brand = 'Citadel';
+          }
+
+          // Vallejo Normalization (consolidate ranges found by web scraper if desired, or just pure 'Vallejo' from AI)
+          // The AI generator returns just "Vallejo", but existing scraped data might have specific ranges.
+          // Let's keep specific ranges if they seem distinct, but fix obvious dupes?
+          // User complained about duplicates. If they see "Vallejo" AND "Vallejo Model Color" that's confusing.
+          // Let's map everything starting with Vallejo to Vallejo for simplicity in this filter
+          if (brand.startsWith('Vallejo')) {
+            brand = 'Vallejo';
+          }
+
+          // Monument Normalization
+          if (brand === 'Monument Hobbies' || brand.includes('ProAcryl')) {
+            brand = 'ProAcryl';
+          }
+
+          return { ...set, brand };
+        });
+
+        setPaintSets(normalizedSets);
+        setFilteredSets(normalizedSets);
       } else {
         setError('Failed to load paint sets');
       }
@@ -196,125 +227,122 @@ export function PaintSetSelectionDialog({
                   )}
                 </div>
 
-                  {/* Search and Filter */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input
-                        type="text"
-                        placeholder="Search paint sets..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 rounded-md border border-border bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
-                    </div>
-
-                    <select
-                      value={selectedBrand}
-                      onChange={e => setSelectedBrand(e.target.value)}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="all">All Brands</option>
-                      {brands.map(brand => (
-                        <option key={brand} value={brand}>
-                          {brand}
-                        </option>
-                      ))}
-                    </select>
+                {/* Search and Filter */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search paint sets..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-md border border-border bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
                   </div>
 
-                  {/* Paint Sets Grid */}
-                  {isLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Spinner />
-                    </div>
-                  ) : filteredSets.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">No paint sets found</p>
-                      {onFallbackToAI && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={onFallbackToAI}
-                          className="mt-4 gap-2"
-                        >
-                          <Sparkles className="w-4 h-4" />
-                          Try AI Import Instead
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
-                      {filteredSets.map(set => {
-                        const isSelected = selectedSets.some(s => s.setId === set.setId);
-                        return (
-                          <button
-                            key={set.setId}
-                            onClick={() => handleToggleSet(set)}
-                            className={`text-left p-4 border rounded-lg transition-all group ${
-                              isSelected
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary hover:bg-accent/50'
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex items-center justify-center w-5 h-5 rounded border shrink-0 mt-0.5 transition-colors">
-                                {isSelected && (
-                                  <Check className="w-4 h-4 text-primary" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className={`font-medium transition-colors ${
-                                  isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
-                                }`}>
-                                  {set.setName}
-                                </h3>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {set.brand} • {set.paintCount} paints
-                                  {set.isCurated && (
-                                    <span className="ml-2 text-green-600">✓ Verified</span>
-                                  )}
-                                </p>
-                                {set.description && (
-                                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                                    {set.description}
-                                  </p>
-                                )}
-                              </div>
-                              <Package className={`w-5 h-5 shrink-0 transition-colors ${
-                                isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                              }`} />
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <select
+                    value={selectedBrand}
+                    onChange={e => setSelectedBrand(e.target.value)}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="all">All Brands</option>
+                    {brands.map(brand => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {error && (
-                    <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                      <AlertCircle className="w-4 h-4" />
-                      {error}
-                    </div>
-                  )}
-
-                  {/* Fallback to AI */}
-                  {onFallbackToAI && filteredSets.length > 0 && (
-                    <div className="pt-4 border-t border-border">
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Don't see your paint set?
-                      </p>
+                {/* Paint Sets Grid */}
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Spinner />
+                  </div>
+                ) : filteredSets.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">No paint sets found</p>
+                    {onFallbackToAI && (
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={onFallbackToAI}
-                        className="w-full gap-2"
+                        className="mt-4 gap-2"
                       >
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        Use AI to Identify Unknown Set
+                        <Sparkles className="w-4 h-4" />
+                        Try AI Import Instead
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
+                    {filteredSets.map(set => {
+                      const isSelected = selectedSets.some(s => s.setId === set.setId);
+                      return (
+                        <button
+                          key={set.setId}
+                          onClick={() => handleToggleSet(set)}
+                          className={`text-left p-4 border rounded-lg transition-all group ${isSelected
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary hover:bg-accent/50'
+                            }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex items-center justify-center w-5 h-5 rounded border shrink-0 mt-0.5 transition-colors">
+                              {isSelected && (
+                                <Check className="w-4 h-4 text-primary" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className={`font-medium transition-colors ${isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                                }`}>
+                                {set.setName}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {set.brand} • {set.paintCount} paints
+                                {set.isCurated && (
+                                  <span className="ml-2 text-green-600">✓ Verified</span>
+                                )}
+                              </p>
+                              {set.description && (
+                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                  {set.description}
+                                </p>
+                              )}
+                            </div>
+                            <Package className={`w-5 h-5 shrink-0 transition-colors ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                              }`} />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                    <AlertCircle className="w-4 h-4" />
+                    {error}
+                  </div>
+                )}
+
+                {/* Fallback to AI */}
+                {onFallbackToAI && filteredSets.length > 0 && (
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Don't see your paint set?
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={onFallbackToAI}
+                      className="w-full gap-2"
+                    >
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      Use AI to Identify Unknown Set
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 

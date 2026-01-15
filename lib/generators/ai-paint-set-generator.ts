@@ -32,7 +32,9 @@ export abstract class BaseAIPaintSetGenerator {
                 sets.push(...batchResults.filter(s => s !== null) as ScrapedPaintSet[]);
 
                 // Rate limiting pause
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                if (i + batchSize < setNames.length) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
             }
 
             return {
@@ -63,8 +65,10 @@ export abstract class BaseAIPaintSetGenerator {
     1. Only official product names.
     2. Include current and popular discontinued sets.
     3. Exclude single paints or individual bottles.
-    4. Return ONLY the names, one per line.
-    5. Limit to the top 20 most popular/comprehensive sets.`;
+    4. Limit to the top 20 most popular/comprehensive sets.
+    
+    Return a strictly valid JSON array of strings. Example:
+    ["Set Name 1", "Set Name 2"]`;
 
         const response = await this.client.callAPI({
             model: 'claude-sonnet-4-5-20250929',
@@ -72,11 +76,20 @@ export abstract class BaseAIPaintSetGenerator {
             messages: [{ role: 'user', content: prompt }]
         });
 
-        return response
-            .split('\n')
-            .map(s => s.trim())
-            .filter(s => s.length > 0 && !s.match(/^\d+\./)) // Remove numbered lists if AI ignores instruction
-            .map(s => s.replace(/^[-*•]\s+/, '')); // Remove bullet points
+        try {
+            // Find JSON array in partial text if needed
+            const jsonMatch = response.match(/\[.*\]/s);
+            const jsonStr = jsonMatch ? jsonMatch[0] : response;
+            return JSON.parse(jsonStr);
+        } catch (e) {
+            console.error('Failed to parse set names JSON', e);
+            // Fallback to text parsing
+            return response
+                .split('\n')
+                .map(s => s.trim())
+                .filter(s => s.length > 0 && !s.match(/^\d+\./))
+                .map(s => s.replace(/^[-*•]\s+/, '').replace(/^["']|["'],?$/g, ''));
+        }
     }
 
     /**
@@ -87,15 +100,13 @@ export abstract class BaseAIPaintSetGenerator {
             console.log(`[AI Generator] Fetching details for: ${setName}`);
 
             const prompt = `For the ${this.brandName} product "${setName}":
-      1. Write a brief 1-sentence description.
-      2. List the exact names of the paints included.
-      
-      Format:
-      DESCRIPTION: [Description here]
-      PAINTS:
-      [Paint Name 1]
-      [Paint Name 2]
-      ...`;
+            Provide the description and list of included maps.
+            
+            Return a strictly valid JSON object. Example:
+            {
+                "description": "Brief description here...",
+                "paints": ["Paint 1", "Paint 2"]
+            }`;
 
             const response = await this.client.callAPI({
                 model: 'claude-sonnet-4-5-20250929',
@@ -103,38 +114,28 @@ export abstract class BaseAIPaintSetGenerator {
                 messages: [{ role: 'user', content: prompt }]
             });
 
-            // Parse response
-            const lines = response.split('\n');
-            let description = '';
-            const paints: string[] = [];
-            let mode: 'desc' | 'paints' | null = null;
+            let data: { description: string, paints: string[] } | null = null;
 
-            for (const line of lines) {
-                const clean = line.trim();
-                if (clean.startsWith('DESCRIPTION:')) {
-                    description = clean.replace('DESCRIPTION:', '').trim();
-                    mode = 'desc';
-                } else if (clean.startsWith('PAINTS:')) {
-                    mode = 'paints';
-                } else if (clean.length > 0) {
-                    if (mode === 'paints') {
-                        paints.push(clean.replace(/^[-*•]\s+/, '').trim());
-                    } else if (mode === 'desc' && !description) {
-                        description = clean;
-                    }
-                }
+            try {
+                const jsonMatch = response.match(/\{[\s\S]*\}/);
+                const jsonStr = jsonMatch ? jsonMatch[0] : response;
+                data = JSON.parse(jsonStr);
+            } catch (e) {
+                console.error('Failed to parse set details JSON', e);
+                // Fallback attempt to parse partial text was unreliable, dropping fallback.
+                return null;
             }
 
-            if (paints.length === 0) return null;
+            if (!data || !data.paints || data.paints.length === 0) return null;
 
             return {
                 setName: setName,
                 brand: this.brandName,
-                paintCount: paints.length,
-                paintNames: paints,
-                sourceUrl: `https://google.com/search?q=${encodeURIComponent(this.brandName + ' ' + setName)}`, // Placeholder
-                description: description,
-                imageUrl: '' // AI cannot generate real product image URLs reliably without scraping
+                paintCount: data.paints.length,
+                paintNames: data.paints,
+                sourceUrl: `https://google.com/search?q=${encodeURIComponent(this.brandName + ' ' + setName)}`,
+                description: data.description || '',
+                imageUrl: ''
             };
 
         } catch (error) {
