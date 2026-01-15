@@ -11,12 +11,12 @@ export function DonationButton() {
             asChild
         >
             <a
-                href="https://ko-fi.com/" // Placeholder, user to update
+                href="https://paypal.me/kendalldavis768"
                 target="_blank"
                 rel="noopener noreferrer"
             >
                 <Heart className="w-4 h-4 fill-current" />
-                Support PaintPile
+                Donate with PayPal
             </a>
         </Button>
     );
