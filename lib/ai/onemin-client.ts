@@ -40,7 +40,8 @@ const MODEL_MAP: Record<string, string> = {
   'claude-3-opus-20240229': 'gpt-4o',
   'claude-3-sonnet-20240229': 'gpt-4o',
   'claude-3-haiku-20240307': 'claude-3-haiku', // Keep original Haiku if it works, otherwise swap to gpt-4o-mini
-  'meta/meta-llama-3-70b-instruct': 'llama-3-70b',
+  'claude-haiku-4-5-20251001': 'claude-haiku-4-5-20251001', // User suggested model
+  'meta/meta-llama-3-70b-instruct': 'gpt-4o', // Fallback to GPT-4o as Llama 70b Chat is unsupported
   'gpt-4o': 'gpt-4o',
 };
 
