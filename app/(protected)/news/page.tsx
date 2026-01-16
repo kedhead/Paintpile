@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getNewsPosts } from '@/lib/firestore/news';
+import { getNewsPosts, deleteNewsPost } from '@/lib/firestore/news';
 import { NewsPost } from '@/types/news';
 import { NewsCard } from '@/components/news/NewsCard';
 import { CreateNewsDialog } from '@/components/news/CreateNewsDialog';
@@ -23,6 +23,19 @@ export default function NewsPage() {
             console.error('Error fetching news:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this news post?')) return;
+
+        try {
+            await deleteNewsPost(id);
+            // Optimistic update
+            setPosts(prev => prev.filter(p => p.id !== id));
+        } catch (error) {
+            console.error('Failed to delete post:', error);
+            alert('Failed to delete post');
         }
     };
 
@@ -56,7 +69,12 @@ export default function NewsPage() {
             ) : posts.length > 0 ? (
                 <div className="space-y-6">
                     {posts.map((post) => (
-                        <NewsCard key={post.id} post={post} />
+                        <NewsCard
+                            key={post.id}
+                            post={post}
+                            isAdmin={isAdmin}
+                            onDelete={handleDelete}
+                        />
                     ))}
                 </div>
             ) : (

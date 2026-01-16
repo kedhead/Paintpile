@@ -2,10 +2,12 @@ import { format } from 'date-fns';
 import { NewsPost, NewsType } from '@/types/news';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Calendar, Megaphone, Zap, Info, Wrench } from 'lucide-react';
+import { Calendar, Megaphone, Zap, Info, Wrench, Trash2 } from 'lucide-react';
 
 interface NewsCardProps {
     post: NewsPost;
+    isAdmin?: boolean;
+    onDelete?: (id: string) => void;
 }
 
 const TYPE_CONFIG: Record<NewsType, { label: string; color: string; icon: any }> = {
@@ -15,7 +17,7 @@ const TYPE_CONFIG: Record<NewsType, { label: string; color: string; icon: any }>
     maintenance: { label: 'Maintenance', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: Wrench },
 };
 
-export function NewsCard({ post }: NewsCardProps) {
+export function NewsCard({ post, isAdmin, onDelete }: NewsCardProps) {
     const config = TYPE_CONFIG[post.type] || TYPE_CONFIG.update;
     const Icon = config.icon;
 
@@ -23,7 +25,7 @@ export function NewsCard({ post }: NewsCardProps) {
     const dateObj = post.date?.toDate ? post.date.toDate() : new Date(post.date);
 
     return (
-        <Card className="overflow-hidden transition-all hover:shadow-md border-l-4" style={{ borderLeftColor: getBorderColor(post.type) }}>
+        <Card className="overflow-hidden transition-all hover:shadow-md border-l-4 group relative" style={{ borderLeftColor: getBorderColor(post.type) }}>
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start gap-4">
                     <div className="space-y-1">
@@ -37,9 +39,19 @@ export function NewsCard({ post }: NewsCardProps) {
                                 {format(dateObj, 'MMM d, yyyy')}
                             </span>
                         </div>
-                        <CardTitle className="text-xl leading-tight">{post.title}</CardTitle>
+                        <CardTitle className="text-xl leading-tight pr-8">{post.title}</CardTitle>
                     </div>
                 </div>
+
+                {isAdmin && onDelete && (
+                    <button
+                        onClick={() => onDelete(post.id)}
+                        className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                        title="Delete Post"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                )}
             </CardHeader>
             <CardContent>
                 <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
