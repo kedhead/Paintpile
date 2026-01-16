@@ -13,9 +13,7 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogHeader,
     DialogTitle,
-    DialogDescription,
 } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -125,8 +123,7 @@ export function CreateNewsDialog({ onPostCreated }: CreateNewsDialogProps) {
                         </DialogFooter>
                     </form>
                 </DialogContent>
-            </DialogContent>
-        </Dialog >
+            </Dialog>
         </>
     );
 }
