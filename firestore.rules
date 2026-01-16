@@ -232,5 +232,11 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
         allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
+
+    // Site News (Admins only write, Everyone read)
+    match /site_news/{newsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

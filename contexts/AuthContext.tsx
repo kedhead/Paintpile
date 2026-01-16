@@ -18,6 +18,7 @@ import { createUserProfile } from '@/lib/firestore/users';
 interface AuthContextType {
   currentUser: FirebaseUser | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signInWithGoogle: () => Promise<UserCredential>;
@@ -37,6 +38,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Sign up with email and password
@@ -82,8 +84,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen for auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      if (user) {
+        try {
+          const tokenResult = await user.getIdTokenResult();
+          setIsAdmin(!!tokenResult.claims.admin);
+        } catch (e) {
+          console.error("Error fetching claims", e);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
 
@@ -93,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
     currentUser,
     loading,
+    isAdmin,
     signUp,
     signIn,
     signInWithGoogle,
