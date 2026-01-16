@@ -54,7 +54,7 @@ export default function FeaturesPage() {
         },
         {
             title: 'Import & Migration',
-            description: 'Easily import your collection from PaintRack via JSON, or use our smart tools to scrape paint sets and bundles.',
+            description: 'Easily import your collection from PaintRack via JSON, or use our migration tools to transfer your data.',
             icon: Download,
             color: 'text-cyan-500',
             bg: 'bg-cyan-500/10',
