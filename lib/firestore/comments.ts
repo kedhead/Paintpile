@@ -122,9 +122,9 @@ export async function createEntityComment(
       entityId,
       type,
       {
-        projectName: type === 'project' ? targetName : undefined,
-        armyName: type === 'army' ? targetName : undefined,
-        recipeName: type === 'recipe' ? targetName : undefined,
+        ...(type === 'project' ? { projectName: targetName } : {}),
+        ...(type === 'army' ? { armyName: targetName } : {}),
+        ...(type === 'recipe' ? { recipeName: targetName } : {}),
         targetName: targetName,
         commentText: content,
         commentPreview,
