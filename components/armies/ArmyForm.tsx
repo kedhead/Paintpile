@@ -88,7 +88,7 @@ export function ArmyForm({ userId, editingArmy, onSuccess, onCancel }: ArmyFormP
         // Create new army
         const newArmyData: any = {
           ...data,
-        }
+        };
 
         if (data.customPhotoUrl) {
           newArmyData.customPhotoUrl = data.customPhotoUrl;
@@ -97,8 +97,13 @@ export function ArmyForm({ userId, editingArmy, onSuccess, onCancel }: ArmyFormP
         armyId = await createArmy(userId, newArmyData);
       }
 
-      // ... rest of logic
-    } catch (err) { }
+      onSuccess(armyId);
+    } catch (err: any) {
+      setError(editingArmy ? 'Failed to update army. Please try again.' : 'Failed to create army. Please try again.');
+      console.error('Error saving army:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
