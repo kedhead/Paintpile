@@ -116,6 +116,15 @@ export default function ProjectDetailPage() {
     }
   }, [projectId, currentUser]);
 
+  // Update image size on window resize
+  useEffect(() => {
+    function handleResize() {
+      updateHeroImageSize();
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   async function loadPhotos() {
     try {
       setLoadingPhotos(true);

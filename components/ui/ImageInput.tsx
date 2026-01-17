@@ -43,13 +43,19 @@ export function ImageInput({ value, onChange, className, label = 'Upload Image' 
             formData.append('file', file);
             formData.append('userId', currentUser?.uid || '');
 
+            const token = await currentUser?.getIdToken();
+
             const response = await fetch('/api/upload/temp-image', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData,
             });
 
             if (!response.ok) {
-                throw new Error('Failed to upload image');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to upload image');
             }
 
             const data = await response.json();

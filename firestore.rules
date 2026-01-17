@@ -131,21 +131,22 @@ service cloud.firestore {
     }
 
     // Global paints database
+    // SECURED: Only Admins can write to the global curated list
     match /paints/{paintId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
 
     // Custom paints (user-created paints)
     match /customPaints/{paintId} {
-      // Anyone can read custom paints (for now - could restrict to owner only)
+      // Anyone can read custom paints
       allow read: if true;
       // Only authenticated users can create custom paints
       allow create: if isAuthenticated() &&
                        request.resource.data.userId == request.auth.uid;
-      // Only the owner can delete their custom paints
-      allow delete: if isAuthenticated() &&
+      // Only the owner can update or delete their custom paints
+      allow update, delete: if isAuthenticated() &&
                        resource.data.userId == request.auth.uid;
     }
 

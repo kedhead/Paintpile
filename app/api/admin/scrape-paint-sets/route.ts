@@ -14,6 +14,18 @@ export async function POST(request: NextRequest) {
   try {
     const { brands } = await request.json();
 
+    // Verify Admin Authentication
+    const { verifyAuth, unauthorizedResponse, forbiddenResponse } = await import('@/lib/auth/server-auth');
+    const auth = await verifyAuth(request);
+
+    if (!auth) {
+      return unauthorizedResponse('You must be logged in');
+    }
+
+    if (!auth.isAdmin) {
+      return forbiddenResponse('Admin access required');
+    }
+
     if (!brands || !Array.isArray(brands) || brands.length === 0) {
       return NextResponse.json(
         { success: false, error: 'No brands specified' },

@@ -5,8 +5,17 @@ import { PaintSet } from '@/types/paint-set';
 
 export async function POST(request: NextRequest) {
     try {
-        // TODO: Verify admin auth here (context or token)
-        // For now assuming middleware or upstream check
+        // Verify Admin Authentication
+        const { verifyAuth, unauthorizedResponse, forbiddenResponse } = await import('@/lib/auth/server-auth');
+        const auth = await verifyAuth(request);
+
+        if (!auth) {
+            return unauthorizedResponse('You must be logged in');
+        }
+
+        if (!auth.isAdmin) {
+            return forbiddenResponse('Admin access required');
+        }
 
         const body = await request.json();
         const { sets } = body as { sets: PaintSet[] };

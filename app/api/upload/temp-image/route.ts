@@ -30,6 +30,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify authentication
+    const { verifyAuth, unauthorizedResponse } = await import('@/lib/auth/server-auth');
+    const auth = await verifyAuth(request);
+
+    if (!auth) {
+      return unauthorizedResponse('You must be logged in to upload images');
+    }
+
+    if (auth.uid !== userId) {
+      return unauthorizedResponse('User ID mismatch');
+    }
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json(

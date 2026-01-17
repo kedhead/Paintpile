@@ -70,9 +70,14 @@ export default function ScrapePaintSetsPage() {
     setResults([]);
 
     try {
+      const token = await currentUser?.getIdToken();
+
       const response = await fetch('/api/admin/scrape-paint-sets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ brands: selectedBrands }),
       });
 
@@ -118,9 +123,14 @@ export default function ScrapePaintSetsPage() {
         });
       });
 
+      const token = await currentUser?.getIdToken();
+
       const response = await fetch('/api/admin/save-paint-set', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ sets: setsToSave }),
       });
 
