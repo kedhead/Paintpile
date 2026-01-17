@@ -103,8 +103,12 @@ export function RecipeCard({ recipe, onEdit, onDelete, showActions = false, user
         />
       )}
       {!recipe.resultColor && recipe.resultPhotos.length === 0 && !recipe.sourcePhotoUrl && (
-        <div className="h-32 w-full bg-muted flex items-center justify-center">
-          <span className="text-muted-foreground text-sm">No preview</span>
+        <div className="h-32 w-full bg-muted flex items-center justify-center overflow-hidden">
+          <img
+            src="/paintpile-logo.png"
+            alt="PaintPile"
+            className="h-full w-auto object-contain p-4 opacity-50 grayscale hover:grayscale-0 transition-all"
+          />
         </div>
       )}
 
@@ -116,9 +120,8 @@ export function RecipeCard({ recipe, onEdit, onDelete, showActions = false, user
               {recipe.name}
             </h3>
             <span
-              className={`px-2 py-1 text-xs rounded-full border ${
-                difficultyColors[recipe.difficulty]
-              }`}
+              className={`px-2 py-1 text-xs rounded-full border ${difficultyColors[recipe.difficulty]
+                }`}
             >
               {DIFFICULTY_LABELS[recipe.difficulty]}
             </span>

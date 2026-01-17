@@ -48,9 +48,9 @@ service cloud.firestore {
       }
 
       // User's badges subcollection
-      match /badges/{badgeId} {
-        allow read: if isAuthenticated() && isOwner(userId);
-        // Allow owner to write (needed for client-side badge awarding until server functions are ready)
+      match /earned_badges/{badgeId} {
+        allow read: if true; // Allow public read so profiles show badges
+        // Allow owner to write (needed for client-side badge awarding)
         allow write: if isAuthenticated() && isOwner(userId);
       }
     }

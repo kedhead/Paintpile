@@ -13,6 +13,7 @@ import { PaintSelectorModal } from '@/components/paints/PaintSelectorModal';
 import { AIRecipeGenerator } from './AIRecipeGenerator';
 import { GeneratedRecipe } from '@/types/ai-recipe';
 import { X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { ImageInput } from '@/components/ui/ImageInput';
 
 interface RecipeFormProps {
   userId: string;
@@ -394,6 +395,23 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
 
               {expandedSections.basic && (
                 <div className="p-4 space-y-4">
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-foreground">
+                      Recipe Photo
+                    </label>
+                    <Controller
+                      control={control}
+                      name="sourcePhotoUrl"
+                      render={({ field }) => (
+                        <ImageInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          label="Add Photo"
+                        />
+                      )}
+                    />
+                  </div>
+
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
                       Recipe Name *
@@ -663,8 +681,8 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
                           type="button"
                           onClick={() => toggleTechnique(value)}
                           className={`px-3 py-1 rounded-full text-sm transition-colors ${selectedTechniques.includes(value as any)
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}
                         >
                           {label}
