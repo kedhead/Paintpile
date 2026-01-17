@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Shield, Database, Palette, Users, Package, Upload, Megaphone } from 'lucide-react';
+import { Shield, Database, Palette, Users, Package, Upload, Megaphone, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
@@ -234,6 +234,50 @@ export default function AdminPage() {
                   </p>
                   <Button variant="outline" size="sm">
                     Open Ad Manager →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Badge Manager (New) */}
+          <Link href="/admin/badges">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <Trophy className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Badge System
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create, edit, and gamify the platform with achievements and badges.
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Manage Badges →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Badge Manager (New) */}
+          <Link href="/admin/badges">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <Trophy className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Badge System
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create, edit, and gamify the platform with achievements and badges.
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Manage Badges →
                   </Button>
                 </div>
               </div>

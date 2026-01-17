@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { db } from '@/lib/firebase/firebase';
 import { AdSettings, DEFAULT_AD_SETTINGS } from '@/types/ads';
 
 const SETTINGS_COLLECTION = 'site_settings';

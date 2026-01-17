@@ -1,59 +1,9 @@
 import { Timestamp } from 'firebase/firestore';
 
 /**
- * All available badge types
+ * Badge ID is now dynamic (string)
  */
-export type BadgeType =
-  // Project badges
-  | 'first_project'           // Created first project
-  | 'project_10'              // Created 10 projects
-  | 'project_50'              // Created 50 projects
-  | 'project_100'             // Created 100 projects
-  | 'completed_10'            // Completed 10 projects
-  | 'completed_50'            // Completed 50 projects
-  | 'completed_100'           // Completed 100 projects
-
-  // Army badges
-  | 'first_army'              // Created first army
-  | 'army_10'                 // Created 10 armies
-  | 'large_army'              // Army with 50+ models
-
-  // Recipe badges
-  | 'recipe_creator'          // Created first recipe
-  | 'recipe_10'               // Created 10 recipes
-  | 'recipe_master'           // Created 50 recipes
-  | 'ai_recipe_pioneer'       // Used AI recipe generation
-
-  // Social badges
-  | 'likes_50'                // Received 50 likes
-  | 'likes_500'               // Received 500 likes
-  | 'likes_1000'              // Received 1000 likes
-  | 'follower_10'             // Have 10 followers
-  | 'follower_100'            // Have 100 followers
-  | 'follower_500'            // Have 500 followers
-  | 'influencer'              // Have 1000 followers
-
-  // Community badges
-  | 'commenter'               // Left 50 comments
-  | 'helpful'                 // Received 10 likes on comments
-  | 'community_leader'        // Top contributor
-
-  // Special badges
-  | 'early_adopter'           // Joined in beta/early access
-  | 'pro_user'                // Has pro subscription
-  | 'verified_artist'         // Verified miniature painter
-  | 'competition_winner'      // Won a community competition
-  | 'curator'                 // Curated featured content
-
-  // Time-based badges
-  | 'one_year'                // Active for 1 year
-  | 'three_year'              // Active for 3 years
-  | 'veteran'                 // Active for 5 years
-
-  // Engagement badges
-  | 'streak_7'                // 7-day activity streak
-  | 'streak_30'               // 30-day activity streak
-  | 'daily_visitor';          // Visit app daily for a month
+export type BadgeType = string;
 
 /**
  * Badge tier/rarity
@@ -79,45 +29,45 @@ export type BadgeCategory =
   | 'engagement';
 
 /**
- * Badge definition (static metadata about each badge)
+ * Badge definition (Stored in 'badges' collection)
  */
-export interface BadgeDefinition {
-  type: BadgeType;
+export interface Badge {
+  id: string;                 // Firestore Doc ID (was type)
   name: string;
   description: string;
   category: BadgeCategory;
   tier: BadgeTier;
-  icon: string;               // Emoji or icon identifier
-  color: string;              // Hex color for badge display
-  requirement: string;        // Human-readable requirement
-  points?: number;            // Optional gamification points
-  hidden?: boolean;           // Hidden until earned (surprise badges)
+  icon: string;               // Emoji or Lucide icon name or URL
+  color: string;
+  requirement: string;
+  points: number;
+  hidden?: boolean;
+  createdAt?: string;         // ISO date
 }
 
 /**
- * User's earned badge (stored in users/{userId}/badges)
+ * User's earned badge (stored in users/{userId}/earned_badges)
  */
 export interface UserBadge {
-  badgeId: string;            // Unique ID for this badge instance
+  badgeId: string;            // Link to Badge.id
   userId: string;
-  badgeType: BadgeType;
   earnedAt: Timestamp;
-  notificationSent?: boolean; // Whether user was notified
-  showcased?: boolean;        // Whether user displays this badge prominently
+  notificationSent?: boolean;
+  showcased?: boolean;
 }
 
 /**
  * Helper type for creating badges
  */
-export type CreateBadgeData = Omit<UserBadge, 'badgeId' | 'earnedAt'>;
+export type CreateBadgeData = Omit<Badge, 'id' | 'createdAt'>;
+
 
 /**
- * All badge definitions
+ * All badge definitions (Seed Data)
  */
-export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
+export const BADGE_DEFINITIONS: Record<string, Omit<Badge, 'id' | 'createdAt'>> = {
   // Project badges
   first_project: {
-    type: 'first_project',
     name: 'First Paint',
     description: 'Created your first project',
     category: 'projects',
@@ -128,7 +78,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 10,
   },
   project_10: {
-    type: 'project_10',
     name: 'Dedicated Painter',
     description: 'Created 10 projects',
     category: 'projects',
@@ -139,7 +88,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 50,
   },
   project_50: {
-    type: 'project_50',
     name: 'Master Painter',
     description: 'Created 50 projects',
     category: 'projects',
@@ -150,7 +98,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 250,
   },
   project_100: {
-    type: 'project_100',
     name: 'Legendary Painter',
     description: 'Created 100 projects',
     category: 'projects',
@@ -161,7 +108,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 500,
   },
   completed_10: {
-    type: 'completed_10',
     name: 'Finisher',
     description: 'Completed 10 projects',
     category: 'projects',
@@ -172,7 +118,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 75,
   },
   completed_50: {
-    type: 'completed_50',
     name: 'Completionist',
     description: 'Completed 50 projects',
     category: 'projects',
@@ -183,7 +128,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 300,
   },
   completed_100: {
-    type: 'completed_100',
     name: 'Ultimate Completionist',
     description: 'Completed 100 projects',
     category: 'projects',
@@ -196,7 +140,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
 
   // Army badges
   first_army: {
-    type: 'first_army',
     name: 'Army Builder',
     description: 'Created your first army',
     category: 'armies',
@@ -207,7 +150,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 20,
   },
   army_10: {
-    type: 'army_10',
     name: 'General',
     description: 'Created 10 armies',
     category: 'armies',
@@ -218,7 +160,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 200,
   },
   large_army: {
-    type: 'large_army',
     name: 'Warlord',
     description: 'Built an army with 50+ models',
     category: 'armies',
@@ -231,7 +172,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
 
   // Recipe badges
   recipe_creator: {
-    type: 'recipe_creator',
     name: 'Recipe Creator',
     description: 'Created your first recipe',
     category: 'recipes',
@@ -242,7 +182,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 15,
   },
   recipe_10: {
-    type: 'recipe_10',
     name: 'Recipe Collector',
     description: 'Created 10 recipes',
     category: 'recipes',
@@ -253,7 +192,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 100,
   },
   recipe_master: {
-    type: 'recipe_master',
     name: 'Recipe Master',
     description: 'Created 50 recipes',
     category: 'recipes',
@@ -264,7 +202,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 400,
   },
   ai_recipe_pioneer: {
-    type: 'ai_recipe_pioneer',
     name: 'AI Pioneer',
     description: 'Used AI to generate a recipe',
     category: 'recipes',
@@ -277,7 +214,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
 
   // Social badges
   likes_50: {
-    type: 'likes_50',
     name: 'Well Liked',
     description: 'Received 50 likes',
     category: 'social',
@@ -288,7 +224,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 50,
   },
   likes_500: {
-    type: 'likes_500',
     name: 'Popular',
     description: 'Received 500 likes',
     category: 'social',
@@ -299,7 +234,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 250,
   },
   likes_1000: {
-    type: 'likes_1000',
     name: 'Beloved',
     description: 'Received 1000 likes',
     category: 'social',
@@ -310,7 +244,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 500,
   },
   follower_10: {
-    type: 'follower_10',
     name: 'Rising Star',
     description: 'Have 10 followers',
     category: 'social',
@@ -321,7 +254,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 50,
   },
   follower_100: {
-    type: 'follower_100',
     name: 'Community Figure',
     description: 'Have 100 followers',
     category: 'social',
@@ -332,7 +264,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 300,
   },
   follower_500: {
-    type: 'follower_500',
     name: 'Celebrity',
     description: 'Have 500 followers',
     category: 'social',
@@ -343,7 +274,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 750,
   },
   influencer: {
-    type: 'influencer',
     name: 'Influencer',
     description: 'Have 1000 followers',
     category: 'social',
@@ -356,7 +286,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
 
   // Community badges
   commenter: {
-    type: 'commenter',
     name: 'Commenter',
     description: 'Left 50 comments',
     category: 'community',
@@ -367,7 +296,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 50,
   },
   helpful: {
-    type: 'helpful',
     name: 'Helpful',
     description: 'Received 10 likes on comments',
     category: 'community',
@@ -378,7 +306,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 100,
   },
   community_leader: {
-    type: 'community_leader',
     name: 'Community Leader',
     description: 'Top contributor to the community',
     category: 'community',
@@ -392,7 +319,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
 
   // Special badges
   early_adopter: {
-    type: 'early_adopter',
     name: 'Early Adopter',
     description: 'Joined during beta/early access',
     category: 'special',
@@ -403,7 +329,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 100,
   },
   pro_user: {
-    type: 'pro_user',
     name: 'Pro User',
     description: 'Subscribed to Pro plan',
     category: 'special',
@@ -414,7 +339,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 0,
   },
   verified_artist: {
-    type: 'verified_artist',
     name: 'Verified Artist',
     description: 'Verified professional miniature painter',
     category: 'special',
@@ -426,7 +350,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     hidden: true,
   },
   competition_winner: {
-    type: 'competition_winner',
     name: 'Competition Winner',
     description: 'Won a community painting competition',
     category: 'special',
@@ -437,7 +360,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 500,
   },
   curator: {
-    type: 'curator',
     name: 'Curator',
     description: 'Selected to curate featured content',
     category: 'special',
@@ -451,7 +373,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
 
   // Time-based badges
   one_year: {
-    type: 'one_year',
     name: 'One Year Anniversary',
     description: 'Active for 1 year',
     category: 'time',
@@ -462,7 +383,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 100,
   },
   three_year: {
-    type: 'three_year',
     name: 'Three Year Veteran',
     description: 'Active for 3 years',
     category: 'time',
@@ -473,7 +393,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 300,
   },
   veteran: {
-    type: 'veteran',
     name: 'Veteran',
     description: 'Active for 5 years',
     category: 'time',
@@ -486,7 +405,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
 
   // Engagement badges
   streak_7: {
-    type: 'streak_7',
     name: '7-Day Streak',
     description: 'Active for 7 days in a row',
     category: 'engagement',
@@ -497,7 +415,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 25,
   },
   streak_30: {
-    type: 'streak_30',
     name: '30-Day Streak',
     description: 'Active for 30 days in a row',
     category: 'engagement',
@@ -508,7 +425,6 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
     points: 200,
   },
   daily_visitor: {
-    type: 'daily_visitor',
     name: 'Daily Visitor',
     description: 'Visited the app daily for a month',
     category: 'engagement',

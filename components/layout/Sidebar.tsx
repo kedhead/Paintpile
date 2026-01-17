@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss, FlaskConical, Camera, Zap } from 'lucide-react';
+import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss, FlaskConical, Camera, Zap, Trophy } from 'lucide-react';
 import { SidebarAd } from '@/components/ads/SidebarAd';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
@@ -44,6 +44,12 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       href: '/armies',
       icon: Shield,
       current: pathname === '/armies' || pathname.startsWith('/armies'),
+    },
+    {
+      name: 'Badges',
+      href: '/badges',
+      icon: Trophy,
+      current: pathname.startsWith('/badges'),
     },
     {
       name: 'Following Feed',

@@ -244,5 +244,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Badges (Admins write definitions, Everyone read definitions)
+    match /badges/{badgeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
