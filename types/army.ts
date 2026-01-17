@@ -48,6 +48,7 @@ export interface ArmyFormData {
   description?: string;
   faction?: string;
   tags?: string[];
+  customPhotoUrl?: string;
 }
 
 /**

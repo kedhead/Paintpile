@@ -9,6 +9,7 @@ import { createArmy, updateArmy } from '@/lib/firestore/armies';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { TagInput } from '@/components/ui/TagInput';
+import { ImageInput } from '@/components/ui/ImageInput';
 import { Army } from '@/types/army';
 
 const armyFormSchema = z.object({
@@ -16,6 +17,7 @@ const armyFormSchema = z.object({
   description: z.string().max(500, 'Description must be less than 500 characters').optional(),
   faction: z.string().max(50, 'Faction must be less than 50 characters').optional(),
   tags: z.array(z.string()).optional(),
+  customPhotoUrl: z.string().optional(),
 });
 
 interface ArmyFormProps {
@@ -42,6 +44,7 @@ export function ArmyForm({ userId, editingArmy, onSuccess, onCancel }: ArmyFormP
       description: '',
       faction: '',
       tags: [],
+      customPhotoUrl: '',
     },
   });
 
@@ -51,6 +54,7 @@ export function ArmyForm({ userId, editingArmy, onSuccess, onCancel }: ArmyFormP
       setValue('description', editingArmy.description || '');
       setValue('faction', editingArmy.faction || '');
       setValue('tags', editingArmy.tags || []);
+      setValue('customPhotoUrl', editingArmy.customPhotoUrl || '');
     }
   }, [editingArmy, setValue]);
 
@@ -68,11 +72,22 @@ export function ArmyForm({ userId, editingArmy, onSuccess, onCancel }: ArmyFormP
           description: data.description || '',
           faction: data.faction || '',
           tags: data.tags || [],
+          customPhotoUrl: data.customPhotoUrl || undefined,
         });
         armyId = editingArmy.armyId;
       } else {
         // Create new army
-        armyId = await createArmy(userId, data);
+        // TypeScript workaround: createArmy expects ArmyFormData which doesn't explicitly include customPhotoUrl in some versions,
+        // but we'll cast or just pass it as data if the type allows.
+        // Let's verify type compatibility, if not we add it. 
+        // Assuming ArmyFormData was updated or we pass it directly.
+        // Actually, createArmy takes ArmyFormData. We should update the type definition in types/army.ts if needed,
+        // but for now we can pass it and let Firestore handle it if the type allows extra props or we cast.
+        // Better yet, let's explicitly pass the object.
+        armyId = await createArmy(userId, {
+          ...data,
+          customPhotoUrl: data.customPhotoUrl,
+        } as any);
       }
 
       onSuccess(armyId);
@@ -145,6 +160,28 @@ export function ArmyForm({ userId, editingArmy, onSuccess, onCancel }: ArmyFormP
           {errors.description && (
             <p className="mt-1.5 text-sm text-accent-600">{errors.description.message}</p>
           )}
+        </div>
+
+        {/* Custom Cover Photo */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Cover Photo (Optional)
+          </label>
+          <Controller
+            name="customPhotoUrl"
+            control={control}
+            render={({ field }) => (
+              <ImageInput
+                value={field.value}
+                onChange={field.onChange}
+                label="Upload Cover"
+                className="w-full"
+              />
+            )}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Upload a group shot or leave empty to use a project photo.
+          </p>
         </div>
 
         {/* Tags */}

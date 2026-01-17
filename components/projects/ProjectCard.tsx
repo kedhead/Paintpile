@@ -6,15 +6,17 @@ import { Project } from '@/types/project';
 import { formatDistanceToNow } from 'date-fns';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { LikeButton } from '@/components/social/LikeButton';
-import { Clock, Image as ImageIcon, Shield } from 'lucide-react';
+import { Clock, Image as ImageIcon, Shield, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ProjectCardProps {
   project: Project;
   coverPhotoUrl?: string;
+  isFeatured?: boolean;
+  onSetFeatured?: (projectId: string) => void;
 }
 
-export function ProjectCard({ project, coverPhotoUrl }: ProjectCardProps) {
+export function ProjectCard({ project, coverPhotoUrl, isFeatured, onSetFeatured }: ProjectCardProps) {
   const { currentUser } = useAuth();
   const timeAgo = project.updatedAt
     ? formatDistanceToNow(new Date(project.updatedAt.toDate()), { addSuffix: true })
@@ -43,6 +45,22 @@ export function ProjectCard({ project, coverPhotoUrl }: ProjectCardProps) {
           <div className="absolute top-3 right-3 flex gap-2">
             <StatusBadge status={project.status} />
           </div>
+          {/* Army Featured Selection */}
+          {onSetFeatured && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onSetFeatured(project.projectId);
+              }}
+              className={`absolute top-3 right-12 p-1.5 rounded-full transition-colors backdrop-blur-sm ${isFeatured
+                ? 'bg-primary text-primary-foreground shadow-lg scale-110'
+                : 'bg-black/40 text-white/70 hover:bg-primary/90 hover:text-white border border-white/20'
+                }`}
+              title={isFeatured ? 'Current Army Cover' : 'Set as Army Cover'}
+            >
+              <Star className={`w-4 h-4 ${isFeatured ? 'fill-current' : ''}`} />
+            </button>
+          )}
           {project.armyIds && project.armyIds.length > 0 && (
             <div className="absolute top-3 left-3">
               <span className="px-2 py-1 text-xs font-medium rounded-md bg-purple-500/90 text-white backdrop-blur-sm border border-white/20 flex items-center gap-1">

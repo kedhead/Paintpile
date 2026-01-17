@@ -25,11 +25,8 @@ export default function ArmyDetailPage() {
 
   const [army, setArmy] = useState<Army | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [coverPhotos, setCoverPhotos] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [featuredPhotoUrl, setFeaturedPhotoUrl] = useState<string | null>(null);
+  const [projectCoverIds, setProjectCoverIds] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (currentUser) {
@@ -59,33 +56,85 @@ export default function ArmyDetailPage() {
       const armyProjects = await getArmyProjects(armyId);
       setProjects(armyProjects);
 
-      // Load cover photos for projects
+      // Load cover photos for projects and determine army hero image
       const photoMap: Record<string, string> = {};
+      const idMap: Record<string, string> = {};
+      let foundFeatured = false;
+      let heroUrl = armyData.customPhotoUrl || null;
+
       await Promise.all(
         armyProjects.map(async (project) => {
           try {
             const photos = await getProjectPhotos(project.projectId);
             if (photos.length > 0) {
               let coverPhoto = photos[0];
+              // Respect project's own featured photo settings
               if (project.featuredPhotoId) {
-                const featuredPhoto = photos.find(p => p.photoId === project.featuredPhotoId);
-                if (featuredPhoto) {
-                  coverPhoto = featuredPhoto;
-                }
+                const featured = photos.find(p => p.photoId === project.featuredPhotoId);
+                if (featured) coverPhoto = featured;
               }
-              photoMap[project.projectId] = coverPhoto.thumbnailUrl || coverPhoto.url;
+
+              const url = coverPhoto.thumbnailUrl || coverPhoto.url;
+              photoMap[project.projectId] = url;
+              idMap[project.projectId] = coverPhoto.photoId;
+
+              // Check if this is the army's featured photo (if not using custom)
+              if (!heroUrl && armyData.featuredPhotoId === coverPhoto.photoId) {
+                heroUrl = coverPhoto.url; // Use full res for hero
+                foundFeatured = true;
+              }
             }
           } catch (err) {
             console.error(`Error loading photos for project ${project.projectId}:`, err);
           }
         })
       );
+
+      // Fallback: If no custom photo and featured photo not found (or not set), use first project's cover
+      if (!heroUrl && armyProjects.length > 0) {
+        // We might not have the URL yet if we didn't match the ID perfectly or order matters.
+        // Let's just grab the first one from the map if it exists.
+        const firstProjectId = armyProjects[0].projectId;
+        if (photoMap[firstProjectId]) {
+          // Ideally we'd want the full res URL here, but map has thumbnail. 
+          // For now, thumbnail/url might be same or close enough.
+          // Improve: fetch full res if needed.
+          heroUrl = photoMap[firstProjectId];
+        }
+      }
+
       setCoverPhotos(photoMap);
+      setProjectCoverIds(idMap);
+      setFeaturedPhotoUrl(heroUrl);
+
     } catch (err) {
       console.error('Error loading army:', err);
       setError('Failed to load army');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSetFeaturedPhoto(projectId: string) {
+    if (!army || !currentUser) return;
+    const photoId = projectCoverIds[projectId];
+    if (!photoId) {
+      alert('This project has no photos to feature.');
+      return;
+    }
+
+    try {
+      await updateArmy(army.armyId, { featuredPhotoId: photoId, customPhotoUrl: undefined }); // Clear custom if setting internal
+      setArmy({ ...army, featuredPhotoId: photoId, customPhotoUrl: undefined });
+
+      // Update the hero URL display immediately
+      // We need the full URL. We only have what's in coverPhotos (thumbnail/url). 
+      // It's acceptable for immediate feedback.
+      setFeaturedPhotoUrl(coverPhotos[projectId]);
+
+    } catch (err) {
+      console.error('Error updating featured photo:', err);
+      alert('Failed to update army cover photo');
     }
   }
 
@@ -126,36 +175,6 @@ export default function ArmyDetailPage() {
 
   const isOwner = currentUser && army && army.userId === currentUser.uid;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-destructive">{error}</p>
-            <Link href="/armies">
-              <Button variant="outline" className="mt-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Armies
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!army) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -168,15 +187,36 @@ export default function ArmyDetailPage() {
             </Button>
           </Link>
 
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
+            {/* Hero Image Section */}
+            <div className="md:col-span-1">
+              <div className="aspect-[4/3] bg-muted rounded-xl overflow-hidden border border-border shadow-md relative group">
+                {featuredPhotoUrl ? (
+                  <img
+                    src={featuredPhotoUrl}
+                    alt={army?.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-secondary/30">
+                    <Shield className="w-16 h-16 text-muted-foreground/30" />
+                  </div>
+                )}
+                {army?.customPhotoUrl && (
+                  <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                    Custom Upload
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-2 flex flex-col justify-center">
               <div className="flex items-center gap-3 mb-2">
-                <Shield className="w-8 h-8 text-primary" />
                 <h1 className="text-3xl md:text-4xl font-display font-bold">
-                  {army.name}
+                  {army?.name}
                 </h1>
               </div>
-              {army.faction && (
+              {army?.faction && (
                 <p className="text-lg text-muted-foreground mb-2">
                   Faction: {army.faction}
                 </p>
@@ -290,6 +330,8 @@ export default function ArmyDetailPage() {
                   key={project.projectId}
                   project={project}
                   coverPhotoUrl={coverPhotos[project.projectId]}
+                  isFeatured={army?.featuredPhotoId === projectCoverIds[project.projectId]}
+                  onSetFeatured={isOwner ? handleSetFeaturedPhoto : undefined}
                 />
               ))}
             </div>
