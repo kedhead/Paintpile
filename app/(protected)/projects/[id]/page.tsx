@@ -34,6 +34,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
+import { ShareButton } from '@/components/ui/ShareButton';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -58,7 +59,6 @@ export default function ProjectDetailPage() {
   const [editedDescription, setEditedDescription] = useState('');
   const [editedStatus, setEditedStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
   const [editedTags, setEditedTags] = useState<string[]>([]);
-  const [copiedLink, setCopiedLink] = useState(false);
   const [showAddRecipe, setShowAddRecipe] = useState(false);
   const heroImageRef = useRef<HTMLImageElement>(null);
 
@@ -222,25 +222,7 @@ export default function ProjectDetailPage() {
     }
   }
 
-  async function handleShareProject() {
-    if (!project) return;
 
-    // Create shareable URL
-    const shareUrl = `${window.location.origin}/projects/${project.projectId}`;
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopiedLink(true);
-
-      // Reset the copied state after 2 seconds
-      setTimeout(() => {
-        setCopiedLink(false);
-      }, 2000);
-    } catch (err) {
-      console.error('Error copying to clipboard:', err);
-      alert('Failed to copy link to clipboard');
-    }
-  }
 
   function handleStartEditProject() {
     if (!project) return;
@@ -361,16 +343,14 @@ export default function ProjectDetailPage() {
                             >
                               {/* Marker Dot */}
                               <div
-                                className={`w-6 h-6 rounded-full border-2 shadow-lg ${
-                                  isSelected ? 'border-white scale-125' : 'border-white/80'
-                                }`}
+                                className={`w-6 h-6 rounded-full border-2 shadow-lg ${isSelected ? 'border-white scale-125' : 'border-white/80'
+                                  }`}
                                 style={{ backgroundColor: markerColor }}
                               />
                               {/* Label */}
                               {annotation.label && (
-                                <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                                  isSelected ? 'bg-white text-gray-900' : 'bg-black/70 text-white'
-                                }`}>
+                                <div className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${isSelected ? 'bg-white text-gray-900' : 'bg-black/70 text-white'
+                                  }`}>
                                   {annotation.label}
                                 </div>
                               )}
@@ -651,14 +631,11 @@ export default function ProjectDetailPage() {
                             showCount={true}
                           />
                         </div>
-                        <Button
-                          variant="default"
+                        <ShareButton
+                          title={`Check out ${project.name} on PaintPile`}
+                          text={`I'm working on ${project.name} on PaintPile!`}
                           className="w-full"
-                          onClick={handleShareProject}
-                        >
-                          <Share2 className="h-4 w-4 mr-2" />
-                          {copiedLink ? 'Link Copied!' : 'Share Project'}
-                        </Button>
+                        />
                       </>
                     )}
                     {isOwner && (
@@ -726,7 +703,7 @@ export default function ProjectDetailPage() {
                       canAnnotate={isOwner}
                       isPro={
                         (userProfile?.subscription?.tier === 'pro' &&
-                         userProfile?.subscription?.status === 'active') ||
+                          userProfile?.subscription?.status === 'active') ||
                         userProfile?.features?.aiEnabled === true
                       }
                     />
