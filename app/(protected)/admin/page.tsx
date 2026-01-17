@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Shield, Database, Palette, Users, Package, Upload } from 'lucide-react';
+import { Shield, Database, Palette, Users, Package, Upload, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
@@ -212,6 +212,28 @@ export default function AdminPage() {
                   </p>
                   <Button variant="outline" size="sm">
                     Run Migration →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Ad Manager (New) */}
+          <Link href="/admin/ads">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <Megaphone className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Manage Ads
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Update sidebar ads, change links, or disable them entirely.
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Open Ad Manager →
                   </Button>
                 </div>
               </div>
