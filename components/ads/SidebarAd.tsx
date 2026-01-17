@@ -2,25 +2,57 @@
 
 import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getAdSettings } from '@/lib/firestore/ads';
+import { AdSettings, DEFAULT_AD_SETTINGS } from '@/types/ads';
 
 interface SidebarAdProps {
-    title?: string;
-    description?: string;
-    cta?: string;
-    href?: string;
-    image?: string;
+    overrideSettings?: AdSettings;
 }
 
-export function SidebarAd({
-    title = "Element Games",
-    description = "Get 15-20% off Warhammer & hobby supplies!",
-    cta = "Shop Now",
-    href = "https://elementgames.co.uk/?d=10279",
-    image
-}: SidebarAdProps) {
+export function SidebarAd({ overrideSettings }: SidebarAdProps) {
+    const [settings, setSettings] = useState<AdSettings | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // If overrides are provided (e.g. admin preview), use them directly
+        if (overrideSettings) {
+            setSettings(overrideSettings);
+            setLoading(false);
+            return;
+        }
+
+        // Otherwise fetch from Firestore
+        async function fetchSettings() {
+            try {
+                const data = await getAdSettings();
+                setSettings(data);
+            } catch (error) {
+                console.error("Failed to fetch ad settings", error);
+                setSettings(DEFAULT_AD_SETTINGS);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchSettings();
+    }, [overrideSettings]);
+
+    // Don't render if loading or specifically disabled
+    if (loading) return null;
+    if (!settings?.enabled) return null;
+
+    // Use settings or fallbacks
+    const {
+        title = DEFAULT_AD_SETTINGS.title,
+        description = DEFAULT_AD_SETTINGS.description,
+        ctaText = DEFAULT_AD_SETTINGS.ctaText,
+        linkUrl = DEFAULT_AD_SETTINGS.linkUrl,
+        imageUrl
+    } = settings;
+
     return (
         <div className="mt-auto px-4 pb-4">
-            <Link href={href} target="_blank" rel="noopener noreferrer" className="block group">
+            <Link href={linkUrl} target="_blank" rel="noopener noreferrer" className="block group">
                 <div className="rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-4 transition-all hover:border-indigo-500/40 hover:shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 bg-background/50 px-1.5 py-0.5 rounded">
@@ -29,9 +61,17 @@ export function SidebarAd({
                         <ExternalLink className="w-3 h-3 text-muted-foreground/70" />
                     </div>
 
-                    {image && (
-                        <div className="mb-3 rounded-lg overflow-hidden aspect-video bg-muted">
-                            <img src={image} alt={title} className="w-full h-full object-cover" />
+                    {imageUrl && (
+                        <div className="mb-3 rounded-lg overflow-hidden aspect-video bg-muted relative">
+                            {/* Use standard img for external URLs to avoid Next/Image config issues */}
+                            <img
+                                src={imageUrl}
+                                alt={title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
                         </div>
                     )}
 
@@ -43,7 +83,7 @@ export function SidebarAd({
                     </p>
 
                     <div className="text-xs font-medium text-primary flex items-center gap-1 group-hover:underline">
-                        {cta}
+                        {ctaText}
                     </div>
                 </div>
             </Link>
