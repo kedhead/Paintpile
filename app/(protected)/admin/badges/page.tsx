@@ -11,7 +11,11 @@ import { Spinner } from '@/components/ui/Spinner';
 import { ArrowLeft, Edit2, Trash2, Plus, RefreshCw, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { Badge, BADGE_DEFINITIONS, BadgeCategory, BadgeTier } from '@/types/badge';
-import { getAllBadges, createBadge, updateBadge, deleteBadge } from '@/lib/firestore/badges';
+import { getAllBadges, createBadge, updateBadge, deleteBadge, createBadgeWithId } from '@/lib/firestore/badges';
+
+// ...
+
+
 
 const badgeSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -104,13 +108,12 @@ export default function BadgeManagerPage() {
     };
 
     const seedDefaults = async () => {
-        if (!confirm('This will create duplicates if standard badges already exist. Continue?')) return;
+        if (!confirm('This will seed the database with standard badges. Existing badges with matching IDs will be updated. Continue?')) return;
         setLoading(true);
         try {
             for (const [key, def] of Object.entries(BADGE_DEFINITIONS)) {
-                await createBadge({
+                await createBadgeWithId(key, {
                     ...def,
-                    // Fix potential undefined if BADGE_DEFINITIONS types are loose
                     points: def.points || 0,
                 } as any);
             }

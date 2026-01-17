@@ -94,6 +94,15 @@ export async function createBadge(badgeData: CreateBadgeData): Promise<string> {
   return docRef.id;
 }
 
+export async function createBadgeWithId(id: string, badgeData: CreateBadgeData): Promise<void> {
+  const docRef = doc(db, BADGES_COLLECTION, id);
+  await setDoc(docRef, {
+    ...badgeData,
+    createdAt: new Date().toISOString(),
+  }, { merge: true }); // Merge to avoid overwriting creation time if possible, or just overwrite? 
+  // Actually, for seeding standard defs, we probably want to ensure latest data.
+}
+
 export async function updateBadge(id: string, badgeData: Partial<Badge>): Promise<void> {
   const docRef = doc(db, BADGES_COLLECTION, id);
   await updateDoc(docRef, badgeData);
