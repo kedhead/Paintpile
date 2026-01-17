@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getArmy, deleteArmy, updateArmy, getArmyProjects } from '@/lib/firestore/armies';
+import { deleteField } from 'firebase/firestore';
 import { Army } from '@/types/army';
 import { Project } from '@/types/project';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -129,7 +130,10 @@ export default function ArmyDetailPage() {
     }
 
     try {
-      await updateArmy(army.armyId, { featuredPhotoId: photoId, customPhotoUrl: undefined }); // Clear custom if setting internal
+      await updateArmy(army.armyId, {
+        featuredPhotoId: photoId,
+        customPhotoUrl: deleteField() as unknown as string
+      });
       setArmy({ ...army, featuredPhotoId: photoId, customPhotoUrl: undefined });
 
       // Update the hero URL display immediately
