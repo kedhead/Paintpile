@@ -11,7 +11,11 @@ import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Clock, Palette, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LikeButton } from '@/components/social/LikeButton';
+import { FollowButton } from '@/components/social/FollowButton';
 import { CommentList } from '@/components/comments/CommentList';
+import { getUserProfile } from '@/lib/firestore/users';
+import { User } from '@/types/user';
+import Link from 'next/link';
 
 interface RecipeDetailPageProps {
   params: Promise<{
@@ -22,6 +26,7 @@ interface RecipeDetailPageProps {
 export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
   const router = useRouter();
   const [recipe, setRecipe] = useState<PaintRecipe | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<User | null>(null);
   const [paints, setPaints] = useState<Record<string, Paint>>({});
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
@@ -56,6 +61,16 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
       }
 
       setRecipe(recipeData);
+
+      // Load author profile
+      if (recipeData.userId) {
+        try {
+          const author = await getUserProfile(recipeData.userId);
+          setAuthorProfile(author);
+        } catch (err) {
+          console.error('Error loading author:', err);
+        }
+      }
 
       // Load paint details for all ingredients
       const paintIds = recipeData.ingredients.map(ing => ing.paintId);
@@ -134,6 +149,31 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
         {/* Title Section */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">{recipe.name}</h1>
+
+          {authorProfile && (
+            <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+              <span>by</span>
+              <Link href={`/users/${authorProfile.username}`} className="flex items-center gap-2 hover:text-primary transition-colors">
+                {authorProfile.photoURL ? (
+                  <img src={authorProfile.photoURL} alt={authorProfile.displayName} className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                    {authorProfile.displayName?.[0] || '?'}
+                  </div>
+                )}
+                <span className="font-medium">{authorProfile.displayName}</span>
+              </Link>
+              {currentUser && currentUser.uid !== authorProfile.userId && (
+                <FollowButton
+                  currentUserId={currentUser.uid}
+                  targetUserId={authorProfile.userId}
+                  size="sm"
+                  variant="outline"
+                />
+              )}
+            </div>
+          )}
+
           <p className="text-lg text-muted-foreground">{recipe.description}</p>
 
           <div className="flex flex-wrap gap-3 mt-4">

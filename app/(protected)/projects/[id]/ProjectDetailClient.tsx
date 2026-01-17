@@ -24,6 +24,7 @@ import { ProjectRecipesList } from '@/components/recipes/ProjectRecipesList';
 import { AddRecipeToProject } from '@/components/recipes/AddRecipeToProject';
 import { ProjectTimeline } from '@/components/timeline/ProjectTimeline';
 import { LikeButton } from '@/components/social/LikeButton';
+import { FollowButton } from '@/components/social/FollowButton';
 import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
 import { getPaintsByIds } from '@/lib/firestore/paints';
@@ -41,6 +42,7 @@ export default function ProjectDetailClient() {
     const projectId = params.id as string;
 
     const [project, setProject] = useState<Project | null>(null);
+    const [authorProfile, setAuthorProfile] = useState<User | null>(null);
     const [photos, setPhotos] = useState<Photo[]>([]);
     const [userProfile, setUserProfile] = useState<User | null>(null);
     const [armies, setArmies] = useState<Army[]>([]);
@@ -78,6 +80,16 @@ export default function ProjectDetailClient() {
                 }
 
                 setProject(projectData);
+
+                // Load author profile
+                if (projectData.userId) {
+                    try {
+                        const author = await getUserProfile(projectData.userId);
+                        setAuthorProfile(author);
+                    } catch (err) {
+                        console.error('Error loading author:', err);
+                    }
+                }
             } catch (err) {
                 console.error('Error loading project:', err);
                 setError('Failed to load project');
@@ -304,7 +316,32 @@ export default function ProjectDetailClient() {
                             <ArrowLeft className="w-5 h-5" />
                         </div>
                     </Link>
-                    <h1 className="text-2xl font-display font-bold">Project Analysis</h1>
+                    <div>
+                        <h1 className="text-2xl font-display font-bold">Project Analysis</h1>
+                        {authorProfile && (
+                            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                                <span>by</span>
+                                <Link href={`/users/${authorProfile.username}`} className="flex items-center gap-2 hover:text-primary transition-colors">
+                                    {authorProfile.photoURL ? (
+                                        <img src={authorProfile.photoURL} alt={authorProfile.displayName} className="w-5 h-5 rounded-full object-cover" />
+                                    ) : (
+                                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                                            {authorProfile.displayName?.[0] || '?'}
+                                        </div>
+                                    )}
+                                    <span className="font-medium">{authorProfile.displayName}</span>
+                                </Link>
+                                {currentUser && currentUser.uid !== authorProfile.userId && (
+                                    <FollowButton
+                                        currentUserId={currentUser.uid}
+                                        targetUserId={authorProfile.userId}
+                                        size="sm"
+                                        variant="outline"
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

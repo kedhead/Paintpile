@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getArmy, deleteArmy, updateArmy, getArmyProjects } from '@/lib/firestore/armies';
+import { getUserProfile } from '@/lib/firestore/users';
 import { deleteField } from 'firebase/firestore';
 import { Army } from '@/types/army';
 import { Project } from '@/types/project';
+import { User } from '@/types/user';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -14,6 +16,7 @@ import { ArmyForm } from '@/components/armies/ArmyForm';
 import { ArmyMemberManager } from '@/components/armies/ArmyMemberManager';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { LikeButton } from '@/components/social/LikeButton';
+import { FollowButton } from '@/components/social/FollowButton';
 import { CommentList } from '@/components/comments/CommentList';
 import { getProjectPhotos } from '@/lib/firestore/photos';
 import { ArrowLeft, Edit2, Trash2, Users, Shield } from 'lucide-react';
@@ -27,6 +30,7 @@ export default function ArmyDetailClient() {
     const armyId = params.id as string;
 
     const [army, setArmy] = useState<Army | null>(null);
+    const [authorProfile, setAuthorProfile] = useState<User | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
     const [featuredPhotoUrl, setFeaturedPhotoUrl] = useState<string | null>(null);
     const [projectCoverIds, setProjectCoverIds] = useState<Record<string, string>>({});
@@ -59,6 +63,16 @@ export default function ArmyDetailClient() {
             }
 
             setArmy(armyData);
+
+            // Load author profile
+            if (armyData.userId) {
+                try {
+                    const author = await getUserProfile(armyData.userId);
+                    setAuthorProfile(author);
+                } catch (err) {
+                    console.error('Error loading author:', err);
+                }
+            }
 
             // Load projects in this army
             const armyProjects = await getArmyProjects(armyId);
@@ -250,6 +264,29 @@ export default function ArmyDetailClient() {
                                     {army?.name}
                                 </h1>
                             </div>
+                            {authorProfile && (
+                                <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+                                    <span>by</span>
+                                    <Link href={`/users/${authorProfile.username}`} className="flex items-center gap-2 hover:text-primary transition-colors">
+                                        {authorProfile.photoURL ? (
+                                            <img src={authorProfile.photoURL} alt={authorProfile.displayName} className="w-5 h-5 rounded-full object-cover" />
+                                        ) : (
+                                            <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                                                {authorProfile.displayName?.[0] || '?'}
+                                            </div>
+                                        )}
+                                        <span className="font-medium">{authorProfile.displayName}</span>
+                                    </Link>
+                                    {currentUser && currentUser.uid !== authorProfile.userId && (
+                                        <FollowButton
+                                            currentUserId={currentUser.uid}
+                                            targetUserId={authorProfile.userId}
+                                            size="sm"
+                                            variant="outline"
+                                        />
+                                    )}
+                                </div>
+                            )}
                             {army?.faction && (
                                 <p className="text-lg text-muted-foreground mb-2">
                                     Faction: {army.faction}

@@ -10,8 +10,8 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
-             request.auth.token.admin == true;
+    function isAdmin() {
+      return request.auth.token.admin == true;
     }
 
     // Allow updating counters if that's the only thing changing

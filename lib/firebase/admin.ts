@@ -101,6 +101,13 @@ export function getAdminFirestore() {
 }
 
 /**
+ * Alias for getAdminFirestore
+ */
+export function getAdminDb() {
+  return getAdminFirestore();
+}
+
+/**
  * Get Firebase Admin Storage instance
  */
 export function getAdminStorage() {

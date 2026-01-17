@@ -24,6 +24,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<UserCredential>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  getAuthToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     signOut,
     resetPassword,
+    getAuthToken: async () => currentUser ? await currentUser.getIdToken() : null,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

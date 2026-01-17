@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { isUserAdmin } from '@/lib/auth/admin-check';
 import { OrphanedPaintCleanup } from '@/components/admin/OrphanedPaintCleanup';
+import { SystemBackup } from '@/components/admin/SystemBackup';
 
 export default function AdminPage() {
   const { currentUser } = useAuth();
@@ -283,6 +284,9 @@ export default function AdminPage() {
               </div>
             </div>
           </Link>
+
+          {/* System Backup */}
+          <SystemBackup />
 
           {/* Orphaned Paint Cleanup */}
           <OrphanedPaintCleanup />
