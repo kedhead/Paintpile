@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getUserBadges } from '@/lib/firestore/badges';
-import { UserBadge, BADGE_DEFINITIONS, BadgeDefinition } from '@/types/badge';
+import { getUserBadges, getAllBadges } from '@/lib/firestore/badges';
+import { UserBadge, Badge } from '@/types/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { Award } from 'lucide-react';
+import { Award, Lock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ProfileBadgesProps {
   userId: string;
@@ -12,15 +13,20 @@ interface ProfileBadgesProps {
 }
 
 export function ProfileBadges({ userId, isOwnProfile = false }: ProfileBadgesProps) {
-  const [badges, setBadges] = useState<UserBadge[]>([]);
+  const [userBadges, setUserBadges] = useState<UserBadge[]>([]);
+  const [allBadges, setAllBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadBadges() {
+    async function loadData() {
       try {
         setLoading(true);
-        const userBadges = await getUserBadges(userId);
-        setBadges(userBadges);
+        const [earned, definitions] = await Promise.all([
+          getUserBadges(userId),
+          getAllBadges() // Fetch definitions so we know details about earned badges
+        ]);
+        setUserBadges(earned);
+        setAllBadges(definitions);
       } catch (err) {
         console.error('Error loading badges:', err);
       } finally {
@@ -28,7 +34,7 @@ export function ProfileBadges({ userId, isOwnProfile = false }: ProfileBadgesPro
       }
     }
 
-    loadBadges();
+    loadData();
   }, [userId]);
 
   if (loading) {
@@ -39,7 +45,7 @@ export function ProfileBadges({ userId, isOwnProfile = false }: ProfileBadgesPro
     );
   }
 
-  if (badges.length === 0) {
+  if (userBadges.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -54,24 +60,39 @@ export function ProfileBadges({ userId, isOwnProfile = false }: ProfileBadgesPro
     );
   }
 
+  // Calculate total points
+  const totalPoints = userBadges.reduce((sum, ub) => {
+    const badge = allBadges.find(b => b.id === ub.badgeId);
+    return sum + (badge?.points || 0);
+  }, 0);
+
   return (
     <div className="space-y-6">
       {/* Badge Count */}
-      <div className="flex items-center gap-2">
-        <Award className="w-5 h-5 text-primary" />
-        <h3 className="text-lg font-semibold text-foreground">
-          {badges.length} {badges.length === 1 ? 'Badge' : 'Badges'} Earned
-        </h3>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Award className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">
+            {userBadges.length} {userBadges.length === 1 ? 'Badge' : 'Badges'} Earned
+          </h3>
+        </div>
+        <div className="text-sm font-medium text-muted-foreground">
+          {totalPoints} Points
+        </div>
       </div>
 
       {/* Badges Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {badges.map((badge) => {
-          const definition = BADGE_DEFINITIONS[badge.badgeType];
+        {userBadges.map((userBadge) => {
+          const definition = allBadges.find(b => b.id === userBadge.badgeId);
+
+          // Skip if definition not found (deleted badge?)
+          if (!definition) return null;
+
           return (
             <BadgeCard
-              key={badge.badgeId}
-              badge={badge}
+              key={userBadge.badgeId}
+              badge={userBadge}
               definition={definition}
             />
           );
@@ -83,7 +104,7 @@ export function ProfileBadges({ userId, isOwnProfile = false }: ProfileBadgesPro
 
 interface BadgeCardProps {
   badge: UserBadge;
-  definition: BadgeDefinition;
+  definition: Badge;
 }
 
 function BadgeCard({ badge, definition }: BadgeCardProps) {
@@ -111,53 +132,49 @@ function BadgeCard({ badge, definition }: BadgeCardProps) {
 
   // Get tier badge
   const getTierBadge = () => {
-    switch (definition.tier) {
-      case 'legendary':
-        return (
-          <span className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-purple-500 to-pink-600 text-white uppercase tracking-wide">
-            Legendary
-          </span>
-        );
-      case 'platinum':
-        return (
-          <span className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-slate-500 text-white uppercase tracking-wide">
-            Platinum
-          </span>
-        );
-      default:
-        return null;
+    if (['legendary', 'platinum'].includes(definition.tier)) {
+      return (
+        <span className={cn(
+          "absolute top-2 right-2 px-1.5 py-0.5 text-[10px] font-bold rounded text-white uppercase tracking-wide",
+          definition.tier === 'legendary' ? "bg-gradient-to-r from-purple-500 to-pink-600" : "bg-slate-500"
+        )}>
+          {definition.tier}
+        </span>
+      );
     }
+    return null;
   };
 
   return (
     <div
-      className={`relative p-4 rounded-lg bg-gradient-to-br ${getTierColor()} border backdrop-blur-sm hover:scale-105 transition-transform cursor-pointer group`}
+      className={`relative p-4 rounded-lg bg-gradient-to-br ${getTierColor()} border backdrop-blur-sm hover:scale-105 transition-transform cursor-pointer group flex flex-col items-center text-center`}
       title={`${definition.name} - ${definition.description}\nEarned ${timeAgo}`}
     >
       {getTierBadge()}
 
       {/* Badge Icon */}
-      <div className="flex flex-col items-center text-center space-y-2">
-        <div
-          className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
-          style={{ backgroundColor: `${definition.color}20` }}
-        >
-          {definition.icon}
-        </div>
-
-        {/* Badge Name */}
-        <h4 className="text-sm font-bold text-foreground line-clamp-2">
-          {definition.name}
-        </h4>
-
-        {/* Badge Description - shows on hover */}
-        <p className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute inset-x-2 bottom-2 bg-background/90 backdrop-blur-sm p-2 rounded border border-border">
-          {definition.description}
-        </p>
+      <div
+        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2 shadow-inner"
+        style={{
+          backgroundColor: `${definition.color}20`,
+          borderColor: definition.color
+        }}
+      >
+        {definition.icon || <Award />}
       </div>
 
+      {/* Badge Name */}
+      <h4 className="text-sm font-bold text-foreground line-clamp-1 mb-1">
+        {definition.name}
+      </h4>
+
+      {/* Badge Description - shows on hover */}
+      <p className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute inset-x-2 bottom-2 bg-background/95 backdrop-blur-sm p-2 rounded border border-border z-10 shadow-lg">
+        {definition.description}
+      </p>
+
       {/* Earned Date - subtle */}
-      <p className="text-[10px] text-muted-foreground text-center mt-2">
+      <p className="text-[10px] text-muted-foreground mt-auto">
         {timeAgo}
       </p>
     </div>
