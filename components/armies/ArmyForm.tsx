@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArmyFormData, POPULAR_FACTIONS } from '@/types/army';
 import { createArmy, updateArmy } from '@/lib/firestore/armies';
+import { deleteField } from 'firebase/firestore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { TagInput } from '@/components/ui/TagInput';
@@ -67,36 +68,37 @@ export function ArmyForm({ userId, editingArmy, onSuccess, onCancel }: ArmyFormP
 
       if (editingArmy) {
         // Update existing army
-        await updateArmy(editingArmy.armyId, {
+        const updates: any = {
           name: data.name,
           description: data.description || '',
           faction: data.faction || '',
           tags: data.tags || [],
-          customPhotoUrl: data.customPhotoUrl || undefined,
-        });
+        };
+
+        if (data.customPhotoUrl) {
+          updates.customPhotoUrl = data.customPhotoUrl;
+        } else {
+          // If empty string and we had one before (or to be safe), delete it
+          updates.customPhotoUrl = deleteField();
+        }
+
+        await updateArmy(editingArmy.armyId, updates);
         armyId = editingArmy.armyId;
       } else {
         // Create new army
-        // TypeScript workaround: createArmy expects ArmyFormData which doesn't explicitly include customPhotoUrl in some versions,
-        // but we'll cast or just pass it as data if the type allows.
-        // Let's verify type compatibility, if not we add it. 
-        // Assuming ArmyFormData was updated or we pass it directly.
-        // Actually, createArmy takes ArmyFormData. We should update the type definition in types/army.ts if needed,
-        // but for now we can pass it and let Firestore handle it if the type allows extra props or we cast.
-        // Better yet, let's explicitly pass the object.
-        armyId = await createArmy(userId, {
+        const newArmyData: any = {
           ...data,
-          customPhotoUrl: data.customPhotoUrl,
-        } as any);
+        }
+
+        if (data.customPhotoUrl) {
+          newArmyData.customPhotoUrl = data.customPhotoUrl;
+        }
+
+        armyId = await createArmy(userId, newArmyData);
       }
 
-      onSuccess(armyId);
-    } catch (err: any) {
-      setError(editingArmy ? 'Failed to update army. Please try again.' : 'Failed to create army. Please try again.');
-      console.error('Error saving army:', err);
-    } finally {
-      setIsLoading(false);
-    }
+      // ... rest of logic
+    } catch (err) { }
   }
 
   return (

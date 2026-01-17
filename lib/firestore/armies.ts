@@ -52,6 +52,7 @@ export async function createArmy(
     isPublic: false,
     likeCount: 0,
     commentCount: 0,
+    ...(armyData.customPhotoUrl ? { customPhotoUrl: armyData.customPhotoUrl } : {}),
   };
 
   await setDoc(newArmyRef, army);
