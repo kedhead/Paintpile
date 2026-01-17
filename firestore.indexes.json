@@ -83,6 +83,34 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "armies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "projectIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "isPublic",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "armies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "projectIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

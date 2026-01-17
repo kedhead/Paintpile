@@ -101,7 +101,7 @@ export default function ProjectDetailPage() {
 
     async function loadArmies() {
       try {
-        const projectArmies = await getProjectArmies(projectId);
+        const projectArmies = await getProjectArmies(projectId, currentUser?.uid);
         setArmies(projectArmies);
       } catch (err) {
         console.error('Error loading armies:', err);

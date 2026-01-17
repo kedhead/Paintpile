@@ -362,13 +362,45 @@ export async function updateArmyMember(
 /**
  * Get all armies that contain a specific project
  */
-export async function getProjectArmies(projectId: string): Promise<Army[]> {
+export async function getProjectArmies(projectId: string, currentUserId?: string): Promise<Army[]> {
   const armiesRef = collection(db, 'armies');
+  const results: Record<string, Army> = {};
 
-  const q = query(armiesRef, where('projectIds', 'array-contains', projectId));
+  // 1. Get Public Armies containing this project
+  // Requires Index: projectIds (array) + isPublic (asc/desc)
+  try {
+    const qPublic = query(
+      armiesRef,
+      where('projectIds', 'array-contains', projectId),
+      where('isPublic', '==', true)
+    );
+    const publicSnap = await getDocs(qPublic);
+    publicSnap.docs.forEach(doc => {
+      results[doc.id] = doc.data() as Army;
+    });
+  } catch (err) {
+    console.error('Error fetching public project armies:', err);
+  }
 
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => doc.data() as Army);
+  // 2. Get My Armies containing this project (if logged in)
+  // Requires Index: projectIds (array) + userId (asc/desc)
+  if (currentUserId) {
+    try {
+      const qMine = query(
+        armiesRef,
+        where('projectIds', 'array-contains', projectId),
+        where('userId', '==', currentUserId)
+      );
+      const mineSnap = await getDocs(qMine);
+      mineSnap.docs.forEach(doc => {
+        results[doc.id] = doc.data() as Army; // Overwrites duplicates safely
+      });
+    } catch (err) {
+      console.error('Error fetching my project armies:', err);
+    }
+  }
+
+  return Object.values(results);
 }
 
 /**
