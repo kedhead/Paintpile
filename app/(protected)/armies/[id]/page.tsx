@@ -27,6 +27,11 @@ export default function ArmyDetailPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [featuredPhotoUrl, setFeaturedPhotoUrl] = useState<string | null>(null);
   const [projectCoverIds, setProjectCoverIds] = useState<Record<string, string>>({});
+  const [coverPhotos, setCoverPhotos] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -174,6 +179,36 @@ export default function ArmyDetailPage() {
   }
 
   const isOwner = currentUser && army && army.userId === currentUser.uid;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-destructive">{error}</p>
+            <Link href="/armies">
+              <Button variant="outline" className="mt-4">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Armies
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!army) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
