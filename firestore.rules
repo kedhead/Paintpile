@@ -16,7 +16,7 @@ service cloud.firestore {
 
     // Allow updating counters if that's the only thing changing
     function isOnlyStatsUpdate() {
-       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'likeCount', 'commentCount', 'followerCount', 'followingCount']);
+       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'likeCount', 'commentCount', 'followerCount', 'followingCount', 'unreadNotificationCount']);
     }
 
     // Users collection
@@ -47,7 +47,10 @@ service cloud.firestore {
 
       // User's notifications subcollection (Phase 2)
       match /notifications/{notificationId} {
-        allow read, write: if isAuthenticated() && isOwner(userId);
+        allow read: if isAuthenticated() && isOwner(userId);
+        // Allow creating notifications if authenticated (e.g., likes, follows)
+        allow create: if isAuthenticated(); 
+        allow update, delete: if isAuthenticated() && isOwner(userId);
       }
 
       // User's badges subcollection
