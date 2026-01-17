@@ -197,3 +197,15 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
     console.error("Error checking/awarding badges:", error);
   }
 }
+
+/**
+ * Manually trigger a sync of user stats and then check for badges.
+ * Use this for retroactive awarding.
+ */
+export async function syncAndAwardBadges(userId: string): Promise<void> {
+  // Dynamic import to avoid circular dependency if possible, or just standard import
+  const { syncUserStats } = await import('./users');
+
+  await syncUserStats(userId);
+  await checkAndAwardBadges(userId);
+}

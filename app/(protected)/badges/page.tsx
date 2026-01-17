@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllBadges, getUserBadges } from '@/lib/firestore/badges';
+import { getAllBadges, getUserBadges, syncAndAwardBadges } from '@/lib/firestore/badges';
 import { Badge, UserBadge, BadgeCategory } from '@/types/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
-import { Trophy, Lock } from 'lucide-react';
+import { Trophy, Lock, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Make sure cn utility is available or use clsx
 
 export default function BadgesPage() {
@@ -14,6 +15,7 @@ export default function BadgesPage() {
     const [badges, setBadges] = useState<Badge[]>([]);
     const [userBadges, setUserBadges] = useState<UserBadge[]>([]);
     const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
         async function loadData() {
@@ -33,6 +35,22 @@ export default function BadgesPage() {
         }
         loadData();
     }, [currentUser]);
+
+    async function handleSync() {
+        if (!currentUser) return;
+        setSyncing(true);
+        try {
+            await syncAndAwardBadges(currentUser.uid);
+            // Reload user badges to reflect any newly awarded ones
+            const earned = await getUserBadges(currentUser.uid);
+            setUserBadges(earned);
+        } catch (error) {
+            console.error("Sync failed", error);
+            alert("Failed to sync badges. Please try again.");
+        } finally {
+            setSyncing(false);
+        }
+    }
 
     if (loading) {
         return <div className="p-12 flex justify-center"><Spinner size="lg" /></div>;
@@ -62,7 +80,19 @@ export default function BadgesPage() {
                         <Trophy className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold">Your Achievements</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-bold">Your Achievements</h1>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleSync}
+                                disabled={syncing}
+                                className="h-8 w-8 p-0 rounded-full"
+                                title="Check for missing badges"
+                            >
+                                <RotateCw className={cn("w-4 h-4 text-muted-foreground", syncing && "animate-spin")} />
+                            </Button>
+                        </div>
                         <p className="text-muted-foreground">Track your progress and painting milestones</p>
                     </div>
                 </div>

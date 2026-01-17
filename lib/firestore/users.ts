@@ -176,3 +176,46 @@ export async function deleteUserAccount(userId: string): Promise<void> {
   // Or use Firebase Cloud Functions to handle cascading deletes on the backend.
   // For now, orphaned data will remain but won't be accessible without the user account.
 }
+
+/**
+ * Recalculate and sync user stats based on actual collection counts.
+ * Useful for fixing drifted stats or retroactive badge awarding.
+ */
+export async function syncUserStats(userId: string): Promise<void> {
+  try {
+    const { getCountFromServer } = await import('firebase/firestore');
+
+    // 1. Count Projects
+    const projectsRef = collection(db, 'projects');
+    const projectsQuery = query(projectsRef, where('userId', '==', userId));
+    const projectsSnap = await getCountFromServer(projectsQuery);
+    const projectCount = projectsSnap.data().count;
+
+    // 2. Count Armies
+    const armiesRef = collection(db, 'armies');
+    const armiesQuery = query(armiesRef, where('userId', '==', userId));
+    const armiesSnap = await getCountFromServer(armiesQuery);
+    const armyCount = armiesSnap.data().count;
+
+    // 3. Count Recipes
+    const recipesRef = collection(db, 'paintRecipes');
+    const recipesQuery = query(recipesRef, where('userId', '==', userId));
+    const recipesSnap = await getCountFromServer(recipesQuery);
+    const recipesCreated = recipesSnap.data().count;
+
+    // 4. Update User Stats
+    // We only update the counts we can easily verify. 
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      'stats.projectCount': projectCount,
+      'stats.armyCount': armyCount,
+      'stats.recipesCreated': recipesCreated,
+    });
+
+    console.log(`Synced stats for user ${userId}: P=${projectCount}, A=${armyCount}, R=${recipesCreated}`);
+
+  } catch (error) {
+    console.error('Error syncing user stats:', error);
+    throw error;
+  }
+}
