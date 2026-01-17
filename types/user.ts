@@ -10,6 +10,7 @@ export interface User {
   bio?: string;
   photoURL?: string;
   createdAt: Timestamp;
+  lastLoginAt?: Timestamp; // timestamp of last login session
   settings: UserSettings;
   stats: UserStats;
   subscription?: UserSubscription;

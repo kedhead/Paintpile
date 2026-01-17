@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
+import { WelcomeBackModal } from '@/components/notifications/WelcomeBackModal';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -107,6 +108,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {currentUser && (
+        <WelcomeBackModal
+          userId={currentUser.uid}
+          userName={currentUser.displayName || 'Friend'}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto p-6 md:p-10 -mt-8 relative z-10">
 

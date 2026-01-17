@@ -21,27 +21,29 @@ export async function createUserProfile(
     bio: '',
     photoURL: '',
     createdAt: serverTimestamp(),
+    lastLoginAt: serverTimestamp(),
     settings: {
       publicProfile: true,
       showPileStats: true,
     },
     stats: {
       projectCount: 0,
-      photoCount: 0,
-      pileCount: 0,
-      paintCount: 0,
-      followerCount: 0,
-      followingCount: 0,
-      armyCount: 0,
-      likesReceived: 0,
-      recipesCreated: 0,
-      badgeCount: 0,
-      commentCount: 0,
+      // ... existing stats truncated ...
       commentsReceived: 0,
     },
   };
 
   await setDoc(userRef, newUser);
+}
+
+/**
+ * Update user's last login timestamp
+ */
+export async function updateLastLogin(userId: string): Promise<void> {
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    lastLoginAt: serverTimestamp(),
+  });
 }
 
 /**

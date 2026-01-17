@@ -101,9 +101,54 @@ export async function getUserNotifications(
   }
 }
 
+// ... existing code ...
+import { Timestamp } from 'firebase/firestore';
+
+// ... existing code ...
+
 /**
- * Get unread notifications count for a user
+ * Get notifications for a user since a specific timestamp
  */
+export async function getNotificationsSince(
+  userId: string,
+  since: Timestamp | Date
+): Promise<{
+  newFollowers: number;
+  newLikes: number;
+  newComments: number;
+  samples: Notification[];
+}> {
+  const notificationsRef = collection(db, 'users', userId, 'notifications');
+  const sinceDate = since instanceof Date ? since : since.toDate();
+
+  const q = query(
+    notificationsRef,
+    where('createdAt', '>', sinceDate),
+    orderBy('createdAt', 'desc'),
+    limit(20) // Limit sample size
+  );
+
+  const querySnapshot = await getDocs(q);
+  const notifications = querySnapshot.docs.map((doc) => doc.data() as Notification);
+
+  // Calculate stats
+  let newFollowers = 0;
+  let newLikes = 0;
+  let newComments = 0;
+
+  notifications.forEach((n) => {
+    if (n.type === 'follow') newFollowers++;
+    else if (n.type === 'like') newLikes++;
+    else if (n.type === 'comment' || n.type === 'comment_reply' || n.type === 'mention') newComments++;
+  });
+
+  return {
+    newFollowers,
+    newLikes,
+    newComments,
+    samples: notifications.slice(0, 3) // Return 3 most recent as samples
+  };
+}
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   // Try to get from denormalized field first (faster)
   const userRef = doc(db, 'users', userId);
