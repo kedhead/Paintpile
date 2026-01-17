@@ -5,11 +5,13 @@ import { Comment } from '@/types/social';
 import { CommentItem } from './CommentItem';
 import { CommentForm } from './CommentForm';
 import { Spinner } from '@/components/ui/Spinner';
-import { getProjectComments, createComment, updateComment, deleteComment } from '@/lib/firestore/comments';
+import { getEntityComments, createEntityComment, updateEntityComment, deleteEntityComment } from '@/lib/firestore/comments';
 import { MessageSquare } from 'lucide-react';
 
 interface CommentListProps {
-  projectId: string;
+  targetId: string;
+  type?: 'project' | 'army' | 'recipe';
+  projectId?: string; // Legacy
   currentUserId?: string;
   currentUsername?: string;
   currentUserPhoto?: string;
@@ -17,24 +19,27 @@ interface CommentListProps {
 }
 
 export function CommentList({
-  projectId,
+  targetId: propTargetId,
+  type = 'project',
+  projectId, // Legacy
   currentUserId,
   currentUsername,
   currentUserPhoto,
   isPublic,
 }: CommentListProps) {
+  const targetId = projectId || propTargetId;
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadComments();
-  }, [projectId]);
+  }, [targetId, type]);
 
   async function loadComments() {
     try {
       setLoading(true);
-      const projectComments = await getProjectComments(projectId);
-      setComments(projectComments);
+      const entityComments = await getEntityComments(targetId, type);
+      setComments(entityComments);
     } catch (err) {
       console.error('Error loading comments:', err);
     } finally {
@@ -49,7 +54,7 @@ export function CommentList({
     }
 
     try {
-      await createComment(projectId, currentUserId, currentUsername, currentUserPhoto, content);
+      await createEntityComment(targetId, type, currentUserId, currentUsername, currentUserPhoto, content);
       await loadComments();
     } catch (err) {
       console.error('Error adding comment:', err);
@@ -59,7 +64,7 @@ export function CommentList({
 
   async function handleEditComment(commentId: string, newContent: string) {
     try {
-      await updateComment(projectId, commentId, newContent);
+      await updateEntityComment(targetId, type, commentId, newContent);
       await loadComments();
     } catch (err) {
       console.error('Error editing comment:', err);
@@ -71,7 +76,7 @@ export function CommentList({
     if (!currentUserId) return;
 
     try {
-      await deleteComment(projectId, commentId, currentUserId);
+      await deleteEntityComment(targetId, type, commentId, currentUserId);
       await loadComments();
     } catch (err) {
       console.error('Error deleting comment:', err);

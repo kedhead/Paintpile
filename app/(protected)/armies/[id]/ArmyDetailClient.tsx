@@ -13,6 +13,8 @@ import { Spinner } from '@/components/ui/Spinner';
 import { ArmyForm } from '@/components/armies/ArmyForm';
 import { ArmyMemberManager } from '@/components/armies/ArmyMemberManager';
 import { ProjectCard } from '@/components/projects/ProjectCard';
+import { LikeButton } from '@/components/social/LikeButton';
+import { CommentList } from '@/components/comments/CommentList';
 import { getProjectPhotos } from '@/lib/firestore/photos';
 import { ArrowLeft, Edit2, Trash2, Users, Shield } from 'lucide-react';
 import Link from 'next/link';
@@ -377,6 +379,34 @@ export default function ArmyDetailClient() {
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Social Section */}
+                <div className="border-t border-border pt-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-display font-bold">
+                            Discussion
+                        </h2>
+                        {currentUser && (
+                            <div className="flex items-center gap-4">
+                                <LikeButton
+                                    userId={currentUser.uid}
+                                    targetId={army.armyId}
+                                    type="army"
+                                    initialLikeCount={army.likeCount || 0}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <CommentList
+                        targetId={army.armyId}
+                        type="army"
+                        isPublic={army.isPublic || (currentUser?.uid === army.userId)}
+                        currentUserId={currentUser?.uid}
+                        currentUsername={currentUser?.displayName || 'User'}
+                        currentUserPhoto={currentUser?.photoURL || undefined}
+                    />
+                </div>
             </div>
         </div>
     );

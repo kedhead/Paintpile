@@ -18,24 +18,38 @@ import { createNotification, createNotificationMessage, createActionUrl } from '
 import { createActivity } from './activities';
 import { checkAndAwardBadges } from './badges';
 import { getProject } from './projects';
+import { getArmy } from './armies';
+import { getRecipe } from './recipes';
+import { getUserProfile } from './users';
+
+type CommentTargetType = 'project' | 'army' | 'recipe';
 
 /**
  * Create a new comment on a project
  */
-export async function createComment(
-  projectId: string,
+/**
+ * Generic function to create a comment on an entity
+ */
+export async function createEntityComment(
+  entityId: string,
+  type: CommentTargetType,
   userId: string,
   username: string,
   userPhotoURL: string | undefined,
   content: string
 ): Promise<string> {
-  const commentsRef = collection(db, 'projects', projectId, 'comments');
+  const collectionName = type === 'project' ? 'projects' : type === 'army' ? 'armies' : 'recipes'; // recipes actually uses 'paintRecipes'
+  const dbCollectionName = type === 'recipe' ? 'paintRecipes' : collectionName;
+
+  const commentsRef = collection(db, dbCollectionName, entityId, 'comments');
   const newCommentRef = doc(commentsRef);
   const commentId = newCommentRef.id;
 
   const comment = {
     commentId,
-    projectId,
+    projectId: type === 'project' ? entityId : undefined, // Legacy
+    targetId: entityId,
+    targetType: type,
     userId,
     username,
     userPhotoURL: userPhotoURL || '',
@@ -47,92 +61,108 @@ export async function createComment(
 
   await setDoc(newCommentRef, comment);
 
-  // Increment comment count on project
-  const projectRef = doc(db, 'projects', projectId);
-  await updateDoc(projectRef, {
-    commentCount: increment(1),
+  // Increment comment count on entity
+  const entityRef = doc(db, dbCollectionName, entityId);
+  await updateDoc(entityRef, {
+    commentCount: increment(1), // Assuming all entities have commentCount, need to verify or add it
   });
 
-  // Get project details for notification/activity
-  const project = await getProject(projectId);
+  // Handle Notifications & Activity
+  try {
+    let targetOwnerId: string | undefined;
+    let targetName: string = '';
+    let isPublic = true;
 
-  if (!project) return commentId;
+    if (type === 'project') {
+      const data = await getProject(entityId);
+      if (data) { targetOwnerId = data.userId; targetName = data.name; isPublic = data.isPublic; }
+    } else if (type === 'army') {
+      const data = await getArmy(entityId);
+      if (data) { targetOwnerId = data.userId; targetName = data.name; isPublic = data.isPublic; }
+    } else if (type === 'recipe') {
+      const data = await getRecipe(entityId);
+      if (data) { targetOwnerId = data.userId; targetName = data.name; isPublic = data.isPublic; }
+    }
 
-  // Create notification for project owner (but not if they commented on their own project)
-  if (project.userId !== userId) {
-    try {
-      // Truncate comment for preview
-      const commentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
-
+    if (targetOwnerId && targetOwnerId !== userId) {
       await createNotification({
-        userId: project.userId,
+        userId: targetOwnerId,
         type: 'comment',
         actorId: userId,
         actorUsername: username,
         actorPhotoURL: userPhotoURL,
-        targetId: projectId,
-        targetType: 'project',
-        targetName: project.name,
-        message: createNotificationMessage('comment', username, project.name),
-        actionUrl: createActionUrl('project', projectId),
+        targetId: entityId,
+        targetType: type,
+        targetName: targetName,
+        message: createNotificationMessage('comment', username, targetName),
+        actionUrl: createActionUrl(type, entityId),
       });
 
-      // Increment project owner's comments received stat
-      const ownerRef = doc(db, 'users', project.userId);
+      // Increment target owner's stats
+      const ownerRef = doc(db, 'users', targetOwnerId);
       await updateDoc(ownerRef, {
         'stats.commentsReceived': increment(1),
       });
-    } catch (err) {
-      console.error('Error creating comment notification:', err);
     }
-  }
 
-  // Increment commenter's comment count stat
-  try {
+    // Increment commenter's stats
     const commenterRef = doc(db, 'users', userId);
     await updateDoc(commenterRef, {
       'stats.commentCount': increment(1),
     });
-
-    // Check if commenter earned any badges
     await checkAndAwardBadges(userId);
-  } catch (err) {
-    console.error('Error updating comment stats:', err);
-  }
 
-  // Create activity entry
-  try {
+    // Create activity
     const commentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
-
     await createActivity(
       userId,
       username,
       userPhotoURL,
-      'comment_created',
-      projectId,
-      'project',
+      'comment_created', // TODO: Make generic or reuse
+      entityId,
+      type,
       {
-        projectName: project.name,
+        projectName: type === 'project' ? targetName : undefined,
+        armyName: type === 'army' ? targetName : undefined,
+        recipeName: type === 'recipe' ? targetName : undefined,
+        targetName: targetName,
         commentText: content,
         commentPreview,
-        visibility: project.isPublic ? 'public' : 'private',
+        visibility: isPublic ? 'public' : 'private',
       }
     );
+
   } catch (err) {
-    console.error('Error creating comment activity:', err);
+    console.error('Error creating comment side-effects:', err);
   }
 
   return commentId;
 }
 
 /**
- * Get all comments for a project
+ * Wrapper for legacy createComment (projects)
  */
-export async function getProjectComments(
+export async function createComment(
   projectId: string,
+  userId: string,
+  username: string,
+  userPhotoURL: string | undefined,
+  content: string
+): Promise<string> {
+  return createEntityComment(projectId, 'project', userId, username, userPhotoURL, content);
+}
+
+
+/**
+ * Generic function to get comments
+ */
+export async function getEntityComments(
+  entityId: string,
+  type: CommentTargetType,
   limitCount: number = 50
 ): Promise<Comment[]> {
-  const commentsRef = collection(db, 'projects', projectId, 'comments');
+  const dbCollectionName = type === 'project' ? 'projects' : type === 'army' ? 'armies' : 'paintRecipes';
+  const commentsRef = collection(db, dbCollectionName, entityId, 'comments');
   const q = query(
     commentsRef,
     orderBy('createdAt', 'desc'),
@@ -144,14 +174,23 @@ export async function getProjectComments(
 }
 
 /**
- * Update a comment
+ * Legacy wrapper
  */
-export async function updateComment(
-  projectId: string,
+export async function getProjectComments(projectId: string, limitCount: number = 50): Promise<Comment[]> {
+  return getEntityComments(projectId, 'project', limitCount);
+}
+
+/**
+ * Generic update comment
+ */
+export async function updateEntityComment(
+  entityId: string,
+  type: CommentTargetType,
   commentId: string,
   content: string
 ): Promise<void> {
-  const commentRef = doc(db, 'projects', projectId, 'comments', commentId);
+  const dbCollectionName = type === 'project' ? 'projects' : type === 'army' ? 'armies' : 'paintRecipes';
+  const commentRef = doc(db, dbCollectionName, entityId, 'comments', commentId);
 
   await updateDoc(commentRef, {
     content,
@@ -160,46 +199,64 @@ export async function updateComment(
   });
 }
 
+// Legacy wrapper
+export async function updateComment(projectId: string, commentId: string, content: string): Promise<void> {
+  return updateEntityComment(projectId, 'project', commentId, content);
+}
+
+
 /**
- * Delete a comment
+ * Generic delete comment
  */
-export async function deleteComment(
-  projectId: string,
+export async function deleteEntityComment(
+  entityId: string,
+  type: CommentTargetType,
   commentId: string,
   userId: string
 ): Promise<void> {
-  const commentRef = doc(db, 'projects', projectId, 'comments', commentId);
+  const dbCollectionName = type === 'project' ? 'projects' : type === 'army' ? 'armies' : 'paintRecipes';
+  const commentRef = doc(db, dbCollectionName, entityId, 'comments', commentId);
 
-  // Get project details before deleting
-  const project = await getProject(projectId);
+  // Get metadata for stats
+  let targetOwnerId: string | undefined;
+  try {
+    if (type === 'project') {
+      const data = await getProject(entityId);
+      targetOwnerId = data?.userId;
+    } else if (type === 'army') {
+      const data = await getArmy(entityId);
+      targetOwnerId = data?.userId;
+    } else if (type === 'recipe') {
+      const data = await getRecipe(entityId);
+      targetOwnerId = data?.userId;
+    }
+  } catch (e) { console.error(e); }
 
   await deleteDoc(commentRef);
 
-  // Decrement comment count on project
-  const projectRef = doc(db, 'projects', projectId);
-  await updateDoc(projectRef, {
+  // Decrement count
+  const entityRef = doc(db, dbCollectionName, entityId);
+  await updateDoc(entityRef, {
     commentCount: increment(-1),
   });
 
-  // Decrement commenter's comment count stat
+  // Decrement stats
   try {
     const commenterRef = doc(db, 'users', userId);
     await updateDoc(commenterRef, {
       'stats.commentCount': increment(-1),
     });
-  } catch (err) {
-    console.error('Error updating comment stats:', err);
-  }
 
-  // Decrement project owner's comments received stat (if not their own comment)
-  if (project && project.userId !== userId) {
-    try {
-      const ownerRef = doc(db, 'users', project.userId);
+    if (targetOwnerId && targetOwnerId !== userId) {
+      const ownerRef = doc(db, 'users', targetOwnerId);
       await updateDoc(ownerRef, {
         'stats.commentsReceived': increment(-1),
       });
-    } catch (err) {
-      console.error('Error updating comments received stat:', err);
     }
-  }
+  } catch (e) { console.error(e); }
+}
+
+// Legacy wrapper
+export async function deleteComment(projectId: string, commentId: string, userId: string): Promise<void> {
+  return deleteEntityComment(projectId, 'project', commentId, userId);
 }

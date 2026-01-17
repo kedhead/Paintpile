@@ -94,7 +94,9 @@ export function ProjectCard({ project, coverPhotoUrl, isFeatured, onSetFeatured 
               {currentUser && (
                 <LikeButton
                   userId={currentUser.uid}
-                  projectId={project.projectId}
+                  targetId={project.projectId}
+                  projectId={project.projectId} // Start transition to targetId
+                  type="project"
                   initialLikeCount={project.likeCount || 0}
                   size="sm"
                   showCount={true}

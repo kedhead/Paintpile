@@ -8,6 +8,9 @@
  * Request format uses type/model/promptObject structure.
  */
 
+import { OneMinConfig, OneMinImageResponse, OneMinErrorResponse } from '@/types/ai';
+import { getApiUrl } from '@/lib/api/config';
+
 export interface OneMinResponse {
   aiRecord?: {
     aiRecordDetail?: {
@@ -256,7 +259,7 @@ export class OneMinClient {
     formData.append('asset', blob, 'image.png'); // Filename is required by some APIs
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(getApiUrl('/api/ai/onemin-client/generate-image'), {
         method: 'POST',
         headers: {
           // Do NOT set Content-Type here, let fetch set it with boundary
@@ -327,7 +330,7 @@ export class OneMinClient {
     const url = `${this.baseUrl}${endpoint}`;
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(getApiUrl('/api/ai/onemin-client/generate-image'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

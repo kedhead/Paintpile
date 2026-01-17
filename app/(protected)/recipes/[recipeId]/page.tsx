@@ -8,7 +8,10 @@ import { PaintRecipe, RECIPE_CATEGORY_LABELS, DIFFICULTY_LABELS, TECHNIQUE_LABEL
 import { Paint } from '@/types/paint';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, Clock, Palette } from 'lucide-react';
+import { ArrowLeft, Clock, Palette, Heart } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { LikeButton } from '@/components/social/LikeButton';
+import { CommentList } from '@/components/comments/CommentList';
 
 interface RecipeDetailPageProps {
   params: Promise<{
@@ -21,6 +24,7 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
   const [recipe, setRecipe] = useState<PaintRecipe | null>(null);
   const [paints, setPaints] = useState<Record<string, Paint>>({});
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
   const [recipeId, setRecipeId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -146,6 +150,24 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
               </span>
             )}
           </div>
+
+          {/* Social Actions */}
+          <div className="mt-6 flex items-center gap-4">
+            {currentUser ? (
+              <LikeButton
+                userId={currentUser.uid}
+                targetId={recipe.recipeId}
+                type="recipe"
+                initialLikeCount={recipe.likes || 0}
+                size="lg"
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Heart className="w-5 h-5" />
+                <span>{recipe.likes || 0}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Ingredients Section */}
@@ -232,6 +254,21 @@ export default function RecipeDetailPage({ params }: RecipeDetailPageProps) {
             )}
           </div>
         )}
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Comments Section */}
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-foreground mb-6">Discussion</h2>
+          <CommentList
+            targetId={recipe.recipeId}
+            type="recipe"
+            isPublic={recipe.isPublic}
+            currentUserId={currentUser?.uid}
+            currentUsername={currentUser?.displayName || 'User'}
+            currentUserPhoto={currentUser?.photoURL || undefined}
+          />
+        </div>
       </div>
     </div>
   );

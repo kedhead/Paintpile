@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { likeProject, unlikeProject, isProjectLiked } from '@/lib/firestore/likes';
+import { toggleLike, isEntityLiked } from '@/lib/firestore/likes';
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
-interface LikeButtonProps {
+export interface LikeButtonProps {
   userId: string;
-  projectId: string;
+  targetId: string;
+  type?: 'project' | 'army' | 'recipe';
+  projectId?: string; // Legacy: if provided, treated as targetId with type='project'
   initialLikeCount?: number;
   onLikeChange?: (isLiked: boolean, newCount: number) => void;
   size?: 'sm' | 'default' | 'lg';
@@ -17,20 +19,30 @@ interface LikeButtonProps {
 
 export function LikeButton({
   userId,
-  projectId,
+  targetId: propTargetId,
+  type = 'project',
+  projectId, // Legacy
   initialLikeCount = 0,
   onLikeChange,
   size = 'default',
   showCount = true,
 }: LikeButtonProps) {
+  // Resolve targetId from legacy prop if needed
+  const targetId = projectId || propTargetId;
+
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
+  if (!targetId) {
+    console.warn("LikeButton: No targetId provided");
+    return null;
+  }
+
   useEffect(() => {
     checkLikeStatus();
-  }, [userId, projectId]);
+  }, [userId, targetId, type]);
 
   useEffect(() => {
     setLikeCount(initialLikeCount);
@@ -39,7 +51,7 @@ export function LikeButton({
   async function checkLikeStatus() {
     try {
       setCheckingStatus(true);
-      const status = await isProjectLiked(userId, projectId);
+      const status = await isEntityLiked(userId, targetId, type);
       setLiked(status);
     } catch (err) {
       console.error('Error checking like status:', err);
@@ -56,22 +68,26 @@ export function LikeButton({
 
     try {
       setLoading(true);
+      // Optimistic update
+      const newLikedState = !liked;
+      setLiked(newLikedState);
+      const newCount = newLikedState ? likeCount + 1 : Math.max(0, likeCount - 1);
+      setLikeCount(newCount);
+      if (onLikeChange) onLikeChange(newLikedState, newCount);
 
-      if (liked) {
-        await unlikeProject(userId, projectId);
-        setLiked(false);
-        const newCount = Math.max(0, likeCount - 1);
-        setLikeCount(newCount);
-        if (onLikeChange) onLikeChange(false, newCount);
-      } else {
-        await likeProject(userId, projectId);
-        setLiked(true);
-        const newCount = likeCount + 1;
-        setLikeCount(newCount);
-        if (onLikeChange) onLikeChange(true, newCount);
+      const result = await toggleLike(userId, targetId, type);
+
+      // Revert if server result mismatches (rare but possible) or correct it
+      if (result.liked !== newLikedState) {
+        setLiked(result.liked);
+        setLikeCount(initialLikeCount + (result.liked ? 1 : 0)); // Resync
       }
+
     } catch (err) {
       console.error('Error toggling like:', err);
+      // Revert optimistic update
+      setLiked(!liked);
+      setLikeCount(likeCount);
       alert('Failed to update like status');
     } finally {
       setLoading(false);

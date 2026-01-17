@@ -59,7 +59,12 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
   // Filter activities
   const filteredActivities = filter === 'all'
     ? activities
-    : activities.filter(a => a.type === filter);
+    : activities.filter(a => {
+      if (filter === 'project_liked') {
+        return a.type.includes('liked'); // Matches project_liked, army_liked, recipe_liked
+      }
+      return a.type === filter;
+    });
 
   return (
     <div className="space-y-4">
@@ -67,61 +72,64 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
         <button
           onClick={() => setFilter('all')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-            filter === 'all'
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'all'
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
-          }`}
+            }`}
         >
           All
         </button>
         <button
           onClick={() => setFilter('project_created')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-            filter === 'project_created'
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'project_created'
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
-          }`}
+            }`}
         >
           Projects
         </button>
         <button
           onClick={() => setFilter('army_created')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-            filter === 'army_created'
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'army_created'
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
-          }`}
+            }`}
         >
           Armies
         </button>
         <button
-          onClick={() => setFilter('project_liked')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-            filter === 'project_liked'
+          onClick={() => setFilter('recipe_created')}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'recipe_created'
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
-          }`}
+            }`}
+        >
+          Recipes
+        </button>
+        <button
+          onClick={() => setFilter('project_liked')}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'project_liked'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
         >
           Likes
         </button>
         <button
           onClick={() => setFilter('comment_created')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-            filter === 'comment_created'
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'comment_created'
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
-          }`}
+            }`}
         >
           Comments
         </button>
         <button
           onClick={() => setFilter('user_followed')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-            filter === 'user_followed'
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'user_followed'
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
-          }`}
+            }`}
         >
           Follows
         </button>

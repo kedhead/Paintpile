@@ -48,6 +48,7 @@ export interface ActivityMetadata {
   // For comment activities
   commentText?: string;
   commentPreview?: string;    // Truncated version
+  targetName?: string;        // Generic target name (polymorphic)
 
   // Additional context
   status?: string;            // Project status (for project_completed)

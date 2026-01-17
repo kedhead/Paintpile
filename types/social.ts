@@ -7,10 +7,14 @@ export interface Follow {
   createdAt: Timestamp;
 }
 
+export type LikeType = 'project' | 'army' | 'recipe';
+
 export interface Like {
   likeId: string;
   userId: string;
-  projectId: string;
+  projectId?: string; // Legacy support
+  targetId?: string;
+  targetType?: LikeType;
   createdAt: Timestamp;
 }
 

@@ -632,6 +632,8 @@ export default function ProjectDetailClient() {
                                                 <div className="flex items-center justify-center py-2">
                                                     <LikeButton
                                                         userId={currentUser.uid}
+                                                        targetId={project.projectId}
+                                                        type="project"
                                                         projectId={project.projectId}
                                                         initialLikeCount={project.likeCount || 0}
                                                         size="lg"
@@ -771,6 +773,8 @@ export default function ProjectDetailClient() {
                 <div className="max-w-7xl mx-auto px-6 mt-12 pb-20">
                     <div className="bg-card rounded-xl border border-border shadow-xl p-6 md:p-8">
                         <CommentList
+                            targetId={projectId}
+                            type="project"
                             projectId={projectId}
                             currentUserId={currentUser?.uid}
                             currentUsername={currentUser?.displayName || undefined}
