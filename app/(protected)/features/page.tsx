@@ -52,13 +52,7 @@ export default function FeaturesPage() {
             color: 'text-purple-500',
             bg: 'bg-purple-500/10',
         },
-        {
-            title: 'Import & Migration',
-            description: 'Easily import your collection from PaintRack via JSON, or use our migration tools to transfer your data.',
-            icon: Download,
-            color: 'text-cyan-500',
-            bg: 'bg-cyan-500/10',
-        },
+
         {
             title: 'Community Sharing',
             description: 'Share your recipes and finished projects with the community. Discover new techniques and get inspired by other hobbiests.',
