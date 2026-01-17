@@ -8,7 +8,8 @@ export type NotificationType =
   | 'like'             // Someone liked your project/army
   | 'comment'          // Someone commented on your project/army
   | 'comment_reply'    // Someone replied to your comment
-  | 'mention';         // Someone mentioned you in a comment
+  | 'mention'          // Someone mentioned you in a comment
+  | 'badge_earned';    // You earned a badge
 
 /**
  * Type of entity being referenced in notification
@@ -18,7 +19,8 @@ export type NotificationTargetType =
   | 'army'
   | 'recipe'
   | 'comment'
-  | 'user';
+  | 'user'
+  | 'badge';
 
 /**
  * Notification document stored in users/{userId}/notifications collection
