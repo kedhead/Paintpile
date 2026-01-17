@@ -43,29 +43,47 @@ export default function ArmiesPage() {
                 return;
               }
 
-              // Otherwise, try to get a photo from the featured project or first project
+              // Otherwise, iterate projects to find the featured photo or a valid fallback
               if (army.projectIds.length > 0) {
-                const projectId = army.featuredPhotoId
-                  ? army.featuredPhotoId
-                  : army.projectIds[0];
+                let fallbackUrl: string | null = null;
 
-                const project = await getProject(projectId);
-                if (project) {
-                  const photos = await getProjectPhotos(projectId);
-                  if (photos.length > 0) {
-                    let coverPhoto = photos[0];
-                    if (project.featuredPhotoId) {
-                      const featuredPhoto = photos.find(p => p.photoId === project.featuredPhotoId);
-                      if (featuredPhoto) {
-                        coverPhoto = featuredPhoto;
+                // Check projects until we find the featured one or run out
+                for (const projectId of army.projectIds) {
+                  try {
+                    // Try to load project - this might fail if we lack permission (e.g. private project in shared army)
+                    const project = await getProject(projectId);
+                    if (!project) continue;
+
+                    const photos = await getProjectPhotos(projectId);
+                    if (photos.length > 0) {
+                      const coverPhoto = photos[0];
+                      const firstUrl = coverPhoto.thumbnailUrl || coverPhoto.url;
+
+                      // Capture the first valid photo as fallback
+                      if (!fallbackUrl) fallbackUrl = firstUrl;
+
+                      // If this is the featured photo, we're done!
+                      if (army.featuredPhotoId) {
+                        const featured = photos.find(p => p.photoId === army.featuredPhotoId);
+                        if (featured) {
+                          photoMap.set(army.armyId, featured.thumbnailUrl || featured.url);
+                          return; // Found the specific featured one, stop checking
+                        }
                       }
                     }
-                    photoMap.set(army.armyId, coverPhoto.thumbnailUrl || coverPhoto.url);
+                  } catch (err) {
+                    // Ignore permission errors for private projects, just skip them
+                    continue;
                   }
+                }
+
+                // If we didn't find the specific featured photo but found a fallback, use it
+                if (fallbackUrl && !photoMap.has(army.armyId)) {
+                  photoMap.set(army.armyId, fallbackUrl);
                 }
               }
             } catch (err) {
-              console.error(`Error loading photos for army ${army.armyId}:`, err);
+              console.error(`Error processing army ${army.armyId}:`, err);
             }
           })
         );

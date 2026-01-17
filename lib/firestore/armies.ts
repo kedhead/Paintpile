@@ -311,9 +311,14 @@ export async function getArmyProjects(armyId: string): Promise<Project[]> {
   const projects: Project[] = [];
 
   for (const projectId of army.projectIds) {
-    const project = await getProject(projectId);
-    if (project) {
-      projects.push(project);
+    try {
+      const project = await getProject(projectId);
+      if (project) {
+        projects.push(project);
+      }
+    } catch (err) {
+      // Skip projects we don't have permission to see (e.g. private projects in a public army)
+      console.warn(`Skipping inaccessible project ${projectId} in army ${armyId}`);
     }
   }
 
