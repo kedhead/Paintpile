@@ -207,7 +207,7 @@ async function likeEntity(userId: string, entityId: string, type: LikeType): Pro
     targetId: entityId,
     targetType: type,
     createdAt: serverTimestamp(),
-    projectId: type === 'project' ? entityId : undefined, // Legacy support
+    ...(type === 'project' ? { projectId: entityId } : {}), // Legacy support
   });
 
   // Increment count on target entity

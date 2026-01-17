@@ -47,7 +47,6 @@ export async function createEntityComment(
 
   const comment = {
     commentId,
-    projectId: type === 'project' ? entityId : undefined, // Legacy
     targetId: entityId,
     targetType: type,
     userId,
@@ -57,6 +56,7 @@ export async function createEntityComment(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     edited: false,
+    ...(type === 'project' ? { projectId: entityId } : {}), // Legacy support only for projects
   };
 
   await setDoc(newCommentRef, comment);
