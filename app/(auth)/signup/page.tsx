@@ -145,10 +145,18 @@ export default function SignupPage() {
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
                   className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
-                <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug cursor-pointer select-none">
-                  I agree to the <Link href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link>,
-                  confirming I will use this platform for miniature painting content only (no adult content).
-                </label>
+                <div className="text-sm text-muted-foreground leading-snug">
+                  <label htmlFor="terms" className="cursor-pointer select-none">
+                    I agree to the
+                  </label>
+                  {' '}
+                  <Link href="/terms" target="_blank" className="text-primary hover:underline relative z-10" onClick={(e) => e.stopPropagation()}>
+                    Terms of Service
+                  </Link>
+                  <label htmlFor="terms" className="cursor-pointer select-none">
+                    , confirming I will use this platform for miniature painting content only (no adult content).
+                  </label>
+                </div>
               </div>
 
               <Button
