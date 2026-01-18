@@ -6,12 +6,14 @@ import { Spinner } from '@/components/ui/Spinner';
 import { AlertCircle, Palette, Trash2, CheckCircle } from 'lucide-react';
 import { db } from '@/lib/firebase/firebase';
 import { collection, getDocs, writeBatch, doc, query, where } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ManagePaintsPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [operation, setOperation] = useState<'clear' | 'seed' | 'update-liquitex' | null>(null);
+  const { currentUser } = useAuth();
 
   async function clearPaints() {
     if (!confirm('Are you sure you want to delete ALL paints from the database? This action cannot be undone!')) {
@@ -240,8 +242,14 @@ export default function ManagePaintsPage() {
       setOperation('update-liquitex');
 
       console.log('Starting Liquitex update...');
+      const token = await currentUser?.getIdToken();
+      if (!token) throw new Error('You must be logged in');
+
       const response = await fetch('/api/admin/update-liquitex-paints', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       const data = await response.json();
