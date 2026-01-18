@@ -104,7 +104,7 @@ export class LiquitexScraper extends BasePaintScraper {
                         name: this.normalizeName(name),
                         hexColor: '#000000', // Fallback
                         type: 'shade',
-                        sourceUrl: url,
+                        sourceUrl: url || '', // Ensure it's a string if ever undefined
                         swatchUrl: swatchUrl || undefined
                     });
                 }

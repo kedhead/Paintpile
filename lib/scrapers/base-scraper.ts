@@ -5,7 +5,7 @@ export interface ScrapedPaint {
   name: string;
   hexColor: string;
   type: PaintType;
-  sourceUrl: string;
+  sourceUrl?: string;
   swatchUrl?: string;
   category?: string;
   imageUrl?: string;
