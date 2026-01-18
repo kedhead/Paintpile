@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isUserAdmin } from '@/lib/auth/admin-check';
 import { OrphanedPaintCleanup } from '@/components/admin/OrphanedPaintCleanup';
 import { SystemBackup } from '@/components/admin/SystemBackup';
+import { SyncFeedVisibility } from '@/components/admin/SyncFeedVisibility';
 
 export default function AdminPage() {
   const { currentUser } = useAuth();

@@ -92,8 +92,9 @@ export async function followUser(followerId: string, followingId: string): Promi
       followingId,
       'user',
       {
-        targetUsername: followingUser.displayName || followingUser.email,
+        targetUsername: followingUser.username || followingId,
         targetUserPhotoUrl: followingUser.photoURL,
+        targetDisplayName: followingUser.displayName || followingUser.email // Store display name separately just in case
       }
     );
   } catch (err) {

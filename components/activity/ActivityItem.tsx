@@ -1,7 +1,7 @@
 'use client';
 
 import { Activity, ACTIVITY_MESSAGES } from '@/types/activity';
-import { Heart, MessageCircle, UserPlus, Shield, Palette, BookOpen, CheckCircle } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Shield, Palette, BookOpen, CheckCircle, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -46,7 +46,10 @@ export function ActivityItem({ activity }: ActivityItemProps) {
       case 'recipe':
         return `/recipes/${activity.targetId}`;
       case 'user':
-        return `/users/${activity.metadata?.targetUsername || activity.targetId}`;
+        // If targetUsername has spaces, it's likely a display name (legacy data), so use targetId
+        const username = activity.metadata?.targetUsername;
+        const safeUsername = (username && !username.includes(' ')) ? username : activity.targetId;
+        return `/users/${safeUsername}`;
       default:
         return '#';
     }
@@ -119,6 +122,13 @@ export function ActivityItem({ activity }: ActivityItemProps) {
                 {activity.metadata.status}
               </span>
             )}
+
+            {activity.metadata.visibility === 'public' && (
+              <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                <Globe className="w-3 h-3" />
+                Shared to Feed
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -139,6 +149,22 @@ export function ActivityItem({ activity }: ActivityItemProps) {
           {activity.type === 'comment_created' && activity.metadata.commentPreview && (
             <div className="mt-2 text-sm text-muted-foreground italic border-l-2 border-border pl-3">
               "{activity.metadata.commentPreview}"
+            </div>
+          )}
+
+          {/* Shared to Feed Indicator (Compact) */}
+          {activity.metadata.visibility === 'public' && (
+            <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+              <Globe className="w-3 h-3" />
+              Shared to Feed
+            </div>
+          )}
+
+          {/* Shared to Feed Indicator (Compact) */}
+          {activity.metadata.visibility === 'public' && (
+            <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+              <Globe className="w-3 h-3" />
+              Shared to Feed
             </div>
           )}
         </div>
