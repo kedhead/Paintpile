@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { AlertCircle, Palette, Trash2, CheckCircle } from 'lucide-react';
 import { db } from '@/lib/firebase/firebase';
-import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, query, where } from 'firebase/firestore';
 
 export default function ManagePaintsPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [operation, setOperation] = useState<'clear' | 'seed' | null>(null);
+  const [operation, setOperation] = useState<'clear' | 'seed' | 'update-liquitex' | null>(null);
 
   async function clearPaints() {
     if (!confirm('Are you sure you want to delete ALL paints from the database? This action cannot be undone!')) {
@@ -228,6 +228,32 @@ export default function ManagePaintsPage() {
     } catch (err: any) {
       console.error('Clear and reseed error:', err);
       setError(err.message || 'Failed to clear and reseed paint database');
+      setLoading(false);
+    }
+  }
+
+  async function updateLiquitexPaints() {
+    try {
+      setLoading(true);
+      setError(null);
+      setResult(null);
+      setOperation('update-liquitex');
+
+      console.log('Starting Liquitex update...');
+      const response = await fetch('/api/admin/update-liquitex-paints', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update Liquitex paints');
+      }
+
+      setResult(data);
+    } catch (err: any) {
+      console.error('Liquitex update error:', err);
+      setError(err.message || 'Failed to update Liquitex paints');
     } finally {
       setLoading(false);
     }
@@ -331,6 +357,35 @@ export default function ManagePaintsPage() {
                 </Button>
               </div>
             </div>
+
+            {/* Brand Specific Updates */}
+            <div className="pt-6 border-t border-border">
+              <h3 className="text-lg font-semibold mb-3">Brand Specific Updates</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Update individual brands by scraping their latest product data. This will replace existing paints for the brand.
+              </p>
+
+              <Button
+                onClick={updateLiquitexPaints}
+                disabled={loading}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                {loading && operation === 'update-liquitex' ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Updating Liquitex Inks...
+                  </>
+                ) : (
+                  <>
+                    <Palette className="w-4 h-4 mr-2" />
+                    Update Liquitex Professional Acrylic Inks
+                  </>
+                )}
+              </Button>
+            </div>
+
+
 
             {/* Results */}
             {error && (
