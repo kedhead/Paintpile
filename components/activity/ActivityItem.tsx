@@ -46,7 +46,7 @@ export function ActivityItem({ activity }: ActivityItemProps) {
       case 'recipe':
         return `/recipes/${activity.targetId}`;
       case 'user':
-        return `/users/${activity.targetId}`;
+        return `/users/${activity.metadata?.targetUsername || activity.targetId}`;
       default:
         return '#';
     }

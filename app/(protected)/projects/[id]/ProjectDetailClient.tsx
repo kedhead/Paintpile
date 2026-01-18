@@ -120,11 +120,17 @@ export default function ProjectDetailClient() {
 
         if (currentUser) {
             loadProject();
-            loadPhotos();
             loadUserProfile();
             loadArmies();
         }
     }, [projectId, currentUser]);
+
+    // Separate effect to load photos once project is confirmed accessible
+    useEffect(() => {
+        if (project && (project.isPublic || project.userId === currentUser?.uid)) {
+            loadPhotos();
+        }
+    }, [project, currentUser]);
 
     // Update image size on window resize
     useEffect(() => {

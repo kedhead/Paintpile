@@ -76,37 +76,52 @@ service cloud.firestore {
 
       // Project photos subcollection
       match /photos/{photoId} {
-        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
-                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        allow read: if (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true) ||
+                       (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId));
+        allow write: if exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project paints subcollection
       match /paints/{paintId} {
-        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
-                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        allow read: if (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true) ||
+                       (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId));
+        allow write: if exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project paint recipes subcollection
       match /paintRecipes/{recipeId} {
-        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
-                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        allow read: if (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true) ||
+                       (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId));
+        allow write: if exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project techniques subcollection
       match /techniques/{techniqueId} {
-        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
-                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        allow read: if (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true) ||
+                       (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId));
+        allow write: if exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project timeline subcollection
       match /timeline/{eventId} {
-        allow read: if get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true ||
-                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
-        allow write: if isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+        allow read: if (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       get(/databases/$(database)/documents/projects/$(projectId)).data.isPublic == true) ||
+                       (exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                       isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId));
+        allow write: if exists(/databases/$(database)/documents/projects/$(projectId)) && 
+                        isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
       }
 
       // Project comments subcollection
