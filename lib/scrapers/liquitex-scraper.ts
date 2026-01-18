@@ -37,24 +37,26 @@ export class LiquitexScraper extends BasePaintScraper {
                     let productData: any[] = [];
 
                     // 1. Build SKU -> Image Map from DOM
-                    // Structure: <figure><img></figure> <div class="product-card-info">...<input name="sku" value="...">...</div>
+                    // Structure: <product-card> ... <figure> ... <div class="product-card-info"> ... <input name="sku"> ...
                     const skuMap = new Map<string, string>();
 
                     const skuInputs = $('input[name="sku"]');
                     skuInputs.each((_, el) => {
                         const sku = $(el).val() as string;
                         if (sku) {
-                            // Traverse up to .product-card-info, then prev sibling is figure (based on observation)
-                            const cardInfo = $(el).closest('.product-card-info');
-                            const figure = cardInfo.prev('figure');
+                            // Search up for the product card container
+                            const card = $(el).closest('.product-card');
 
-                            if (figure.length > 0) {
-                                const img = figure.find('img').first();
-                                const src = img.attr('src') || img.attr('data-src') || img.attr('srcset')?.split(' ')[0]; // fallback to first srcset
+                            if (card.length > 0) {
+                                // Look for the primary image (swatch) first, then secondary (bottle), then any
+                                let img = card.find('img.product-primary-image').first();
+                                if (img.length === 0) img = card.find('img.product-secondary-image').first();
+                                if (img.length === 0) img = card.find('figure img').first();
+
+                                const src = img.attr('src') || img.attr('data-src') || img.attr('srcset')?.split(' ')[0];
 
                                 if (src) {
                                     const finalSrc = src.startsWith('//') ? `https:${src}` : src;
-                                    // Remove query params if cleaner image needed, but keeping them is safer for CDN resizing
                                     skuMap.set(sku, finalSrc);
                                 }
                             }
