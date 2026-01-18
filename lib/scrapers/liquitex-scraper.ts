@@ -34,7 +34,7 @@ export class LiquitexScraper extends BasePaintScraper {
                 const content = $(script).html() || '';
                 if (content.includes('listed_products: [')) {
                     // Extract the listed_products array
-                    const match = content.match(/listed_products:\s*(\[\s*\{[\s\S]*?\}\s*\])/);
+                    const match = content.match(/listed_products:\s*(\[[\s\S]*?\])/);
                     if (match && match[1]) {
                         try {
                             // The JSON might be malformed (e.g. trailing commas, method calls), so we need to be careful
