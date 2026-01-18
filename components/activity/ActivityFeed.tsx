@@ -57,14 +57,22 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
   }, [feedType, userId, currentUser, limitCount]);
 
   // Filter activities
-  const filteredActivities = filter === 'all'
-    ? activities
-    : activities.filter(a => {
-      if (filter === 'project_liked') {
-        return a.type.includes('liked'); // Matches project_liked, army_liked, recipe_liked
-      }
-      return a.type === filter;
-    });
+  const filteredActivities = activities.filter(a => {
+    // 1. Visibility Check: Hide private activities if not the owner
+    // This handles cases where a project was private when created, or became private later
+    // (requires metadata.visibility to be kept in sync via projects.ts)
+    if (a.metadata?.visibility === 'private' && a.userId !== currentUser?.uid) {
+      return false;
+    }
+
+    // 2. Type Filter
+    if (filter === 'all') return true;
+
+    if (filter === 'project_liked') {
+      return a.type.includes('liked');
+    }
+    return a.type === filter;
+  });
 
   return (
     <div className="space-y-4">

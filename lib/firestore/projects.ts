@@ -150,7 +150,7 @@ export async function getUserProjects(
  */
 export async function getProjectsByTag(userId: string, tag: string): Promise<Project[]> {
   const projectsRef = collection(db, 'projects');
-  
+
   const q = query(
     projectsRef,
     where('userId', '==', userId),
@@ -181,8 +181,8 @@ export async function getProjectsByTags(userId: string, tags: string[]): Promise
   // For multiple tags, we need to filter in memory since Firestore
   // doesn't support array-contains-all with other where clauses
   const allProjects = await getUserProjects(userId);
-  
-  return allProjects.filter(project => 
+
+  return allProjects.filter(project =>
     tags.every(tag => project.tags.includes(tag))
   );
 }
@@ -200,6 +200,37 @@ export async function updateProject(
     ...updates,
     updatedAt: serverTimestamp(),
   });
+
+  // If visibility is changing, update the activity metadata
+  if (updates.isPublic !== undefined) {
+    try {
+      // Import dynamically to avoid circular dependency if needed, 
+      // though projects.ts is low level. 
+      // We can just query activities directly.
+      const activitiesRef = collection(db, 'activities');
+      /* 
+       * Note: We need to import 'collection', 'query', 'where', 'limit', 'getDocs', 'updateDoc' 
+       * but they are already imported at top of file.
+       */
+      const q = query(
+        activitiesRef,
+        where('type', '==', 'project_created'),
+        where('targetId', '==', projectId),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const activityDoc = snapshot.docs[0];
+        await updateDoc(activityDoc.ref, {
+          'metadata.visibility': updates.isPublic ? 'public' : 'private'
+        });
+      }
+    } catch (err) {
+      console.error('Error updating activity visibility:', err);
+    }
+  }
 }
 
 /**
@@ -207,7 +238,7 @@ export async function updateProject(
  */
 export async function addTagToProject(projectId: string, tag: string): Promise<void> {
   const projectRef = doc(db, 'projects', projectId);
-  
+
   await updateDoc(projectRef, {
     tags: arrayUnion(tag),
     updatedAt: serverTimestamp(),
@@ -219,7 +250,7 @@ export async function addTagToProject(projectId: string, tag: string): Promise<v
  */
 export async function removeTagFromProject(projectId: string, tag: string): Promise<void> {
   const projectRef = doc(db, 'projects', projectId);
-  
+
   await updateDoc(projectRef, {
     tags: arrayRemove(tag),
     updatedAt: serverTimestamp(),

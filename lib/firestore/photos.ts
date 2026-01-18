@@ -12,6 +12,8 @@ import {
   getDoc,
   arrayUnion,
   arrayRemove,
+  where,
+  limit,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { Photo, PhotoAnnotation } from '@/types/photo';
@@ -59,8 +61,33 @@ export async function addPhotoToProject(
     updatedAt: serverTimestamp(),
   });
 
-  // Increment user photo count
+  // Join user stats update
   await incrementUserStats(userId, 'photoCount', 1);
+
+  // Update "Project Created" activity with this photo if it's the first one (or just update it generally)
+  // This ensures the feed shows a rich card with the hero image
+  try {
+    const activitiesRef = collection(db, 'activities');
+    const q = query(
+      activitiesRef,
+      where('type', '==', 'project_created'),
+      where('targetId', '==', projectId),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+      const activityDoc = snapshot.docs[0];
+      const currentMetadata = activityDoc.data().metadata || {};
+
+      // Update if no photo URL or just always update to the latest
+      await updateDoc(activityDoc.ref, {
+        'metadata.projectPhotoUrl': photoData.thumbnailUrl || photoData.url
+      });
+    }
+  } catch (err) {
+    console.error('Error updating activity metadata with new photo:', err);
+  }
 
   // Create timeline event
   await createTimelineEvent(projectId, userId, 'photo_added', {
