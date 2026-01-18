@@ -24,9 +24,16 @@ export function PaintSwatch({ paint, size = "md", className }: PaintSwatchProps)
             sizes[size],
             className
           )}
-          style={{ backgroundColor: paint.hexColor }}
+          style={{ backgroundColor: !paint.swatchUrl ? paint.hexColor : undefined }}
           aria-label={`${paint.brand} - ${paint.name}`}
         >
+          {paint.swatchUrl && (
+            <img
+              src={paint.swatchUrl}
+              alt={paint.name}
+              className="w-full h-full object-cover rounded-full"
+            />
+          )}
           {/* Shine effect */}
           <div className="absolute top-[10%] left-[10%] w-[30%] h-[30%] bg-white/40 rounded-full blur-[1px]" />
         </div>

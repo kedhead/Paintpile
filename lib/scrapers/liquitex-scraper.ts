@@ -75,12 +75,37 @@ export class LiquitexScraper extends BasePaintScraper {
                 name = name.trim();
 
                 if (name) {
+                    // Try to find the image SWATCH based on the title
+                    // HTML Image: alt="Professional Acrylic Ink - Bismuth Yellow" src="..."
+                    // JSON Title: "Professional Acrylic Ink - Bismuth Yellow - 1oz/30ml"
+                    // We need to match partially.
+
+                    const searchTitle = p.title.replace(/ - 1oz\/30ml$/, '').replace(/ - Default Title$/, ''); // "Professional Acrylic Ink - Bismuth Yellow"
+
+                    let swatchUrl = '';
+                    // Look for img with alt containing the searchTitle
+                    // Use a specific selector to avoid thumbnails if possible, but finding by alt is decent
+                    // The main image usually has class "product-primary-image" or similar, but let's check all imgs
+
+                    // We need to escape special regex chars in searchTitle just in case
+                    const safeTitle = searchTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const img = $(`img[alt="${searchTitle}"]`).first();
+
+                    if (img.length > 0) {
+                        // Prefer data-src or srcset if available, otherwise src
+                        const src = img.attr('src') || img.attr('data-src');
+                        if (src) {
+                            swatchUrl = src.startsWith('//') ? `https:${src}` : src;
+                        }
+                    }
+
                     paints.push({
                         brand: 'Liquitex Professional Acrylic Ink',
                         name: this.normalizeName(name),
-                        hexColor: '#000000', // Placeholder
-                        type: 'shade', // 'shade' includes inks in our mapping
+                        hexColor: '#000000', // Fallback
+                        type: 'shade',
                         sourceUrl: url,
+                        swatchUrl: swatchUrl || undefined
                     });
                 }
             }

@@ -9,6 +9,7 @@ export interface Paint {
   hexColor: string;
   type: PaintType;
   category?: string; // e.g. "Speedpaint 2.0", "Model Color", etc.
+  swatchUrl?: string;
 }
 
 export interface CustomPaint extends Paint {

@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
                 hexColor: paint.hexColor,
                 // Add metadata if needed
                 scrapedAt: new Date(),
-                sourceUrl: paint.sourceUrl
+                sourceUrl: paint.sourceUrl,
+                swatchUrl: paint.swatchUrl
             };
 
             batch.set(newDocRef, paintData);

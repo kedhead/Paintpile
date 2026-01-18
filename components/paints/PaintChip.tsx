@@ -28,10 +28,18 @@ export function PaintChip({ paint, onRemove, size = 'md', showRemove = true }: P
       className={`inline-flex items-center gap-2 bg-white border border-gray-300 rounded-full ${sizeClasses[size]} group hover:border-primary-400 transition`}
     >
       <div
-        className={`rounded-full border border-gray-300 ${dotSizeClasses[size]} flex-shrink-0`}
-        style={{ backgroundColor: paint.hexColor }}
+        className={`rounded-full border border-gray-300 ${dotSizeClasses[size]} flex-shrink-0 overflow-hidden relative`}
+        style={{ backgroundColor: !paint.swatchUrl ? paint.hexColor : undefined }}
         title={`${paint.brand} - ${paint.name}`}
-      />
+      >
+        {paint.swatchUrl && (
+          <img
+            src={paint.swatchUrl}
+            alt={paint.name}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
       <span className="font-medium text-gray-900 truncate max-w-[120px]">
         {paint.name}
       </span>
