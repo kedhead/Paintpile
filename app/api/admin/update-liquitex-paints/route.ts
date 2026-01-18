@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`[Update Liquitex] Scraper found ${scrapeResult.paints.length} paints`);
+        const withSwatch = scrapeResult.paints.filter(p => p.swatchUrl).length;
+        console.log(`[Update Liquitex] Paints with swatchUrl: ${withSwatch}`);
 
         // 2. Update Firestore
         const db = getAdminFirestore();
