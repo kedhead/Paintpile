@@ -8,10 +8,11 @@ import { ProjectCard } from '@/components/projects/ProjectCard';
 import { getUserProjects } from '@/lib/firestore/projects';
 import { getProjectPhotos } from '@/lib/firestore/photos';
 import { Project } from '@/types/project';
-import { Search, Plus, Filter } from 'lucide-react';
+import { Search, Plus, Filter, FolderKanban, Palette, Beaker, Trophy, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
 import { WelcomeBackModal } from '@/components/notifications/WelcomeBackModal';
 
@@ -203,12 +204,16 @@ export default function DashboardPage() {
 
         {/* Empty State */}
         {!loading && filteredProjects.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || statusFilter !== 'all'
-                ? 'No projects match your filters.'
-                : 'No projects yet. Start your first project!'}
-            </p>
+          <div className="py-12">
+            <EmptyState
+              icon={Sparkles}
+              title={searchQuery || statusFilter !== 'all' ? "No matches found" : "Welcome to PaintPile!"}
+              description={searchQuery || statusFilter !== 'all'
+                ? "Try adjusting your filters or search terms."
+                : "It looks like you're new here. Start by adding some paints to your inventory or creating your first project."}
+              actionLabel={!(searchQuery || statusFilter !== 'all') ? "Add Your First Paint" : undefined}
+              onAction={!(searchQuery || statusFilter !== 'all') ? () => router.push('/paints') : undefined}
+            />
           </div>
         )}
       </div>

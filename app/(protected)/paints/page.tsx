@@ -11,8 +11,10 @@ import { getUserCustomPaints, deleteCustomPaint, isCustomPaint } from '@/lib/fir
 import { getAllPaints } from '@/lib/firestore/paints';
 import { getUserInventory, addToInventory, removeFromInventory } from '@/lib/firestore/inventory';
 import { Paint, CustomPaint, UserOwnedPaint } from '@/types/paint';
-import { Search, Trash2, Palette, CheckCircle, Package } from 'lucide-react';
+import { Search, Trash2, Palette, CheckCircle, Package, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useRouter } from 'next/navigation';
 
 export default function PaintsPage() {
   const { currentUser } = useAuth();
@@ -218,9 +220,14 @@ export default function PaintsPage() {
                   My Custom Paints ({filteredCustomPaints.length})
                 </h2>
                 {filteredCustomPaints.length === 0 ? (
-                  <p className="text-muted-foreground">
-                    No custom paints match your search.
-                  </p>
+                  <EmptyState
+                    icon={Palette}
+                    title="No custom paints found"
+                    description={searchQuery
+                      ? "No custom paints match your search."
+                      : "You haven't created any custom paints yet."}
+                    className="py-12"
+                  />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredCustomPaints.map((paint) => (
@@ -244,9 +251,16 @@ export default function PaintsPage() {
                 Paint Database ({filteredGlobalPaints.length})
               </h2>
               {filteredGlobalPaints.length === 0 ? (
-                <p className="text-muted-foreground">
-                  No paints match your search.
-                </p>
+                <EmptyState
+                  icon={Search}
+                  title="No paints found"
+                  description="Try adjusting your search terms or brand filters. Can't find what you need?"
+                  actionLabel="Add Custom Paint"
+                // We can't easily open the dialog from here without refactoring, so maybe just show text or
+                // trigger the button click via ref (hacky), or just leave action empty.
+                // Actually, we can use the 'Add Custom Paint' dialog which is up top.
+                // For now let's just make it a friendly message.
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {filteredGlobalPaints.map((paint) => (

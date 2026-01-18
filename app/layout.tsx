@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Cinzel, Caveat } from 'next/font/google';
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CommandMenu } from "@/components/ui/CommandMenu";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -50,7 +51,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${cinzel.variable} ${caveat.variable}`}>
       <body className="antialiased font-sans">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <CommandMenu />
+        </AuthProvider>
       </body>
     </html>
   );
