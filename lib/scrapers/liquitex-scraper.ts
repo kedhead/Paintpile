@@ -24,7 +24,7 @@ export class LiquitexScraper extends BasePaintScraper {
             let page = 1;
             let hasMore = true;
 
-            while (hasMore && page <= 3) { // Safety limit of 3 pages (likely only 2 needed for 55 products)
+            while (hasMore && page <= 3) {
                 console.log(`Scraping page ${page}...`);
                 const url = page === 1
                     ? 'https://www.liquitex.com/collections/professional-acrylic-inks'
@@ -36,7 +36,34 @@ export class LiquitexScraper extends BasePaintScraper {
                     const pagePaints: ScrapedPaint[] = [];
                     let productData: any[] = [];
 
-                    // Liquitex uses embedded JSON for product data
+                    // 1. Build SKU -> Image Map from DOM
+                    // Structure: <figure><img></figure> <div class="product-card-info">...<input name="sku" value="...">...</div>
+                    const skuMap = new Map<string, string>();
+
+                    const skuInputs = $('input[name="sku"]');
+                    skuInputs.each((_, el) => {
+                        const sku = $(el).val() as string;
+                        if (sku) {
+                            // Traverse up to .product-card-info, then prev sibling is figure (based on observation)
+                            const cardInfo = $(el).closest('.product-card-info');
+                            const figure = cardInfo.prev('figure');
+
+                            if (figure.length > 0) {
+                                const img = figure.find('img').first();
+                                const src = img.attr('src') || img.attr('data-src') || img.attr('srcset')?.split(' ')[0]; // fallback to first srcset
+
+                                if (src) {
+                                    const finalSrc = src.startsWith('//') ? `https:${src}` : src;
+                                    // Remove query params if cleaner image needed, but keeping them is safer for CDN resizing
+                                    skuMap.set(sku, finalSrc);
+                                }
+                            }
+                        }
+                    });
+
+                    console.log(`Page ${page}: Found ${skuMap.size} valid separate SKU/Image pairs in DOM.`);
+
+                    // 2. Parse JSON Data
                     const scripts = $('script').toArray();
                     for (const script of scripts) {
                         const content = $(script).html() || '';
@@ -49,10 +76,18 @@ export class LiquitexScraper extends BasePaintScraper {
 
                                     for (const pMatch of productMatches) {
                                         const productStr = pMatch[0];
+
+                                        // Extract Title
                                         const titleMatch = productStr.match(/title:\s*"([^"]+)"/);
                                         const titleAltMatch = productStr.match(/title:\s*'([^']+)'/);
                                         const title = titleMatch ? titleMatch[1] : (titleAltMatch ? titleAltMatch[1] : '');
-                                        if (title) productData.push({ title });
+
+                                        // Extract SKU
+                                        const skuMatch = productStr.match(/sku:\s*"([^"]+)"/);
+                                        const skuAltMatch = productStr.match(/sku:\s*'([^']+)'/);
+                                        const sku = skuMatch ? skuMatch[1] : (skuAltMatch ? skuAltMatch[1] : '');
+
+                                        if (title) productData.push({ title, sku });
                                     }
                                 } catch (e) {
                                     console.error(`Error parsing JSON on page ${page}:`, e);
@@ -69,6 +104,7 @@ export class LiquitexScraper extends BasePaintScraper {
 
                     console.log(`Found ${productData.length} products on page ${page}`);
 
+                    // 3. Merge Data
                     for (const p of productData) {
                         let name = p.title;
                         name = name.replace(/^Professional Acrylic Ink - /, '')
@@ -77,15 +113,18 @@ export class LiquitexScraper extends BasePaintScraper {
                         name = name.trim();
 
                         if (name) {
-                            const searchTitle = p.title.replace(/ - 1oz\/30ml$/, '').replace(/ - Default Title$/, ''); // "Professional Acrylic Ink - Bismuth Yellow"
-                            let swatchUrl = '';
-                            const safeTitle = searchTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            const img = $(`img[alt="${searchTitle}"]`).first();
+                            // Lookup swatch via SKU
+                            let swatchUrl = p.sku ? skuMap.get(p.sku) : undefined;
 
-                            if (img.length > 0) {
-                                const src = img.attr('src') || img.attr('data-src');
-                                if (src) {
-                                    swatchUrl = src.startsWith('//') ? `https:${src}` : src;
+                            // Fallback to title matching if SKU lookup failed (unlikely but good safety)
+                            if (!swatchUrl) {
+                                // Original title matching logic as last resort
+                                const searchTitle = p.title.replace(/ - 1oz\/30ml$/, '').replace(/ - Default Title$/, '');
+                                const safeTitle = searchTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                const img = $(`img[alt="${searchTitle}"]`).first();
+                                if (img.length > 0) {
+                                    const src = img.attr('src') || img.attr('data-src');
+                                    if (src) swatchUrl = src.startsWith('//') ? `https:${src}` : src;
                                 }
                             }
 
