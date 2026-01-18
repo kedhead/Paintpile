@@ -17,7 +17,7 @@ import {
     Moon
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/hooks/useTheme';
+
 
 export function CommandMenu() {
     const router = useRouter();
