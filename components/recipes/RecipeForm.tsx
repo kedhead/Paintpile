@@ -252,8 +252,8 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
         normalizedData.estimatedTime = Number(normalizedData.estimatedTime);
       }
 
-      // Handle surfaceType empty string
-      if (normalizedData.surfaceType === '') {
+      // Handle surfaceType empty string or undefined
+      if (!normalizedData.surfaceType) {
         delete normalizedData.surfaceType;
       }
 
