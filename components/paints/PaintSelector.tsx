@@ -168,48 +168,37 @@ export function PaintSelector({
           >
             All Brands
           </button>
-          {PAINT_BRANDS.filter((brand) => brand !== 'Custom').map((brand) => {
-            // Check if this brand has any paints available
-            const hasPaints = allPaints.some(paint => {
-              const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-              const pBrand = normalize(paint.brand);
-              const sBrand = normalize(brand);
 
-              // Exact/Normalized Match
-              if (pBrand === sBrand) return true;
+          {/* Dynamic Brand List */}
+          {useMemo(() => {
+            // Get all unique brands from the actual data
+            const uniqueBrands = Array.from(new Set(allPaints.map(p => p.brand)));
 
-              // Citadel
-              if (brand === 'Citadel' && pBrand.includes('citadel')) return true;
-              // Army Painter
-              if (brand === 'Army Painter' && pBrand.includes('armypainter')) return true;
-              // AK Interactive
-              if (brand === 'AK Interactive' && (pBrand.includes('ak') || pBrand === 'ak')) return true;
-              // Pro Acryl
-              if ((brand === 'ProAcryl' || brand === 'Pro Acryl') && (pBrand.includes('proacryl') || pBrand.includes('monument'))) return true;
-              // Vallejo
-              if (brand.startsWith('Vallejo') && pBrand.includes('vallejo')) {
-                if (brand.includes('Model') && pBrand.includes('model')) return true;
-                if (brand.includes('Game') && pBrand.includes('game')) return true;
-                if (pBrand === 'vallejo') return true;
-              }
-              return false;
+            // Sort: Popular brands first (based on PAINT_BRANDS order), then alphabetical
+            return uniqueBrands.sort((a, b) => {
+              const indexA = PAINT_BRANDS.indexOf(a);
+              const indexB = PAINT_BRANDS.indexOf(b);
+
+              const isPopularA = indexA !== -1;
+              const isPopularB = indexB !== -1;
+
+              if (isPopularA && isPopularB) return indexA - indexB;
+              if (isPopularA) return -1;
+              if (isPopularB) return 1;
+              return a.localeCompare(b);
             });
-
-            if (!hasPaints) return null;
-
-            return (
-              <button
-                key={brand}
-                onClick={() => setSelectedBrand(brand)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === brand
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                  }`}
-              >
-                {brand}
-              </button>
-            );
-          })}
+          }, [allPaints]).map((brand) => (
+            <button
+              key={brand}
+              onClick={() => setSelectedBrand(brand)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${selectedBrand === brand
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
+            >
+              {brand}
+            </button>
+          ))}
         </div>
       </div>
 

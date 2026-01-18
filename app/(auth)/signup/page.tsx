@@ -15,6 +15,7 @@ import Image from 'next/image';
 export default function SignupPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
   const { signUp, signInWithGoogle } = useAuth();
 
@@ -27,6 +28,11 @@ export default function SignupPage() {
   });
 
   async function onSubmit(data: SignupFormData) {
+    if (!acceptedTerms) {
+      setError('You must accept the Terms of Service to create an account.');
+      return;
+    }
+
     try {
       setError('');
       setIsLoading(true);
@@ -45,6 +51,11 @@ export default function SignupPage() {
   }
 
   async function handleGoogleSignIn() {
+    if (!acceptedTerms) {
+      setError('You must accept the Terms of Service to create an account.');
+      return;
+    }
+
     try {
       setError('');
       setIsLoading(true);
@@ -126,7 +137,27 @@ export default function SignupPage() {
                 className="bg-background/50"
               />
 
-              <Button type="submit" variant="default" className="w-full font-semibold" isLoading={isLoading}>
+              <div className="flex items-start gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug cursor-pointer select-none">
+                  I agree to the <Link href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link>,
+                  confirming I will use this platform for miniature painting content only (no adult content).
+                </label>
+              </div>
+
+              <Button
+                type="submit"
+                variant="default"
+                className="w-full font-semibold"
+                isLoading={isLoading}
+                disabled={!acceptedTerms}
+              >
                 Sign Up
               </Button>
             </form>
