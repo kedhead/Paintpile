@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function SyncFeedVisibility() {
-    const { getToken } = useAuth();
+    const { currentUser } = useAuth();
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -16,7 +16,9 @@ export function SyncFeedVisibility() {
         setResult(null);
 
         try {
-            const token = await getToken();
+            const token = await currentUser?.getIdToken();
+            if (!token) throw new Error('Not authenticated');
+
             const response = await fetch('/api/admin/sync-visibility', {
                 method: 'POST',
                 headers: {

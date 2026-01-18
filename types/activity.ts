@@ -43,6 +43,7 @@ export interface ActivityMetadata {
 
   // For user activities
   targetUsername?: string;
+  targetDisplayName?: string;
   targetUserPhotoUrl?: string;
 
   // For comment activities
@@ -53,6 +54,11 @@ export interface ActivityMetadata {
   // Additional context
   status?: string;            // Project status (for project_completed)
   visibility?: 'public' | 'private';
+  targetPhotoUrl?: string;
+  description?: string;
+  likeCount?: number;
+  commentCount?: number;
+  faction?: string;
 }
 
 /**

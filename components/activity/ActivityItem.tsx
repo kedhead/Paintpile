@@ -1,41 +1,14 @@
-'use client';
-
 import { Activity, ACTIVITY_MESSAGES } from '@/types/activity';
-import { Heart, MessageCircle, UserPlus, Shield, Palette, BookOpen, CheckCircle, Globe } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Shield, Palette, BookOpen, CheckCircle, Globe, MoreHorizontal, Share2, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/Button';
 
 interface ActivityItemProps {
   activity: Activity;
 }
 
 export function ActivityItem({ activity }: ActivityItemProps) {
-  // Get icon based on activity type
-  const getIcon = () => {
-    switch (activity.type) {
-      case 'project_created':
-        return <Palette className="w-5 h-5 text-blue-500" />;
-      case 'project_completed':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'project_liked':
-        return <Heart className="w-5 h-5 text-accent-500 fill-accent-500" />;
-      case 'army_created':
-        return <Shield className="w-5 h-5 text-purple-500" />;
-      case 'army_liked':
-        return <Heart className="w-5 h-5 text-accent-500 fill-accent-500" />;
-      case 'recipe_created':
-        return <BookOpen className="w-5 h-5 text-orange-500" />;
-      case 'recipe_liked':
-        return <Heart className="w-5 h-5 text-accent-500 fill-accent-500" />;
-      case 'user_followed':
-        return <UserPlus className="w-5 h-5 text-blue-500" />;
-      case 'comment_created':
-        return <MessageCircle className="w-5 h-5 text-green-500" />;
-      default:
-        return <Palette className="w-5 h-5 text-gray-500" />;
-    }
-  };
-
   // Get the target URL
   const getTargetUrl = () => {
     switch (activity.targetType) {
@@ -46,7 +19,7 @@ export function ActivityItem({ activity }: ActivityItemProps) {
       case 'recipe':
         return `/recipes/${activity.targetId}`;
       case 'user':
-        // If targetUsername has spaces, it's likely a display name (legacy data), so use targetId
+        // Safe username fallback
         const username = activity.metadata?.targetUsername;
         const safeUsername = (username && !username.includes(' ')) ? username : activity.targetId;
         return `/users/${safeUsername}`;
@@ -55,120 +28,143 @@ export function ActivityItem({ activity }: ActivityItemProps) {
     }
   };
 
-  // Format timestamp
   const timeAgo = activity.createdAt
     ? formatDistanceToNow(activity.createdAt.toDate(), { addSuffix: true })
     : '';
 
-  // Generate activity message
-  const message = ACTIVITY_MESSAGES[activity.type](activity.metadata);
+  // Activity context message (e.g. "created a project")
+  const actionText = ACTIVITY_MESSAGES[activity.type](activity.metadata).split(':')[0]; // Get just the action part
 
-  // Determine if this is a "rich" activity (one that should show a big image)
   const isRichActivity = ['project_created', 'army_created', 'recipe_created'].includes(activity.type);
-  const heroImage = activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl;
+  const heroImage = activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl || (activity.type === 'recipe_created' ? activity.metadata.targetPhotoUrl : null); // Recipe might have one too
+  const title = activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName;
+  const description = activity.metadata.description || ''; // We might not have this in metadata yet, but good to fallback
 
-  return (
-    <Link
-      href={getTargetUrl()}
-      className="block bg-card border border-border rounded-xl shadow-sm overflow-hidden mb-4 hover:shadow-md transition-shadow group"
-    >
-      {/* Header: User & Action */}
-      <div className="p-4 flex items-center gap-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
-          {activity.userPhotoUrl ? (
-            <img
-              src={activity.userPhotoUrl}
-              alt={activity.username}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-sm font-semibold text-foreground">
-              {activity.username[0]?.toUpperCase()}
-            </span>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground">
-            <span className="font-bold hover:underline">{activity.username}</span>{' '}
-            <span className="text-muted-foreground">{message.replace(`: ${activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName || ''}`, '')}</span>
-          </p>
-          <p className="text-xs text-muted-foreground">{timeAgo}</p>
-        </div>
-
-        <div className="text-muted-foreground opacity-50">
-          {getIcon()}
-        </div>
-      </div>
-
-      {/* Hero Content (for projects/armies) */}
-      {isRichActivity && (
-        <div className="border-t border-border bg-muted/30">
-          {heroImage && (
-            <div className="relative aspect-video w-full overflow-hidden">
-              <img
-                src={heroImage}
-                alt="Preview"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-          )}
-          <div className="p-4">
-            <h3 className="font-display font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
-              {activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName}
-            </h3>
-            {activity.metadata.status && (
-              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold bg-secondary text-secondary-foreground">
-                {activity.metadata.status}
-              </span>
-            )}
-
-            {activity.metadata.visibility === 'public' && (
-              <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-                <Globe className="w-3 h-3" />
-                Shared to Feed
+  // If it's a "Follow" or simple "Like", use a compact card
+  if (!isRichActivity && activity.type !== 'comment_created') {
+    return (
+      <div className="mb-4 p-4 rounded-xl bg-card/50 border border-border flex items-center gap-4">
+        {/* Avatar */}
+        <Link href={`/users/${activity.username}`} className="flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-muted overflow-hidden border border-border">
+            {activity.userPhotoUrl ? (
+              <img src={activity.userPhotoUrl} alt={activity.username} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400 font-bold">
+                {activity.username[0]?.toUpperCase()}
               </div>
             )}
           </div>
+        </Link>
+        <div className="flex-1">
+          <p className="text-sm text-foreground">
+            <Link href={`/users/${activity.username}`} className="font-bold hover:text-orange-500 transition-colors">{activity.username}</Link>
+            {' '}<span className="text-muted-foreground">{actionText}</span>
+            {' '}<Link href={getTargetUrl()} className="font-bold hover:text-orange-500 transition-colors">
+              {activity.metadata.targetUsername || 'something'}
+            </Link>
+          </p>
+          <p className="text-xs text-muted-foreground">{timeAgo}</p>
         </div>
+      </div>
+    )
+  }
+
+  // RICH CARD (Grimdark Style)
+  return (
+    <div className="mb-6 bg-[#0f1115] border border-border/40 rounded-xl overflow-hidden shadow-sm hover:shadow-orange-500/5 transition-all duration-300 group">
+      {/* Header */}
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href={`/users/${activity.username}`}>
+            <div className="w-10 h-10 rounded-full bg-muted overflow-hidden border border-border group-hover:border-orange-500/30 transition-colors">
+              {activity.userPhotoUrl ? (
+                <img src={activity.userPhotoUrl} alt={activity.username} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400 font-bold">
+                  {activity.username[0]?.toUpperCase()}
+                </div>
+              )}
+            </div>
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <Link href={`/users/${activity.username}`} className="text-sm font-bold text-foreground hover:text-orange-500 transition-colors text-transform uppercase tracking-wide">
+                {activity.username}
+              </Link>
+              <span className="text-xs text-muted-foreground uppercase">{timeAgo}</span>
+            </div>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-widest font-bold">
+              {(activity.metadata as any).faction || 'Hobbyist'}
+            </p>
+          </div>
+        </div>
+        <button className="text-muted-foreground hover:text-foreground">
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Hero Image */}
+      {heroImage && (
+        <Link href={getTargetUrl()} className="block relative aspect-video w-full overflow-hidden bg-black">
+          <img
+            src={heroImage}
+            alt={title || 'Project Image'}
+            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+          />
+
+          {/* Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f1115] via-transparent to-transparent opacity-60" />
+        </Link>
       )}
 
-      {/* Compact Content (for comments/likes/follows) */}
-      {!isRichActivity && (
-        <div className="px-4 pb-4 pl-16">
-          {/* Detailed Context for other types */}
-          {(activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName) && (
-            <div className="p-3 rounded-lg bg-muted/50 border border-border mt-1">
-              <p className="font-medium text-sm text-foreground">
-                {activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName}
-              </p>
-            </div>
-          )}
+      {/* Content */}
+      <div className="p-5 relative">
+        {/* Title */}
+        {title && (
+          <Link href={getTargetUrl()} className="block mb-2">
+            <h3 className="text-2xl font-display font-black text-foreground uppercase leading-none hover:text-orange-500 transition-colors">
+              {title}
+            </h3>
+          </Link>
+        )}
 
-          {/* Comment Preview */}
-          {activity.type === 'comment_created' && activity.metadata.commentPreview && (
-            <div className="mt-2 text-sm text-muted-foreground italic border-l-2 border-border pl-3">
-              "{activity.metadata.commentPreview}"
-            </div>
-          )}
+        {/* Description / Metadata */}
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
+          {description || `Updated their ${activity.targetType} with new progress. Check out the latest photos and painting recipes.`}
+        </p>
 
-          {/* Shared to Feed Indicator (Compact) */}
-          {activity.metadata.visibility === 'public' && (
-            <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-              <Globe className="w-3 h-3" />
-              Shared to Feed
-            </div>
-          )}
+        {/* Comment Preview (if comment type) */}
+        {activity.type === 'comment_created' && activity.metadata.commentPreview && (
+          <div className="mb-4 p-3 bg-muted/20 border-l-2 border-orange-500/50 text-sm text-muted-foreground italic">
+            "{activity.metadata.commentPreview}"
+            {title && <div className="mt-1 text-xs not-italic text-muted-foreground/50">on <span className="text-foreground">{title}</span></div>}
+          </div>
+        )}
 
-          {/* Shared to Feed Indicator (Compact) */}
-          {activity.metadata.visibility === 'public' && (
-            <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-              <Globe className="w-3 h-3" />
-              Shared to Feed
-            </div>
-          )}
+        {/* Action Bar */}
+        <div className="flex items-center justify-between pt-4 border-t border-border/30">
+          <div className="flex items-center gap-4">
+            <button className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-red-500 transition-colors group/like">
+              <Heart className="w-4 h-4 group-hover/like:fill-current" />
+              <span>{(activity.metadata as any).likeCount || 0}</span>
+            </button>
+            <button className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-blue-500 transition-colors">
+              <MessageCircle className="w-4 h-4" />
+              <span>{(activity.metadata as any).commentCount || 0}</span>
+            </button>
+            <button className="text-muted-foreground hover:text-foreground transition-colors">
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          <Link href={getTargetUrl()}>
+            <Button size="sm" className="bg-orange-600/90 hover:bg-orange-500 text-white font-bold uppercase tracking-wider text-[10px] h-8 px-4">
+              View Project <ArrowUpRight className="w-3 h-3 ml-1" />
+            </Button>
+          </Link>
         </div>
-      )}
-    </Link>
+      </div>
+    </div>
   );
 }
