@@ -283,11 +283,19 @@ function PaintCard({ paint, isCustom, isOwned, onToggleOwn, onDelete }: PaintCar
     )}>
       <div className="flex items-start gap-3">
         <div
-          className="w-12 h-12 rounded border border-border flex-shrink-0 cursor-pointer"
-          style={{ backgroundColor: paint.hexColor }}
+          className="w-12 h-12 rounded border border-border flex-shrink-0 cursor-pointer overflow-hidden relative"
+          style={{ backgroundColor: !paint.swatchUrl ? paint.hexColor : undefined }}
           onClick={onToggleOwn}
           title={isOwned ? "Remove from inventory" : "Add to inventory"}
-        />
+        >
+          {paint.swatchUrl && (
+            <img
+              src={paint.swatchUrl}
+              alt={paint.name}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between">
             <h3 className="font-medium text-foreground truncate" title={paint.name}>{paint.name}</h3>
