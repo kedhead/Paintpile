@@ -204,14 +204,10 @@ export async function updateProject(
   // If visibility is changing, update the activity metadata
   if (updates.isPublic !== undefined) {
     try {
-      // Import dynamically to avoid circular dependency if needed, 
-      // though projects.ts is low level. 
+      // Import dynamically to avoid circular dependency
       // We can just query activities directly.
       const activitiesRef = collection(db, 'activities');
-      /* 
-       * Note: We need to import 'collection', 'query', 'where', 'limit', 'getDocs', 'updateDoc' 
-       * but they are already imported at top of file.
-       */
+
       const q = query(
         activitiesRef,
         where('type', '==', 'project_created'),
@@ -223,9 +219,17 @@ export async function updateProject(
 
       if (!snapshot.empty) {
         const activityDoc = snapshot.docs[0];
-        await updateDoc(activityDoc.ref, {
+
+        const activityUpdates: any = {
           'metadata.visibility': updates.isPublic ? 'public' : 'private'
-        });
+        };
+
+        // KEY FIX: If becoming public, bump the createdAt timestamp so it appears at the top of feeds
+        if (updates.isPublic) {
+          activityUpdates.createdAt = serverTimestamp();
+        }
+
+        await updateDoc(activityDoc.ref, activityUpdates);
       }
     } catch (err) {
       console.error('Error updating activity visibility:', err);

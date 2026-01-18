@@ -86,6 +86,20 @@ export async function getAllBadges(): Promise<Badge[]> {
   }
 }
 
+export async function getBadge(id: string): Promise<Badge | null> {
+  try {
+    const docRef = doc(db, BADGES_COLLECTION, id);
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists()) {
+      return { id: snapshot.id, ...snapshot.data() } as Badge;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching badge:', error);
+    return null;
+  }
+}
+
 export async function createBadge(badgeData: CreateBadgeData): Promise<string> {
   const docRef = await addDoc(collection(db, BADGES_COLLECTION), {
     ...badgeData,

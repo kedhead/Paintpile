@@ -14,10 +14,22 @@ export default function FeedPage() {
         </aside>
 
         {/* Main Feed */}
-        <main className="col-span-1 md:col-span-9 lg:col-span-7">
-          {/* Mobile Header (optional, usually handled by main layout but good to have title here) */}
-          <div className="mb-6 md:hidden">
-            <h1 className="font-display font-bold text-2xl">Community Feed</h1>
+        <main className="col-span-1 md:col-span-9 lg:col-span-7 flex flex-col gap-6">
+          {/* Header Section */}
+          <div className="flex items-end justify-between px-2 md:px-0">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-foreground">
+                Community <span className="text-primary/50">Feed</span>
+              </h1>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mt-1">
+                Updates from the frontline of painting
+              </p>
+            </div>
+            {/* Visual Tabs (logic handled in active component, just placeholder for layout match or we can move tabs here later) */}
+            <div className="hidden md:flex border-b border-border gap-6">
+              {/* We just show the header here. The actual tabs are inside ActivityFeed component. 
+                   We might want to rethink this structure later, but for now let's keep the title here. */}
+            </div>
           </div>
 
           <ActivityFeed feedType="following" />

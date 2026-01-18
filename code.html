@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Warhammer Painting Community Feed - Variant 1</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#c67d2a",
+                        "background-light": "#f7f7f7",
+                        "background-dark": "#121212",
+                        "surface-dark": "#1e1e1e",
+                        "accent-bronze": "#c67d2a",
+                    },
+                    fontFamily: {
+                        "display": ["Epilogue", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .grimdark-border {
+            border: 1px solid rgba(198, 125, 42, 0.2);
+        }
+        .grimdark-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
+        }
+        body {
+            font-family: 'Epilogue', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #121212;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c67d2a;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 min-h-screen">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-3">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-primary">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined">brush</span>
+</div>
+<h2 class="text-xl font-extrabold uppercase tracking-tighter dark:text-white">Grimdark <span class="text-primary">Feed</span></h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-primary text-xs font-bold uppercase tracking-widest" href="#">Home</a>
+<a class="text-slate-500 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Explore</a>
+<a class="text-slate-500 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Challenges</a>
+<a class="text-slate-500 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Profile</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-surface-dark/50 border-white/5 rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-primary focus:border-primary w-64" placeholder="Search miniatures..."/>
+</div>
+<button class="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-400">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="size-9 rounded-lg bg-cover bg-center border border-primary/30" data-alt="User avatar of a space marine hobbyist" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCp03qST5SRultsoLg4BH5qIoY3EhJi_d_eqZgqCZ4ogNU2Osj0v1DZbWhKrjxu2lNtXVr-CNbqqp-eHicV6_er0m8e5naEr9n-BjN29kttUZGWvoZkcUg4tKS6DkC4Et5yk9HN-AwJ_1oYh4lkSNAWZXDGx81XoTFQVve_zuJV2igUuNg68DTUcrCJKrZ_sgTej7EddWvWPCsypVISng0c4-ZTVzDzCHa2DosLAX_4Qu1qJBwT95BihXC4PJ5HPQ_EBdQR_67Hz8w");'></div>
+</div>
+</header>
+<div class="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
+<!-- Left Sidebar: Discovery -->
+<aside class="col-span-3 hidden lg:flex flex-col gap-8 sticky top-24 self-start h-[calc(100vh-120px)] overflow-y-auto custom-scrollbar pr-2">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white grimdark-shadow">
+<span class="material-symbols-outlined">grid_view</span>
+<p class="text-xs font-bold uppercase tracking-widest">Global Feed</p>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined">group</span>
+<p class="text-xs font-bold uppercase tracking-widest">Followed Artists</p>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined">trending_up</span>
+<p class="text-xs font-bold uppercase tracking-widest">Trending Groups</p>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined">bookmark</span>
+<p class="text-xs font-bold uppercase tracking-widest">Saved Projects</p>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 px-3">Followed Artists</h3>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/5 rounded-lg transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded border border-white/10 bg-center bg-cover" data-alt="Avatar of Sigismund Paint" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB_e1v_X8Hk9Qkbor7ift7N0nYX4vawhrzUYbE5xMAV0l3d-Ff2dcWUtMIrxnF_Eq8_S5bDj1JFH800Vm3CYRtkjCdMSMbcad7OivaIVcvxiLObLF_HjAqPSOSkrBRvz3N3b6-Ppehp5qgnf5A_EkOn0z2d3iiZBE2PDWuOgerJMjD3l9xVmEHxJs3vX0f8R2P8IkfcGl25q36fpCLyLoPVNmP7M9PbFLW0IsDpP0A4iN2D4kL3DigBBeaqeyyQJ971wRcSNbk26uU');"></div>
+<span class="text-sm font-bold text-slate-300 group-hover:text-white">Sigismund_Paint</span>
+</div>
+<div class="size-1.5 rounded-full bg-green-500 animate-pulse"></div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/5 rounded-lg transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded border border-white/10 bg-center bg-cover" data-alt="Avatar of Guilliman Colors" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCiHVbaicorGrFtH3-6m4Wim8eV4XFYYkbdsE2lmPwz85z-5SUW_iiFs5IfeJ6tFn_TO6UQZWq1QLoNPrpnGTBYNMA7uQ-S1exdS_sGbkrkXyNphn-UGSvAJhvLeQ3lvo5stSWL_h7bO3xH4rBIO1LTiX2cSzG8auj266NteTW6t8m544DDyUv7bIc2SlwUNHdHV0qRlLFj7o4dMi_l8ibVFmvvzdw8HD_hXQ8F1F_t9RvYe_e4f5eddnBKGiyjxM_Ivb5zJtdAH38');"></div>
+<span class="text-sm font-bold text-slate-300 group-hover:text-white">Guilliman_Colors</span>
+</div>
+<div class="size-1.5 rounded-full bg-slate-600"></div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/5 rounded-lg transition-colors group cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded border border-white/10 bg-center bg-cover" data-alt="Avatar of Chaos Workshop" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDm1u8IFVnCLUa0jjo0rxUUyaeZhDGz0CSmET9XjKCrtM5x_Ha47z9pFJrO9YOeV6AJ-GAD2Xh8qTfoH5hzxeDax0A7yZBBBDRmRNh_ZnGaxEw3zGjRpPeqlftgnESJwIIs-ZMNhZGPo-jBg2_JicE4gfAAIWBXMZt4aYQMKcC-hfHmomo43jrKd9_YDxOGS1pH_A85Ffb9RZjE5WcmsplvK3QKj0W5P02aCSCwXbZoWLiocbpv2pDBYtw2GwtA2fTGqAcGM7ok9wg');"></div>
+<span class="text-sm font-bold text-slate-300 group-hover:text-white">Chaos_Workshop</span>
+</div>
+<div class="size-1.5 rounded-full bg-green-500"></div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 px-3">Trending Groups</h3>
+<div class="flex flex-wrap gap-2 px-3">
+<span class="px-2 py-1 bg-surface-dark border border-white/5 rounded text-[10px] font-bold uppercase tracking-tighter text-slate-400 hover:border-primary/50 cursor-pointer">#spacemarines</span>
+<span class="px-2 py-1 bg-surface-dark border border-white/5 rounded text-[10px] font-bold uppercase tracking-tighter text-slate-400 hover:border-primary/50 cursor-pointer">#chaos_legions</span>
+<span class="px-2 py-1 bg-surface-dark border border-white/5 rounded text-[10px] font-bold uppercase tracking-tighter text-slate-400 hover:border-primary/50 cursor-pointer">#grimdark_style</span>
+<span class="px-2 py-1 bg-surface-dark border border-white/5 rounded text-[10px] font-bold uppercase tracking-tighter text-slate-400 hover:border-primary/50 cursor-pointer">#oil_washes</span>
+</div>
+</div>
+<button class="mt-auto flex items-center justify-center gap-2 bg-surface-dark hover:bg-surface-dark/80 border border-primary/20 p-3 rounded-lg text-xs font-bold uppercase tracking-widest text-primary grimdark-shadow transition-all">
+<span class="material-symbols-outlined text-sm">explore</span>
+                Find Creators
+            </button>
+</aside>
+<!-- Main Feed -->
+<main class="col-span-12 lg:col-span-6 flex flex-col gap-8">
+<div class="flex items-end justify-between px-4">
+<div>
+<h1 class="text-4xl font-black uppercase tracking-tighter text-white">Community <span class="text-primary/50">Feed</span></h1>
+<p class="text-slate-500 text-xs font-medium uppercase tracking-widest mt-1">Updates from the frontline of painting</p>
+</div>
+<div class="flex border-b border-white/5 gap-6">
+<a class="border-b-2 border-primary text-white pb-2 text-[10px] font-black uppercase tracking-widest" href="#">All Posts</a>
+<a class="border-b-2 border-transparent text-slate-500 hover:text-slate-300 pb-2 text-[10px] font-black uppercase tracking-widest transition-colors" href="#">Following</a>
+</div>
+</div>
+<!-- Post Card 1 -->
+<article class="bg-surface-dark rounded-xl overflow-hidden grimdark-border grimdark-shadow group">
+<div class="p-4 flex items-center justify-between border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-cover bg-center border border-white/10" data-alt="Avatar of Sigismund" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA3-XhO4TnyN7lw_5BR3q0R1RxqOQwzF7ges8Nvwyie_Mo1HNuvoNh4F5RcPK2j30kOAfVhruOBPuIiZjZs-zfOsqu4F2UbP_8YEeecf5tyiPAW3dDkoM6WuVnGRJBOID-jKvobG0Ait4pNtbQBGHnA4iIalI5W0LV1UCTRYijQ-7_FjUgXh_k385p9Al2uR5hUvnERmWe5YM62n7tC0U1Lu5n7XYDGQvx4OhUzFpxDA6JPluXiNVgX7zHWzhSj5rmrKHZtwC5Kp0U');"></div>
+<div>
+<p class="text-xs font-black uppercase text-white tracking-wider">Sigismund_Paint</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter font-bold">2 hours ago • Adeptus Astartes</p>
+</div>
+</div>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<div class="relative aspect-video bg-cover bg-center cursor-zoom-in" data-alt="High quality close up of a Space Marine Veteran with gold trim and weathering" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBzf2Wwq1UJAR1rUes7ES-MyZcEmvqdNTJr4rixvNSHUbeMErvasitkVQ23VMbMpp0GEFFoXe2upi-RbamOxNs7C50vqTGrjbzYu7HbxDdRIA1rHlHaaHwfJLv-ioQZMQi2hOcThK8n_uvcDshFEbO1pFn4MJ6mzwmvwND83U0N1KfFJrGyQKz-uNUbeeKC5vIgockMFCEufMhZz9_fCFbI0lRrEVkrU86DJ4x11AwNCFOapHto2P5ntqPlxeKCxgBVHkl9mx4mptc");'>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+<div class="flex gap-4">
+<span class="text-white text-[10px] font-bold uppercase bg-primary/80 px-2 py-1 rounded">NMM Gold</span>
+<span class="text-white text-[10px] font-bold uppercase bg-black/50 px-2 py-1 rounded">Battle Damage</span>
+</div>
+</div>
+</div>
+<div class="p-6">
+<h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Adeptus Astartes Veteran</h2>
+<p class="text-slate-400 text-sm leading-relaxed mb-6 font-medium">
+                        Edge highlighting complete on the primary pauldrons. Used a mix of bronze-ochre for the trim to give it that ancient, weathered look. The grimdark aesthetic is really coming together with the final oil wash.
+                    </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-4">
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">favorite</span>
+<span class="text-xs font-bold">1.2k</span>
+</button>
+<button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">chat_bubble</span>
+<span class="text-xs font-bold">48</span>
+</button>
+<button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">share</span>
+</button>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded font-black uppercase text-[10px] tracking-widest transition-all">
+                            View Project
+                        </button>
+</div>
+</div>
+</article>
+<!-- Post Card 2 -->
+<article class="bg-surface-dark rounded-xl overflow-hidden grimdark-border grimdark-shadow group">
+<div class="p-4 flex items-center justify-between border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-cover bg-center border border-white/10" data-alt="Avatar of Chaos Painter" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCMnfXEi1aUzziMcsz0IkcL_yN8YxwI0tLunTq3G8lA2Ut-2wvrpA5ECdX9djR4-EH2EWOvfoBkhfBCr2WwMkzpeBcfnBxT5NngLY5M8iv7CuSV6j1YPUPQFmZOrE9n4Je3AXFoBqZvlk57waUv7e4NnfS12Y_5rmx3k1yytvdUvK28vD4mVSdZ1Lcaf0GzAsADoE8OnXo16VzbRnoRCTd75mhOTPZEQGK-7febHouFgNMPwjz2ZmnXT6AqzSJpT8g4BbWhdKMg1HA');"></div>
+<div>
+<p class="text-xs font-black uppercase text-white tracking-wider">Warp_Entity_99</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter font-bold">5 hours ago • Chaos Undivided</p>
+</div>
+</div>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<div class="relative aspect-video bg-cover bg-center cursor-zoom-in" data-alt="A dark and moody Chaos Marine miniature with glowing red eyes" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuANotAnHRDPQ0LFqWDaJSUcZ5kxq60f2WsxjvUljY0g17gi41YyLZ9K_eqTXd4ZDv2PRS4ZdSC7bIHTpjvznJT30QLGyPZXaFlpJgBHQR3c6-ZNtnoIuFR0TXrjjvownPdXUnhZcOW5LGVndXqDAK270EA7MCgWMoFnACnvMJ9hzvKn_6WalK5ZWJ41UiXueDeZ-UuEjbsz-aV3Kx_l9KNILEVwYZegTL9Ig1abV4eP0fQ9oN3THkK9ZUeBYwL2-YdYzm_wmLYNFHg");'>
+</div>
+<div class="p-6">
+<h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Chaos Chosen of the Void</h2>
+<p class="text-slate-400 text-sm leading-relaxed mb-6 font-medium">
+                        Experimenting with reactive pigments for the glowing ocular lenses. The dark charcoal base really makes the highlights pop.
+                    </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-4">
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">favorite</span>
+<span class="text-xs font-bold">856</span>
+</button>
+<button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">chat_bubble</span>
+<span class="text-xs font-bold">12</span>
+</button>
+<button class="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">share</span>
+</button>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded font-black uppercase text-[10px] tracking-widest transition-all">
+                            View Project
+                        </button>
+</div>
+</div>
+</article>
+</main>
+<!-- Right Sidebar: WIP Widget -->
+<aside class="col-span-3 hidden xl:flex flex-col gap-6 sticky top-24 self-start">
+<div class="bg-surface-dark border border-white/10 rounded-xl p-5 grimdark-shadow">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-xs font-black uppercase tracking-widest text-primary">Your Active WIPs</h3>
+<button class="text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-tighter">View All</button>
+</div>
+<div class="flex flex-col gap-6">
+<!-- WIP Item 1 -->
+<div class="flex gap-3">
+<div class="size-16 rounded border border-white/10 bg-cover bg-center flex-shrink-0" data-alt="WIP shot of an unpainted Dreadnought" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBEyar0vtXQzzUw2Q6H9ueCc4S6YtipP1E9csyC28CWcvOkobsLvDwUEOf6jj9T3QEYIKfkePO1ckHOaOmjFz6cmIHAJtbCNWEoZLGK5Vwgxa9_YqPe9OOSIKci518L1ZPJ1uKYr6lB4P_0y5EXEUhzuOeKphe8ygGuTi26r27DNpNI-kQ2LsgRrieFDtbE-ognTzVGTQI2YM9ijU2Ls3zHjRrbrmAu0x8bERtiOwpwuahzb0-LHl_qqpiBq8ZThXdPZpLnedkg5J8');"></div>
+<div class="flex flex-col justify-between py-1 flex-1">
+<div>
+<p class="text-[10px] font-black uppercase text-white leading-tight">Dreadnought Chassis</p>
+<p class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Priming Phase</p>
+</div>
+<div class="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[20%]"></div>
+</div>
+</div>
+</div>
+<!-- WIP Item 2 -->
+<div class="flex gap-3">
+<div class="size-16 rounded border border-white/10 bg-cover bg-center flex-shrink-0" data-alt="WIP shot of a miniature with partial base colors" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC9l9SD0c1M5X83EdUJOnvvQf2wiHo9o8rGRKG_llKgNbXsASwsYGN0owgD2Afb5sKQFuEydrRpJUELx5ud5dbgRFrJLzhlv2yYKd4EIlWo5um6gkVPv1m0SrP24lpm2X6qind-kuHeks_6yiQCmAwLJn_FDhkrTwbVOyid-bEHCgXRO8VY_P7QRW48bAVmqX1mh8pplVLczZgHyYi2J-PqSGvOQ0zpJzx_3exDH_jRoRmwmggK6C6rzrp4neuab3k1wQyVPRWREN0');"></div>
+<div class="flex flex-col justify-between py-1 flex-1">
+<div>
+<p class="text-[10px] font-black uppercase text-white leading-tight">Intercessor Squad</p>
+<p class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Base Coating</p>
+</div>
+<div class="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+</div>
+</div>
+<!-- WIP Item 3 -->
+<div class="flex gap-3">
+<div class="size-16 rounded border border-white/10 bg-cover bg-center flex-shrink-0" data-alt="WIP shot of a nearly finished miniature" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBeVDBuBdGXG-2328-6kVgt9EoH4qozMp4rEMVXHw3UxTuklaRq3iANp0f-nUPaZYLECYYEG8SSGSyijEoMCNYimUHsTzhK5KW1C3yOQwjs8595_GFxtz6yafAaScB4dMM3Di0oGApbGsIy0HICILDeIa3WcXrQB-f9o5ZZ93UIpECn8vlg45s-aJ7pVg0G9Ob_alt4pNFeRIXmUPKXHFTpLtmgRnAcCF-wks1ESiNM2OSKmbDjb8JENV3vFTuumKOladYrdlPGh2c');"></div>
+<div class="flex flex-col justify-between py-1 flex-1">
+<div>
+<p class="text-[10px] font-black uppercase text-white leading-tight">Captain in Gravis</p>
+<p class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Final Highlights</p>
+</div>
+<div class="w-full bg-black/50 h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[85%]"></div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-3 border-2 border-dashed border-white/10 hover:border-primary/50 text-slate-500 hover:text-primary transition-all rounded-lg flex flex-col items-center justify-center gap-1">
+<span class="material-symbols-outlined">add_photo_alternate</span>
+<span class="text-[9px] font-black uppercase tracking-widest">Add Snapshot</span>
+</button>
+</div>
+<div class="bg-primary/5 border border-primary/20 rounded-xl p-5">
+<h3 class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Weekly Challenge</h3>
+<p class="text-sm font-bold text-white mb-2 leading-tight">#Golden_Aura - Paint any miniature with glowing gold effects.</p>
+<p class="text-[10px] text-slate-400 font-medium mb-4">432 hobbyists participating</p>
+<button class="w-full bg-primary text-white py-2 rounded text-[10px] font-black uppercase tracking-widest grimdark-shadow">Join Challenge</button>
+</div>
+</aside>
+</div>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 size-16 bg-primary rounded-full flex items-center justify-center text-white grimdark-shadow shadow-xl border-4 border-background-dark group z-50 transition-transform hover:scale-110 active:scale-95">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform">add</span>
+<div class="absolute -top-12 right-0 bg-primary text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
+            Post Project
+        </div>
+</button>
+</body></html>

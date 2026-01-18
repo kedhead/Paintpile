@@ -242,6 +242,28 @@ export default function AdminPage() {
             </div>
           </Link>
 
+          {/* Challenge Manager (New) */}
+          <Link href="/admin/challenges">
+            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <Trophy className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    Challenge Manager
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create weekly painting challenges and assign badge rewards.
+                  </p>
+                  <Button variant="outline" size="sm">
+                    Manage Challenges →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Link>
+
           {/* Badge Manager (New) */}
           <Link href="/admin/badges">
             <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
