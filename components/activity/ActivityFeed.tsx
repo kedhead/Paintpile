@@ -73,8 +73,8 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         <button
           onClick={() => setFilter('all')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'all'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
           All
@@ -82,8 +82,8 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         <button
           onClick={() => setFilter('project_created')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'project_created'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
           Projects
@@ -91,8 +91,8 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         <button
           onClick={() => setFilter('army_created')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'army_created'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
           Armies
@@ -100,8 +100,8 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         <button
           onClick={() => setFilter('recipe_created')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'recipe_created'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
           Recipes
@@ -109,8 +109,8 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         <button
           onClick={() => setFilter('project_liked')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'project_liked'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
           Likes
@@ -118,8 +118,8 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         <button
           onClick={() => setFilter('comment_created')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'comment_created'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
           Comments
@@ -127,8 +127,8 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         <button
           onClick={() => setFilter('user_followed')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === 'user_followed'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
           Follows
@@ -136,13 +136,13 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
       </div>
 
       {/* Activities List */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="space-y-4">
         {loading ? (
           <div className="px-4 py-12 text-center text-muted-foreground">
             Loading activities...
           </div>
         ) : filteredActivities.length === 0 ? (
-          <div className="px-4 py-12 text-center">
+          <div className="px-4 py-12 text-center bg-card border border-border rounded-xl">
             <p className="text-muted-foreground">
               {filter === 'all'
                 ? feedType === 'following'

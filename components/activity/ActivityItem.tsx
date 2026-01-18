@@ -60,14 +60,18 @@ export function ActivityItem({ activity }: ActivityItemProps) {
   // Generate activity message
   const message = ACTIVITY_MESSAGES[activity.type](activity.metadata);
 
+  // Determine if this is a "rich" activity (one that should show a big image)
+  const isRichActivity = ['project_created', 'army_created', 'recipe_created'].includes(activity.type);
+  const heroImage = activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl;
+
   return (
     <Link
       href={getTargetUrl()}
-      className="block px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-0"
+      className="block bg-card border border-border rounded-xl shadow-sm overflow-hidden mb-4 hover:shadow-md transition-shadow group"
     >
-      <div className="flex items-start gap-3">
-        {/* User Avatar */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+      {/* Header: User & Action */}
+      <div className="p-4 flex items-center gap-3">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
           {activity.userPhotoUrl ? (
             <img
               src={activity.userPhotoUrl}
@@ -81,43 +85,64 @@ export function ActivityItem({ activity }: ActivityItemProps) {
           )}
         </div>
 
-        {/* Activity Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2">
-            {/* Icon */}
-            <div className="flex-shrink-0 mt-0.5">{getIcon()}</div>
+          <p className="text-sm text-foreground">
+            <span className="font-bold hover:underline">{activity.username}</span>{' '}
+            <span className="text-muted-foreground">{message.replace(`: ${activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName || ''}`, '')}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">{timeAgo}</p>
+        </div>
 
-            {/* Message */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground">
-                <span className="font-semibold">{activity.username}</span>{' '}
-                <span className="text-muted-foreground">{message}</span>
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
-            </div>
-          </div>
+        <div className="text-muted-foreground opacity-50">
+          {getIcon()}
+        </div>
+      </div>
 
-          {/* Preview Image (if available) */}
-          {(activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl) && (
-            <div className="mt-2 ml-7">
+      {/* Hero Content (for projects/armies) */}
+      {isRichActivity && (
+        <div className="border-t border-border bg-muted/30">
+          {heroImage && (
+            <div className="relative aspect-video w-full overflow-hidden">
               <img
-                src={activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl}
+                src={heroImage}
                 alt="Preview"
-                className="w-16 h-16 rounded-md object-cover border border-border"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>
           )}
+          <div className="p-4">
+            <h3 className="font-display font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
+              {activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName}
+            </h3>
+            {activity.metadata.status && (
+              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold bg-secondary text-secondary-foreground">
+                {activity.metadata.status}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
-          {/* Comment Preview (if comment activity) */}
-          {activity.type === 'comment_created' && activity.metadata.commentPreview && (
-            <div className="mt-2 ml-7 p-2 rounded-md bg-muted/50 border border-border">
-              <p className="text-xs text-muted-foreground italic line-clamp-2">
-                "{activity.metadata.commentPreview}"
+      {/* Compact Content (for comments/likes/follows) */}
+      {!isRichActivity && (
+        <div className="px-4 pb-4 pl-16">
+          {/* Detailed Context for other types */}
+          {(activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName) && (
+            <div className="p-3 rounded-lg bg-muted/50 border border-border mt-1">
+              <p className="font-medium text-sm text-foreground">
+                {activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName}
               </p>
             </div>
           )}
+
+          {/* Comment Preview */}
+          {activity.type === 'comment_created' && activity.metadata.commentPreview && (
+            <div className="mt-2 text-sm text-muted-foreground italic border-l-2 border-border pl-3">
+              "{activity.metadata.commentPreview}"
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </Link>
   );
 }
