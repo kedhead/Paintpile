@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { GalleryGrid } from '@/components/gallery/GalleryGrid';
-import { ActivityFeed } from '@/components/feed/ActivityFeed';
+import { ActivityFeed } from '@/components/activity/ActivityFeed';
 import { FeedWidgetsRight } from '@/components/feed/FeedWidgetsRight';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Globe, Grid, Trophy } from 'lucide-react';
