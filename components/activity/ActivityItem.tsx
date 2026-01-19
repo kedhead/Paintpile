@@ -104,14 +104,22 @@ export function ActivityItem({ activity }: ActivityItemProps) {
         </button>
       </div>
 
-      {/* Hero Image */}
-      {heroImage && (
-        <Link href={getTargetUrl()} className="block relative aspect-video w-full overflow-hidden bg-black">
-          <img
-            src={heroImage}
-            alt={title || 'Project Image'}
-            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
-          />
+      {/* Hero Image or Fallback */}
+      {isRichActivity && (
+        <Link href={getTargetUrl()} className="block relative aspect-video w-full overflow-hidden bg-black group-image">
+          {heroImage ? (
+            <img
+              src={heroImage}
+              alt={title || 'Project Image'}
+              className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#1a1d24] via-[#111318] to-[#0f1115] flex items-center justify-center opacity-80 group-hover:scale-105 transition-all duration-700">
+              <div className="text-muted-foreground/20">
+                {activity.targetType === 'army' ? <Shield className="w-16 h-16" /> : <Palette className="w-16 h-16" />}
+              </div>
+            </div>
+          )}
 
           {/* Overlay Gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f1115] via-transparent to-transparent opacity-60" />

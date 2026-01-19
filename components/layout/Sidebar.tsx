@@ -53,7 +53,7 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
     },
     {
       name: 'Following Feed',
-      href: '/feed',
+      href: '/feed?type=following',
       icon: Rss,
       current: pathname === '/feed',
     },
