@@ -10,7 +10,7 @@ export default async function FeedPage(props: {
   const resolvedParams = await props.searchParams;
   const rawType = resolvedParams?.type;
   const typeString = Array.isArray(rawType) ? rawType[0] : rawType;
-  const feedType = (typeString === 'following' || typeString === 'saved') ? typeString : 'global';
+  const feedType = (typeString === 'saved') ? 'saved' : 'following';
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -27,17 +27,13 @@ export default async function FeedPage(props: {
             <div>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-foreground">
                 {feedType === 'following'
-                  ? 'My'
-                  : feedType === 'saved'
-                    ? 'Saved'
-                    : 'Community'} <span className="text-primary/50">{feedType === 'saved' ? 'Projects' : 'Feed'}</span>
+                  ? 'Home'
+                  : 'Saved'} <span className="text-primary/50">{feedType === 'saved' ? 'Projects' : ''}</span>
               </h1>
               <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mt-1">
                 {feedType === 'following'
-                  ? 'Updates from users you follow'
-                  : feedType === 'saved'
-                    ? 'Updates from your bookmarked projects'
-                    : 'Updates from the frontline of painting'}
+                  ? 'Updates from artists you follow'
+                  : 'Updates from your bookmarked projects'}
               </p>
             </div>
             {/* Visual Tabs (logic handled in active component, just placeholder for layout match or we can move tabs here later) */}

@@ -63,9 +63,7 @@ export function FeedSidebarLeft() {
     }, [currentUser]);
 
     const navItems = [
-        { icon: Home, label: 'Global Feed', href: '/feed' },
-        { icon: Users, label: 'Followed Artists', href: '/feed?type=following' },
-
+        { icon: Home, label: 'Activity', href: '/feed' },
         { icon: Bookmark, label: 'Saved Projects', href: '/feed?type=saved' },
     ];
 

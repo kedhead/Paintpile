@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss, FlaskConical, Camera, Zap, Trophy } from 'lucide-react';
+import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss, FlaskConical, Camera, Zap, Trophy, Home, Globe } from 'lucide-react';
 import { SidebarAd } from '@/components/ads/SidebarAd';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
@@ -52,16 +52,16 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       current: pathname.startsWith('/badges'),
     },
     {
-      name: 'Following Feed',
-      href: '/feed?type=following',
-      icon: Rss,
-      current: pathname === '/feed',
+      name: 'Home',
+      href: '/feed',
+      icon: Home,
+      current: pathname === '/feed' && !pathname.includes('type=saved'),
     },
     {
       name: 'Community',
-      href: '/gallery',
-      icon: Users,
-      current: pathname === '/gallery',
+      href: '/community',
+      icon: Globe,
+      current: pathname === '/community',
     },
     {
       name: 'Paint Library',

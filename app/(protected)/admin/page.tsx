@@ -308,6 +308,9 @@ export default function AdminPage() {
             </div>
           </Link>
 
+          {/* Sync Feed Visibility / Heal Tool */}
+          <SyncFeedVisibility />
+
           {/* System Backup */}
           <SystemBackup />
 
