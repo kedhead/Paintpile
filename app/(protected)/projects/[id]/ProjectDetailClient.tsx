@@ -224,9 +224,15 @@ export default function ProjectDetailClient() {
     async function handleSetFeaturedPhoto(photoId: string) {
         if (!project || !currentUser) return;
 
+        const photo = photos.find(p => p.photoId === photoId);
+        const coverUrl = photo?.url;
+
         try {
-            await updateProject(project.projectId, { featuredPhotoId: photoId });
-            setProject({ ...project, featuredPhotoId: photoId });
+            await updateProject(project.projectId, {
+                featuredPhotoId: photoId,
+                coverPhotoUrl: coverUrl
+            });
+            setProject({ ...project, featuredPhotoId: photoId, coverPhotoUrl: coverUrl });
         } catch (err) {
             console.error('Error setting featured photo:', err);
             alert('Failed to set featured photo');

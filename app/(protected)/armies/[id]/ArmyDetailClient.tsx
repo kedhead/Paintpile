@@ -141,11 +141,13 @@ export default function ArmyDetailClient() {
         }
 
         try {
+            const newPhotoUrl = coverPhotos[projectId];
+
             await updateArmy(army.armyId, {
                 featuredPhotoId: photoId,
-                customPhotoUrl: deleteField() as unknown as string
+                customPhotoUrl: newPhotoUrl
             });
-            setArmy({ ...army, featuredPhotoId: photoId, customPhotoUrl: undefined });
+            setArmy({ ...army, featuredPhotoId: photoId, customPhotoUrl: newPhotoUrl });
 
             // Update the hero URL display immediately
             setFeaturedPhotoUrl(coverPhotos[projectId]);
