@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
-import { differenceInSeconds, formatDuration, intervalToDuration } from 'date-fns';
+import { differenceInSeconds, formatDuration, intervalToDuration, Duration } from 'date-fns';
 import { Clock } from 'lucide-react';
 
 interface CountdownTimerProps {
