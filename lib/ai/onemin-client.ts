@@ -418,10 +418,15 @@ export class OneMinClient {
     // Virtual-hosted style (asset.1min.ai.s3...) fails SSL because of dots in bucket name.
     // We must use path-style: https://s3.us-east-1.amazonaws.com/asset.1min.ai/{path}
     const s3Base = 'https://s3.us-east-1.amazonaws.com/asset.1min.ai';
+    const cnameBase = 'https://asset.1min.ai';
+
+    const cleanPath = path.startsWith('images/') ? path.replace('images/', '') : path;
 
     const endpoints = [
+      { base: cnameBase, path: `/${path}` }, // Try public CNAME first
       { base: s3Base, path: `/${path}` },
       { base: this.baseUrl, path: `/assets/${path}` },
+      { base: this.baseUrl, path: `/assets/${cleanPath}` }, // Try without 'images/' prefix
       { base: this.baseUrl, path: `/assets?path=${encodeURIComponent(path)}` },
       // Try alternate download endpoints found in common API patterns
       { base: this.baseUrl, path: `/download?filepath=${encodeURIComponent(path)}` },
