@@ -13,9 +13,9 @@ function handleWinnerPicked() {
     loadData(); // Refresh to show completed status
 }
 
-// ... inside return (List Section) 
+// ... inside return (List Section)
 <div className="flex items-center gap-2">
-    {/* Judge Button - Only for Active Challenges or those ready to judge */}
+    {/* Judge Button */}
     {challenge.status !== 'completed' && (
         <Button
             size="sm"
@@ -29,10 +29,27 @@ function handleWinnerPicked() {
     )}
 
     <Button
-        // ... (rest of buttons)
+        size="sm"
+        variant="outline"
+        onClick={() => handleToggleActive(challenge.id, challenge.isActive)}
+        title={challenge.isActive ? "Deactivate" : "Set Active"}
+    >
+        {challenge.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+    </Button>
+    <Button size="sm" variant="outline" onClick={() => startEdit(challenge)}>
+        <Edit className="w-4 h-4" />
+    </Button>
+    <Button size="sm" variant="destructive" onClick={() => handleDelete(challenge.id)}>
+        <Trash2 className="w-4 h-4" />
+    </Button>
+</div>
+                        </div >
+                    ))
+                )}
+            </div >
 
-        {/* Judging Dialog */}
-            <Dialog open={!!judgingChallengeId} onOpenChange={(open) => !open && setJudgingChallengeId(null)}>
+    {/* Judging Dialog */ }
+    < Dialog open = {!!judgingChallengeId} onOpenChange = {(open) => !open && setJudgingChallengeId(null)}>
         <DialogContent className="max-w-3xl">
             <DialogHeader>
                 <DialogTitle>Judge Challenge</DialogTitle>
@@ -44,7 +61,7 @@ function handleWinnerPicked() {
                 />
             )}
         </DialogContent>
-    </Dialog>
-</div>
+            </Dialog >
+        </div >
     );
 }

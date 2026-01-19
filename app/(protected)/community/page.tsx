@@ -10,8 +10,8 @@ import { getActiveChallenge } from '@/lib/firestore/challenges';
 import { Challenge } from '@/types/challenge';
 import { EntryGallery } from '@/components/challenges/EntryGallery';
 import { SubmitEntryDialog } from '@/components/challenges/SubmitEntryDialog';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function CommunityPage() {
