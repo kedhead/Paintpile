@@ -54,7 +54,8 @@ function GenerateIconDialog({
         setGeneratedUrl(null);
 
         try {
-            const token = await import('@/lib/firebase/auth').then(m => m.auth.currentUser?.getIdToken());
+            // FIXED: Import from firebase.ts, not auth.ts which doesn't exist
+            const token = await import('@/lib/firebase/firebase').then(m => m.auth.currentUser?.getIdToken());
             if (!token) throw new Error("Not authenticated");
 
             const res = await fetch('/api/ai/generate-badge-icon', {
