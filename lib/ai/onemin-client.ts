@@ -188,6 +188,13 @@ export class OneMinClient {
       request.promptObject.n = 1;
     }
 
+    // FIX: DALL-E 3 requires specific fields
+    if (model === 'dall-e-3') {
+      request.promptObject.size = options.imageSize || '1024x1024';
+      request.promptObject.quality = 'standard';
+      request.promptObject.n = 1;
+    }
+
     if (imageKey) {
       request.promptObject.imageList = [imageKey];
       // Some models might expect specific parameters for img2img, 
