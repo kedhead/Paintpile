@@ -155,7 +155,7 @@ export class OneMinClient {
     imageMediaType?: string;
   }): Promise<string> {
     // Default to a good image model if not specified
-    const model = options.model || 'midjourney';
+    const model = options.model || 'dall-e-3';
 
     console.log(`[1min.ai] Sending image generation request with model: ${model}`);
 

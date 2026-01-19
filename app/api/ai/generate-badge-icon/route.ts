@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         // Using 'midjourney' as per original plan
         const imageUrl = await aiClient.generateImage({
             prompt: fullPrompt,
-            model: 'midjourney',
+            model: 'dall-e-3',
             aspectRatio: '1:1'
         });
 
