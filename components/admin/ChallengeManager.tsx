@@ -167,10 +167,10 @@ export function ChallengeManager() {
                     <p className="text-muted-foreground text-center py-8">No challenges found.</p>
                 ) : (
                     challenges.map(challenge => (
-                        <div key={challenge.id} className="bg-card border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div className="flex-1 min-w-0 w-full sm:w-auto">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-lg truncate">{challenge.title}</h3>
+                        <div key={challenge.id} className="bg-card border rounded-lg p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-full overflow-hidden">
+                            <div className="flex-1 min-w-0 w-full md:w-auto">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-semibold text-lg truncate max-w-[200px] sm:max-w-[300px] md:max-w-none hover:whitespace-normal transition-all">{challenge.title}</h3>
                                     <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full border ${challenge.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
                                         challenge.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                                             'bg-gray-100 text-gray-700 border-gray-200'
@@ -188,7 +188,7 @@ export function ChallengeManager() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap w-full md:w-auto mt-2 md:mt-0">
                                 {challenge.status !== 'completed' && (
                                     <Button
                                         size="sm"
