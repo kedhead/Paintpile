@@ -168,12 +168,12 @@ export function ChallengeManager() {
                 ) : (
                     challenges.map(challenge => (
                         <div key={challenge.id} className="bg-card border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div>
+                            <div className="flex-1 min-w-0 w-full sm:w-auto">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-lg">{challenge.title}</h3>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full border ${challenge.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
-                                            challenge.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                                                'bg-gray-100 text-gray-700 border-gray-200'
+                                    <h3 className="font-semibold text-lg truncate">{challenge.title}</h3>
+                                    <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full border ${challenge.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
+                                        challenge.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                            'bg-gray-100 text-gray-700 border-gray-200'
                                         }`}>
                                         {challenge.status}
                                     </span>
