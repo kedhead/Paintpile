@@ -120,6 +120,47 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* Data Privacy Section */}
+          <div className="pt-8 border-t">
+            <h2 className="text-lg font-semibold mb-4">Privacy & Data</h2>
+            <div className="bg-card border rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Export Your Data</h3>
+                  <p className="text-sm text-muted-foreground">Download a copy of all your personal data (GDPR compliant).</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const token = await import('@/lib/firebase/firebase').then(m => m.auth.currentUser?.getIdToken());
+                      if (!token) throw new Error("Not authenticated");
+
+                      const res = await fetch('/api/user/export-data', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                      });
+                      if (!res.ok) throw new Error('Export failed');
+
+                      const blob = await res.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `paintpile-data-${new Date().toISOString().split('T')[0]}.json`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error('Export error:', err);
+                      alert('Failed to export data. Please try again.');
+                    }
+                  }}
+                >
+                  Download Data (JSON)
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -209,32 +250,29 @@ export default function ProfilePage() {
       <div className="flex items-center gap-2 border-b border-border">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === 'overview'
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'overview'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           Overview
         </button>
         <button
           onClick={() => setActiveTab('badges')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
-            activeTab === 'badges'
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'badges'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Award className="w-4 h-4" />
           Badges {profile.stats?.badgeCount ? `(${profile.stats.badgeCount})` : ''}
         </button>
         <button
           onClick={() => setActiveTab('activity')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === 'activity'
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'activity'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           Activity
         </button>
