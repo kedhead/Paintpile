@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         } catch (downloadError: any) {
             console.error('[BadgeGen] Download failed:', downloadError);
             return NextResponse.json(
-                { success: false, error: `Failed to download: ${downloadError.message}`, debug_url: imageUrl },
+                { success: false, error: 'Failed to download generated image from AI provider' },
                 { status: 502 }
             );
         }
@@ -102,13 +102,9 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error(`[BadgeGen] Failed at step "${step}":`, error);
+        console.error('[BadgeGen] Error:', error);
         return NextResponse.json(
-            {
-                success: false,
-                error: `Server Error (${step}): ${error.message}`,
-                details: error.toString()
-            },
+            { success: false, error: error.message || 'Internal Server Error' },
             { status: 500 }
         );
     }
