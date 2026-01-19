@@ -176,6 +176,16 @@ export async function updateArmy(
 
         if (updates.customPhotoUrl !== undefined) {
           activityUpdates['metadata.armyPhotoUrl'] = updates.customPhotoUrl || null;
+        } else if (updates.isPublic === true) {
+          // If becoming public but no new photo provided, grab the CURRENT existing photo
+          // to ensure the feed has an image.
+          const armySnap = await getDoc(armyRef);
+          if (armySnap.exists()) {
+            const currentArmy = armySnap.data() as Army;
+            if (currentArmy.customPhotoUrl) {
+              activityUpdates['metadata.armyPhotoUrl'] = currentArmy.customPhotoUrl;
+            }
+          }
         }
 
         // If becoming public, bump the createdAt timestamp so it appears at the top of feeds

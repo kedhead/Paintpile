@@ -234,9 +234,19 @@ export async function updateProject(
           activityUpdates['metadata.visibility'] = updates.isPublic ? 'public' : 'private';
         }
 
-        // Update photo if changed
+        // Update photo if changed OR if becoming public (force sync current photo)
         if (updates.coverPhotoUrl !== undefined) {
           activityUpdates['metadata.projectPhotoUrl'] = updates.coverPhotoUrl || null;
+        } else if (updates.isPublic === true) {
+          // If becoming public but no new photo provided, grab the CURRENT existing photo
+          // to ensure the feed has an image.
+          const projectSnap = await getDoc(projectRef);
+          if (projectSnap.exists()) {
+            const currentProject = projectSnap.data() as Project;
+            if (currentProject.coverPhotoUrl) {
+              activityUpdates['metadata.projectPhotoUrl'] = currentProject.coverPhotoUrl;
+            }
+          }
         }
 
         // KEY FIX: If becoming public, bump the createdAt timestamp so it appears at the top of feeds
@@ -270,7 +280,7 @@ export async function updateProject(
                   'project',
                   {
                     projectName: projectData.name,
-                    projectPhotoUrl: projectData.coverPhotoUrl,
+                    projectPhotoUrl: projectData.coverPhotoUrl, // Ensure this is passed
                     status: projectData.status,
                     visibility: 'public'
                   }
