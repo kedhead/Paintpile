@@ -167,10 +167,10 @@ export function ChallengeManager() {
                     <p className="text-muted-foreground text-center py-8">No challenges found.</p>
                 ) : (
                     challenges.map(challenge => (
-                        <div key={challenge.id} className="bg-card border rounded-lg p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-full overflow-hidden">
-                            <div className="flex-1 min-w-0 w-full md:w-auto">
+                        <div key={challenge.id} className="bg-card border rounded-lg p-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center max-w-full overflow-hidden">
+                            <div className="min-w-0 space-y-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <h3 className="font-semibold text-lg truncate max-w-[200px] sm:max-w-[300px] md:max-w-none hover:whitespace-normal transition-all">{challenge.title}</h3>
+                                    <h3 className="font-semibold text-lg truncate pr-2">{challenge.title}</h3>
                                     <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full border ${challenge.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
                                         challenge.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                                             'bg-gray-100 text-gray-700 border-gray-200'
@@ -178,8 +178,8 @@ export function ChallengeManager() {
                                         {challenge.status}
                                     </span>
                                 </div>
-                                <p className="text-sm text-muted-foreground line-clamp-1">{challenge.description}</p>
-                                <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-1 break-words">{challenge.description}</p>
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
                                     <span className="flex items-center gap-1">
                                         <Calendar className="w-3 h-3" />
                                         {challenge.endDate?.toDate().toLocaleDateString()}
@@ -188,7 +188,7 @@ export function ChallengeManager() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 flex-wrap w-full md:w-auto mt-2 md:mt-0">
+                            <div className="flex items-center gap-2 flex-wrap justify-start md:justify-end w-full md:w-auto">
                                 {challenge.status !== 'completed' && (
                                     <Button
                                         size="sm"
@@ -197,7 +197,8 @@ export function ChallengeManager() {
                                         onClick={() => setJudgingChallengeId(challenge.id)}
                                         title="Judge & Pick Winner"
                                     >
-                                        <Trophy className="w-4 h-4" />
+                                        <Trophy className="w-4 h-4 mr-2 md:mr-0 lg:mr-2" />
+                                        <span className="md:hidden lg:inline">Judge</span>
                                     </Button>
                                 )}
 
