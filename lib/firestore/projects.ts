@@ -240,6 +240,38 @@ export async function updateProject(
         if (Object.keys(activityUpdates).length > 0) {
           await updateDoc(activityDoc.ref, activityUpdates);
         }
+      } else {
+        // SELF-HEALING: Activity not found! Create it if it should exist.
+        if (updates.isPublic === true || (updates.isPublic === undefined)) {
+          const projectSnap = await getDoc(projectRef);
+          if (projectSnap.exists()) {
+            const projectData = projectSnap.data() as Project;
+
+            // Only create if it IS public
+            if (projectData.isPublic) {
+              const userRef = doc(db, 'users', projectData.userId);
+              const userSnap = await getDoc(userRef);
+
+              if (userSnap.exists()) {
+                const userData = userSnap.data();
+                await createActivity(
+                  projectData.userId,
+                  userData.displayName || userData.email,
+                  userData.photoURL,
+                  'project_created',
+                  projectId,
+                  'project',
+                  {
+                    projectName: projectData.name,
+                    projectPhotoUrl: projectData.coverPhotoUrl,
+                    status: projectData.status,
+                    visibility: 'public'
+                  }
+                );
+              }
+            }
+          }
+        }
       }
     } catch (err) {
       console.error('Error updating activity visibility/photo:', err);

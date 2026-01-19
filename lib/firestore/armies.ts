@@ -186,6 +186,38 @@ export async function updateArmy(
         if (Object.keys(activityUpdates).length > 0) {
           await updateDoc(activityDoc.ref, activityUpdates);
         }
+      } else {
+        // SELF-HEALING: Activity not found! Create it if it should exist.
+        if (updates.isPublic === true || (updates.isPublic === undefined)) {
+          const armyRef = doc(db, 'armies', armyId);
+          const armySnap = await getDoc(armyRef);
+          if (armySnap.exists()) {
+            const armyData = armySnap.data() as Army;
+
+            // Only create if it IS public
+            if (armyData.isPublic) {
+              const userRef = doc(db, 'users', armyData.userId);
+              const userSnap = await getDoc(userRef);
+
+              if (userSnap.exists()) {
+                const userData = userSnap.data();
+                await createActivity(
+                  armyData.userId,
+                  userData.displayName || userData.email,
+                  userData.photoURL,
+                  'army_created',
+                  armyId,
+                  'army',
+                  {
+                    armyName: armyData.name,
+                    armyPhotoUrl: armyData.customPhotoUrl,
+                    visibility: 'public'
+                  }
+                );
+              }
+            }
+          }
+        }
       }
     } catch (err) {
       console.error('Error updating army activity visibility:', err);
