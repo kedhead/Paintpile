@@ -12,6 +12,7 @@ import { EntryGallery } from '@/components/challenges/EntryGallery';
 import { SubmitEntryDialog } from '@/components/challenges/SubmitEntryDialog';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function CommunityPage() {
@@ -129,8 +130,6 @@ export default function CommunityPage() {
                                                 <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
                                                     {challenge.description}
                                                 </p>
-
-                                                import {CountdownTimer} from '@/components/ui/CountdownTimer';
 
                                                 // ... (inside the component return)
 
