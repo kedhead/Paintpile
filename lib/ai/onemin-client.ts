@@ -423,17 +423,20 @@ export class OneMinClient {
       { base: this.baseUrl, path: `/assets?path=${encodeURIComponent(path)}` },
     ];
 
+    const attempts: string[] = [];
+
     for (const { base, path: endpointPath } of endpoints) {
+      const url = `${base}${endpointPath}`;
       try {
-        const url = `${base}${endpointPath}`;
         console.log(`[1min.ai] Attempting download from: ${url}`);
 
         // For S3, we probably don't need the API key in headers, but it doesn't hurt usually.
         // However, if it's a signed URL or public bucket, standard fetch is fine.
+        const headers: HeadersInit = base === this.baseUrl ? { 'API-KEY': this.apiKey } : {};
+
         const response = await fetch(url, {
           method: 'GET',
-          // Only add API key if hitting the API endpoint
-          headers: base === this.baseUrl ? { 'API-KEY': this.apiKey } : undefined,
+          headers
         });
 
         if (response.ok) {
@@ -441,14 +444,19 @@ export class OneMinClient {
           const arrayBuffer = await response.arrayBuffer();
           return Buffer.from(arrayBuffer);
         } else {
-          console.warn(`[1min.ai] Download failed from ${url}: ${response.status}`);
+          const statusText = await response.text();
+          const failMsg = `[${response.status}] ${url} - ${statusText.substring(0, 100)}`;
+          console.warn(`[1min.ai] Download failed: ${failMsg}`);
+          attempts.push(failMsg);
         }
-      } catch (error) {
-        console.warn(`[1min.ai] Download error from ${endpointPath}:`, error);
+      } catch (error: any) {
+        const failMsg = `[ERR] ${url} - ${error.message}`;
+        console.warn(`[1min.ai] Download error: ${failMsg}`);
+        attempts.push(failMsg);
       }
     }
 
-    throw new Error(`Failed to download asset: ${path}`);
+    throw new Error(`Failed to download asset '${path}'. Attempts: ${JSON.stringify(attempts)}`);
   }
 
 
