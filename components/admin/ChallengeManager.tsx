@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/Dialog';
 import { ChallengeEntryList } from '@/components/admin/ChallengeEntryList';
-import { Plus, Edit, Trash2, Trophy, Eye, EyeOff, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Trophy, Eye, EyeOff, Calendar, Clock, Award } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card';
 
 export function ChallengeManager() {
     const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -160,66 +161,97 @@ export function ChallengeManager() {
                 </Button>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                 {loading ? (
                     <p>Loading...</p>
                 ) : challenges.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No challenges found.</p>
+                    <p className="text-muted-foreground text-center py-8 col-span-full">No challenges found.</p>
                 ) : (
                     challenges.map(challenge => (
-                        <div key={challenge.id} className="bg-card border rounded-lg p-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center max-w-full overflow-hidden">
-                            <div className="min-w-0 space-y-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <h3 className="font-semibold text-lg truncate pr-2">{challenge.title}</h3>
-                                    <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full border ${challenge.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
-                                        challenge.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                                            'bg-gray-100 text-gray-700 border-gray-200'
-                                        }`}>
-                                        {challenge.status}
-                                    </span>
+                        <Card key={challenge.id} className="flex flex-col h-full overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="space-y-1 min-w-0">
+                                        <CardTitle className="text-xl truncate" title={challenge.title}>
+                                            {challenge.title}
+                                        </CardTitle>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-xs px-2 py-0.5 rounded-full border uppercase tracking-wider font-semibold ${challenge.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                    challenge.status === 'completed' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                                        'bg-gray-100 text-gray-700 border-gray-200'
+                                                }`}>
+                                                {challenge.status}
+                                            </span>
+                                            {challenge.isActive && (
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200 font-bold flex items-center gap-1">
+                                                    <Eye className="w-3 h-3" /> Live
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleEdit(challenge)}>
+                                            <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(challenge.id)}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                                <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-1 break-words">{challenge.description}</p>
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
-                                    <span className="flex items-center gap-1">
-                                        <Calendar className="w-3 h-3" />
-                                        {challenge.endDate?.toDate().toLocaleDateString()}
-                                    </span>
-                                    <span>{challenge.participantCount || 0} Entries</span>
-                                </div>
-                            </div>
+                            </CardHeader>
+                            <CardContent className="flex-1 pb-4">
+                                <p className="text-sm text-muted-foreground line-clamp-3 mb-4 min-h-[3em]">
+                                    {challenge.description}
+                                </p>
 
-                            <div className="flex items-center gap-2 flex-wrap justify-start md:justify-end w-full md:w-auto">
+                                <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-primary" />
+                                        <span>End: {challenge.endDate?.toDate().toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-primary" />
+                                        <span>Entries: {challenge.participantCount || 0}</span>
+                                    </div>
+                                    {challenge.rewardBadgeId && (
+                                        <div className="col-span-2 flex items-center gap-2 text-purple-600 font-medium">
+                                            <Award className="w-4 h-4" />
+                                            <span>Badge Reward Active</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                            <CardFooter className="pt-0 flex gap-2 justify-end bg-muted/20 p-4 mt-auto border-t">
                                 {challenge.status !== 'completed' && (
                                     <Button
                                         size="sm"
                                         variant="default"
-                                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                                        className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
                                         onClick={() => setJudgingChallengeId(challenge.id)}
-                                        title="Judge & Pick Winner"
                                     >
-                                        <Trophy className="w-4 h-4 mr-2 md:mr-0 lg:mr-2" />
-                                        <span className="md:hidden lg:inline">Judge</span>
+                                        <Trophy className="w-4 h-4 mr-2" />
+                                        Judge Winner
                                     </Button>
                                 )}
 
                                 <Button
                                     size="sm"
-                                    variant="outline"
+                                    variant={challenge.isActive ? "secondary" : "outline"}
                                     onClick={() => handleToggleActive(challenge.id, challenge.isActive)}
-                                    title={challenge.isActive ? "Deactivate" : "Set Active"}
+                                    className="flex-1"
                                 >
-                                    {challenge.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    {challenge.isActive ? (
+                                        <>
+                                            <EyeOff className="w-4 h-4 mr-2" /> Deactivate
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Eye className="w-4 h-4 mr-2" /> Set Live
+                                        </>
+                                    )}
                                 </Button>
-
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(challenge)}>
-                                    <Edit className="w-4 h-4" />
-                                </Button>
-
-                                <Button size="sm" variant="destructive" onClick={() => handleDelete(challenge.id)}>
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </div>
+                            </CardFooter>
+                        </Card>
                     ))
                 )}
             </div>
