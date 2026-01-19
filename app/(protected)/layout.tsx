@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileHeader } from '@/components/layout/MobileHeader';
+import { UsernameSetupModal } from '@/components/onboarding/UsernameSetupModal';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, loading } = useAuth();
@@ -50,6 +51,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <main className="flex-1 lg:pl-64 pt-16 lg:pt-0 transition-all duration-300">
         {children}
       </main>
+
+      {/* Force username setup for legacy users */}
+      <UsernameSetupModal currentUser={currentUser} />
     </div>
   );
 }

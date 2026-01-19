@@ -37,14 +37,10 @@ export function FeedSidebarLeft() {
                     const profile = await getUserProfile(f.followingId);
 
                     // Fallback username logic if field is missing (legacy users)
-                    let safeUsername = profile?.username || '';
-                    if (!safeUsername && profile?.displayName) {
-                        // Create a temporary slug if username is missing
-                        safeUsername = profile.displayName.toLowerCase().replace(/\s+/g, '-');
-                    }
-                    if (!safeUsername) {
-                        safeUsername = f.followingId; // Last resort: use ID
-                    }
+                    // CRITICAL FIX: Do NOT generate a slug from display name. 
+                    // It creates broken links because we can't map the slug back to an ID.
+                    // Always use ID if real username is missing.
+                    const safeUsername = profile?.username || f.followingId;
 
                     return {
                         userId: f.followingId,

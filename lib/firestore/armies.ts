@@ -49,7 +49,7 @@ export async function createArmy(
     armySize: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    isPublic: false,
+    isPublic: true, // Default to public
     likeCount: 0,
     commentCount: 0,
     ...(armyData.customPhotoUrl ? { customPhotoUrl: armyData.customPhotoUrl } : {}),
@@ -76,7 +76,7 @@ export async function createArmy(
         {
           armyName: armyData.name,
           armyPhotoUrl: armyData.customPhotoUrl, // Add cover photo
-          visibility: 'private', // New armies are private by default
+          visibility: 'public', // Default to public
         }
       );
     } catch (err) {

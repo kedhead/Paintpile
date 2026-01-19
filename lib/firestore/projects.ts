@@ -44,7 +44,7 @@ export async function createProject(
     startDate: projectData.startDate ? Timestamp.fromDate(projectData.startDate) : null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    isPublic: false,
+    isPublic: true, // Default to public so it shows in feeds
     photoCount: 0,
     paintCount: 0,
     likeCount: 0,
@@ -74,7 +74,7 @@ export async function createProject(
           projectName: projectData.name,
           projectPhotoUrl: projectData.coverPhotoUrl, // Add cover photo
           status: projectData.status,
-          visibility: 'private', // New projects are private by default
+          visibility: 'public', // Default to public matches project status
         }
       );
     } catch (err) {
