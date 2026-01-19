@@ -423,6 +423,9 @@ export class OneMinClient {
       { base: s3Base, path: `/${path}` },
       { base: this.baseUrl, path: `/assets/${path}` },
       { base: this.baseUrl, path: `/assets?path=${encodeURIComponent(path)}` },
+      // Try alternate download endpoints found in common API patterns
+      { base: this.baseUrl, path: `/download?filepath=${encodeURIComponent(path)}` },
+      { base: this.baseUrl, path: `/file?path=${encodeURIComponent(path)}` },
     ];
 
     const attempts: string[] = [];
