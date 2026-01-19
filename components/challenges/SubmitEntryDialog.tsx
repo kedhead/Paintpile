@@ -17,7 +17,7 @@ interface SubmitEntryDialogProps {
 }
 
 export function SubmitEntryDialog({ challengeId, onSuccess, children }: SubmitEntryDialogProps) {
-    const { user } = useAuth();
+    const { currentUser: user } = useAuth();
     const [open, setOpen] = useState(false);
 
     const [projects, setProjects] = useState<Project[]>([]);
