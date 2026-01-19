@@ -1,4 +1,4 @@
-'use client';
+
 
 import { FeedSidebarLeft } from '@/components/feed/FeedSidebarLeft';
 import { FeedWidgetsRight } from '@/components/feed/FeedWidgetsRight';
