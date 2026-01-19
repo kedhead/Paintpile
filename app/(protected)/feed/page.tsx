@@ -4,7 +4,13 @@ import { FeedSidebarLeft } from '@/components/feed/FeedSidebarLeft';
 import { FeedWidgetsRight } from '@/components/feed/FeedWidgetsRight';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
 
-export default function FeedPage() {
+export default function FeedPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const feedType = (searchParams.type as 'following' | 'global') || 'global';
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 p-6">
@@ -19,10 +25,12 @@ export default function FeedPage() {
           <div className="flex items-end justify-between px-2 md:px-0">
             <div>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-foreground">
-                My <span className="text-primary/50">Feed</span>
+                {feedType === 'following' ? 'My' : 'Community'} <span className="text-primary/50">Feed</span>
               </h1>
               <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mt-1">
-                Updates from users you follow
+                {feedType === 'following'
+                  ? 'Updates from users you follow'
+                  : 'Updates from the frontline of painting'}
               </p>
             </div>
             {/* Visual Tabs (logic handled in active component, just placeholder for layout match or we can move tabs here later) */}
@@ -32,7 +40,7 @@ export default function FeedPage() {
             </div>
           </div>
 
-          <ActivityFeed feedType="following" />
+          <ActivityFeed feedType={feedType} />
         </main>
 
         {/* Right Sidebar (Widgets) */}
