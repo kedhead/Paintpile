@@ -259,7 +259,7 @@ export default function BadgeManagerPage() {
                                                     </select>
                                                 </div>
                                                 <div className="space-y-2 col-span-2">
-                                                    <label className="text-sm font-medium">Threshold Value (>=)</label>
+                                                    <label className="text-sm font-medium">Threshold Value (&ge;)</label>
                                                     <Input type="number" {...register('trigger_value')} />
                                                     <p className="text-[10px] text-muted-foreground">
                                                         Badge awards automatically when this value is reached.
