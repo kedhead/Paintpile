@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
 
         for (const projectDoc of projectsSnapshot.docs) {
             const projectId = projectDoc.id;
+            const projectData = projectDoc.data();
 
             const activitySnapshot = await adminDb.collection('activities')
                 .where('type', '==', 'project_created')
@@ -33,17 +34,26 @@ export async function POST(req: NextRequest) {
             if (!activitySnapshot.empty) {
                 const activityDoc = activitySnapshot.docs[0];
                 const activityData = activityDoc.data();
+                const updates: any = {};
 
+                // 1. Fix Visibility
                 if (activityData.metadata?.visibility !== 'public') {
-                    batch.update(activityDoc.ref, {
-                        'metadata.visibility': 'public'
-                    });
+                    updates['metadata.visibility'] = 'public';
+                }
+
+                // 2. Fix Missing Photo URL
+                if (!activityData.metadata?.projectPhotoUrl && projectData.coverPhotoUrl) {
+                    updates['metadata.projectPhotoUrl'] = projectData.coverPhotoUrl;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    batch.update(activityDoc.ref, updates);
                     updateCount++;
                 }
             }
         }
 
-        // 2. Sync Army Visibility
+        // 2. Sync Army Visibility & Photos
         const armiesSnapshot = await adminDb.collection('armies')
             .where('isPublic', '==', true)
             .get();
@@ -52,6 +62,7 @@ export async function POST(req: NextRequest) {
 
         for (const armyDoc of armiesSnapshot.docs) {
             const armyId = armyDoc.id;
+            const armyData = armyDoc.data();
 
             const activitySnapshot = await adminDb.collection('activities')
                 .where('type', '==', 'army_created')
@@ -62,11 +73,20 @@ export async function POST(req: NextRequest) {
             if (!activitySnapshot.empty) {
                 const activityDoc = activitySnapshot.docs[0];
                 const activityData = activityDoc.data();
+                const updates: any = {};
 
+                // 1. Fix Visibility
                 if (activityData.metadata?.visibility !== 'public') {
-                    batch.update(activityDoc.ref, {
-                        'metadata.visibility': 'public'
-                    });
+                    updates['metadata.visibility'] = 'public';
+                }
+
+                // 2. Fix Missing Photo URL
+                if (!activityData.metadata?.armyPhotoUrl && armyData.customPhotoUrl) {
+                    updates['metadata.armyPhotoUrl'] = armyData.customPhotoUrl;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    batch.update(activityDoc.ref, updates);
                     updateCount++;
                 }
             }
