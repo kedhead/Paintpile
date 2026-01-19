@@ -37,20 +37,30 @@ export async function createActivity(
   const newActivityRef = doc(activitiesRef);
   const activityId = newActivityRef.id;
 
-  const activity: Omit<Activity, 'activityId' | 'createdAt'> & {
-    activityId: string;
-    createdAt: any;
-  } = {
+  const activity: any = {
     activityId,
     userId,
     username,
-    userPhotoUrl,
     type,
     targetId,
     targetType,
-    metadata: metadata || {},
+    metadata: metadata ? { ...metadata } : {},
     createdAt: serverTimestamp(),
   };
+
+  // Only add userPhotoUrl if defined
+  if (userPhotoUrl) {
+    activity.userPhotoUrl = userPhotoUrl;
+  }
+
+  // Sanitize metadata to remove undefined values
+  if (activity.metadata) {
+    Object.keys(activity.metadata).forEach((key) => {
+      if (activity.metadata[key] === undefined) {
+        delete activity.metadata[key];
+      }
+    });
+  }
 
   await setDoc(newActivityRef, activity);
 
