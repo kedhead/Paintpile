@@ -170,6 +170,7 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
 
     // Dictionary of Badge ID -> Requirement Condition
     // This maps the dynamic badge IDs (seeded defaults) to logic
+    // 1. Check Hardcoded Badges
     const checks: Record<string, boolean> = {
       // Projects
       'first_project': (stats.projectCount || 0) >= 1,
@@ -196,12 +197,33 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       'commenter': (stats.commentCount || 0) >= 50,
     };
 
-    // Check each condition
     const awardedPromises: Promise<boolean>[] = [];
+
+    // Process Hardcoded Checks
     for (const [badgeId, condition] of Object.entries(checks)) {
       if (condition) {
-        // awardBadge handles duplication check internally
         awardedPromises.push(awardBadge(userId, badgeId));
+      }
+    }
+
+    // 2. Check Dynamic Database Badges
+    // Fetch all badges that have a trigger configured
+    const badgesRef = collection(db, BADGES_COLLECTION);
+    const q = query(badgesRef, where('trigger_type', '==', 'stat_milestone'));
+    const dynamicBadgesSnap = await getDocs(q);
+
+    for (const doc of dynamicBadgesSnap.docs) {
+      const badge = doc.data() as Badge;
+      const field = badge.trigger_field;
+      const value = badge.trigger_value;
+
+      if (field && value !== undefined && typeof value === 'number') {
+        // @ts-ignore - dynamic access to stats
+        const userStatValue = stats[field] || 0;
+
+        if (typeof userStatValue === 'number' && userStatValue >= value) {
+          awardedPromises.push(awardBadge(userId, doc.id));
+        }
       }
     }
 

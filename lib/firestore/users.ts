@@ -76,7 +76,7 @@ export async function updateUserProfile(
  */
 export async function incrementUserStats(
   userId: string,
-  field: 'projectCount' | 'photoCount' | 'pileCount' | 'paintCount' | 'armyCount' | 'likesReceived' | 'recipesCreated' | 'badgeCount' | 'commentCount' | 'commentsReceived',
+  field: 'projectCount' | 'photoCount' | 'pileCount' | 'paintCount' | 'armyCount' | 'likesReceived' | 'recipesCreated' | 'badgeCount' | 'commentCount' | 'commentsReceived' | 'diaryEntryCount',
   value: number = 1
 ): Promise<void> {
   const userRef = doc(db, 'users', userId);
@@ -113,6 +113,7 @@ export async function incrementUserStats(
         badgeCount: field === 'badgeCount' ? value : 0,
         commentCount: field === 'commentCount' ? value : 0,
         commentsReceived: field === 'commentsReceived' ? value : 0,
+        diaryEntryCount: field === 'diaryEntryCount' ? value : 0,
       },
     });
     return;

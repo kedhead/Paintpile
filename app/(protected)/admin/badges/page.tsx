@@ -27,6 +27,9 @@ const badgeSchema = z.object({
     requirement: z.string().min(1, "Requirement is required"),
     points: z.coerce.number().min(0),
     hidden: z.boolean().optional(),
+    trigger_type: z.enum(['manual', 'stat_milestone']).optional(),
+    trigger_field: z.string().optional(),
+    trigger_value: z.coerce.number().optional(),
 });
 
 type FormData = z.infer<typeof badgeSchema>;
@@ -48,7 +51,10 @@ export default function BadgeManagerPage() {
             category: 'projects',
             tier: 'bronze',
             requirement: '',
-            hidden: false
+            hidden: false,
+            trigger_type: 'manual',
+            trigger_field: 'projectCount',
+            trigger_value: 1
         }
     });
 
@@ -99,6 +105,9 @@ export default function BadgeManagerPage() {
         setValue('requirement', badge.requirement);
         setValue('points', badge.points);
         setValue('hidden', badge.hidden);
+        setValue('trigger_type', badge.trigger_type || 'manual');
+        setValue('trigger_field', badge.trigger_field || 'projectCount');
+        setValue('trigger_value', badge.trigger_value || 1);
     };
 
     const handleDelete = async (id: string) => {
@@ -128,6 +137,7 @@ export default function BadgeManagerPage() {
     const watchedIcon = watch('icon');
     const watchedColor = watch('color');
     const watchedName = watch('name');
+    const watchedTriggerType = watch('trigger_type');
 
     return (
         <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -219,6 +229,45 @@ export default function BadgeManagerPage() {
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Requirement</label>
                                     <Input {...register('requirement')} placeholder="e.g. Complete 50 projects" />
+                                </div>
+
+                                {/* Automation Rules */}
+                                <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                                    <h3 className="font-semibold text-sm flex items-center gap-2">
+                                        🤖 Automation Rules
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Trigger Type</label>
+                                            <select {...register('trigger_type')} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                                <option value="manual">Manual (Admin/System)</option>
+                                                <option value="stat_milestone">Stat Milestone</option>
+                                            </select>
+                                        </div>
+                                        {watchedTriggerType === 'stat_milestone' && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Stat Field</label>
+                                                    <select {...register('trigger_field')} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                                        <option value="projectCount">Projects Created</option>
+                                                        <option value="diaryEntryCount">Diary Entries</option>
+                                                        <option value="armyCount">Armies Created</option>
+                                                        <option value="recipesCreated">Recipes Created</option>
+                                                        <option value="photoCount">Photos Uploaded</option>
+                                                        <option value="followerCount">Followers</option>
+                                                        <option value="likesReceived">Likes Received</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-2 col-span-2">
+                                                    <label className="text-sm font-medium">Threshold Value (>=)</label>
+                                                    <Input type="number" {...register('trigger_value')} />
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        Badge awards automatically when this value is reached.
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="flex gap-2 justify-end">

@@ -68,6 +68,7 @@ export interface UserStats {
   badgeCount: number;
   commentCount: number;
   commentsReceived: number;
+  diaryEntryCount: number;
 }
 
 export type UserFormData = Omit<User, 'userId' | 'createdAt' | 'stats'>;

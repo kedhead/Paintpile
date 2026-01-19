@@ -15,6 +15,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firebase';
 import { DiaryEntry, DiaryEntryFormData } from '@/types/diary';
+import { incrementUserStats } from '@/lib/firestore/users';
+import { checkAndAwardBadges } from '@/lib/firestore/badges';
 
 const COLLECTION_NAME = 'diary_entries';
 
@@ -31,6 +33,11 @@ export async function createDiaryEntry(userId: string, data: DiaryEntryFormData)
         };
 
         const docRef = await addDoc(collection(db, COLLECTION_NAME), entryData);
+
+        // Update stats and check for badges
+        await incrementUserStats(userId, 'diaryEntryCount', 1);
+        await checkAndAwardBadges(userId);
+
         return docRef.id;
     } catch (error) {
         console.error('Error creating diary entry:', error);

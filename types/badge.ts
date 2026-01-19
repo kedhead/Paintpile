@@ -43,6 +43,11 @@ export interface Badge {
   points: number;
   hidden?: boolean;
   createdAt?: string;         // ISO date
+
+  // Automation Logic
+  trigger_type?: 'manual' | 'stat_milestone';
+  trigger_field?: string;     // e.g. 'diaryEntryCount', 'projectCount'
+  trigger_value?: number;     // e.g. 1, 10, 50
 }
 
 /**
