@@ -287,26 +287,7 @@ export default function AdminPage() {
           </Link>
 
           {/* Badge Manager (New) */}
-          <Link href="/admin/badges">
-            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer h-full">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                  <Trophy className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold text-foreground mb-2">
-                    Badge System
-                  </h2>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Create, edit, and gamify the platform with achievements and badges.
-                  </p>
-                  <Button variant="outline" size="sm">
-                    Manage Badges →
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Link>
+
 
           {/* Sync Feed Visibility / Heal Tool */}
           <SyncFeedVisibility />

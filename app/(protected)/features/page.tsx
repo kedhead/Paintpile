@@ -118,7 +118,19 @@ export default function FeaturesPage() {
             <div className="bg-primary/5 rounded-2xl p-8 md:p-12 text-center space-y-6">
                 <h2 className="text-3xl font-bold">Ready to organize your pile?</h2>
                 <p className="text-muted-foreground max-w-xl mx-auto">
-                    Join thousands of other painters who are getting more done and stressing less about their backlog.
+                    <div className="text-center space-y-4 max-w-2xl mx-auto">
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                            Ready to organize your hobby?
+                        </h2>
+                        <p className="text-muted-foreground text-lg">
+                            Join the growing list of painters who are getting more done and stressing less about their backlog.
+                        </p>
+                        <Link href="/signup">
+                            <Button size="lg" className="mt-4 gap-2 text-lg px-8 h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105">
+                                Get Started Free <ArrowRight className="w-5 h-5" />
+                            </Button>
+                        </Link>
+                    </div>
                 </p>
                 <Link href="/projects/new">
                     <Button size="lg" className="rounded-full">
