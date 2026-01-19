@@ -9,7 +9,8 @@ export type NotificationType =
   | 'comment'          // Someone commented on your project/army
   | 'comment_reply'    // Someone replied to your comment
   | 'mention'          // Someone mentioned you in a comment
-  | 'badge_earned';    // You earned a badge
+  | 'badge_earned'     // You earned a badge
+  | 'system';          // System notification
 
 /**
  * Type of entity being referenced in notification
@@ -20,7 +21,8 @@ export type NotificationTargetType =
   | 'recipe'
   | 'comment'
   | 'user'
-  | 'badge';
+  | 'badge'
+  | 'challenge';
 
 /**
  * Notification document stored in users/{userId}/notifications collection
