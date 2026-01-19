@@ -272,6 +272,7 @@ export class OneMinClient {
         headers: {
           // Do NOT set Content-Type here, let fetch set it with boundary
           'API-KEY': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`
         },
         body: formData,
       });
@@ -344,6 +345,7 @@ export class OneMinClient {
         headers: {
           'Content-Type': 'application/json',
           'API-KEY': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`
         },
         body: JSON.stringify(body),
       });
@@ -432,7 +434,10 @@ export class OneMinClient {
 
         // For S3, we probably don't need the API key in headers, but it doesn't hurt usually.
         // However, if it's a signed URL or public bucket, standard fetch is fine.
-        const headers: HeadersInit = base === this.baseUrl ? { 'API-KEY': this.apiKey } : {};
+        const headers: HeadersInit = base === this.baseUrl ? {
+          'API-KEY': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`
+        } : {};
 
         const response = await fetch(url, {
           method: 'GET',
