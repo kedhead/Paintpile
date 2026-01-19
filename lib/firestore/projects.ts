@@ -72,7 +72,7 @@ export async function createProject(
         'project',
         {
           projectName: projectData.name,
-          projectPhotoUrl: projectData.coverPhotoUrl, // Add cover photo
+          projectPhotoUrl: (projectData.coverPhotoUrl || null) as any, // Add cover photo, avoid undefined
           status: projectData.status,
           visibility: 'public', // Default to public matches project status
         }
@@ -197,6 +197,13 @@ export async function updateProject(
 ): Promise<void> {
   const projectRef = doc(db, 'projects', projectId);
 
+  // Sanitize updates to remove undefined values
+  Object.keys(updates).forEach(key => {
+    if ((updates as any)[key] === undefined) {
+      delete (updates as any)[key];
+    }
+  });
+
   await updateDoc(projectRef, {
     ...updates,
     updatedAt: serverTimestamp(),
@@ -229,7 +236,7 @@ export async function updateProject(
 
         // Update photo if changed
         if (updates.coverPhotoUrl !== undefined) {
-          activityUpdates['metadata.projectPhotoUrl'] = updates.coverPhotoUrl;
+          activityUpdates['metadata.projectPhotoUrl'] = updates.coverPhotoUrl || null;
         }
 
         // KEY FIX: If becoming public, bump the createdAt timestamp so it appears at the top of feeds

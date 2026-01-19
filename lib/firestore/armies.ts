@@ -75,7 +75,7 @@ export async function createArmy(
         'army',
         {
           armyName: armyData.name,
-          armyPhotoUrl: armyData.customPhotoUrl, // Add cover photo
+          armyPhotoUrl: (armyData.customPhotoUrl || null) as any, // Add cover photo, avoid undefined
           visibility: 'public', // Default to public
         }
       );
@@ -175,7 +175,7 @@ export async function updateArmy(
         }
 
         if (updates.customPhotoUrl !== undefined) {
-          activityUpdates['metadata.armyPhotoUrl'] = updates.customPhotoUrl;
+          activityUpdates['metadata.armyPhotoUrl'] = updates.customPhotoUrl || null;
         }
 
         // If becoming public, bump the createdAt timestamp so it appears at the top of feeds
