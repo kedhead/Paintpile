@@ -186,5 +186,6 @@ export function SubmitEntryDialog({ challengeId, onSuccess, children }: SubmitEn
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            );
+        </>
+    );
 }
