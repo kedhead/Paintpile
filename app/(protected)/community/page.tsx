@@ -130,11 +130,16 @@ export default function CommunityPage() {
                                                     {challenge.description}
                                                 </p>
 
+                                                import {CountdownTimer} from '@/components/ui/CountdownTimer';
+
+                                                // ... (inside the component return)
+
                                                 <div className="flex justify-center items-center gap-6 py-4 text-sm text-muted-foreground">
                                                     <div className="flex items-center gap-2">
-                                                        <Calendar className="w-4 h-4" />
-                                                        <span>Ends {formatDistanceToNow(challenge.endDate.toDate(), { addSuffix: true })}</span>
+                                                        <span className="text-xs uppercase tracking-widest opacity-70">Time Remaining:</span>
+                                                        <CountdownTimer targetDate={challenge.endDate} />
                                                     </div>
+                                                    <div className="w-px h-8 bg-border" />
                                                     <div className="flex items-center gap-2">
                                                         <Paintbrush className="w-4 h-4" />
                                                         <span>{challenge.participantCount || 0} Entries</span>
