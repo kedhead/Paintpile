@@ -30,8 +30,19 @@ export default function UserProfilePage() {
       try {
         setLoading(true);
 
-        // Look up user by username
-        const foundUser = await getUserByUsername(username);
+        // 1. Look up user by username
+        let foundUser = await getUserByUsername(username);
+
+        // 2. If not found, try looking up by User ID (fallback for legacy/migrated URLs)
+        if (!foundUser) {
+          // We dynamically import here or just use the one we have? 
+          // We need getUserProfile. It was imported.
+          // However, getUserProfile requires an ID. 'username' param might be an ID.
+          const userById = await getUserProfile(username);
+          if (userById) {
+            foundUser = userById;
+          }
+        }
 
         if (!foundUser) {
           setNotFound(true);

@@ -75,6 +75,7 @@ export async function createArmy(
         'army',
         {
           armyName: armyData.name,
+          armyPhotoUrl: armyData.customPhotoUrl, // Add cover photo
           visibility: 'private', // New armies are private by default
         }
       );
@@ -152,8 +153,8 @@ export async function updateArmy(
     updatedAt: serverTimestamp(),
   });
 
-  // If visibility is changing, update the activity metadata
-  if (updates.isPublic !== undefined) {
+  // If visibility or photo is changing, update the activity metadata
+  if (updates.isPublic !== undefined || updates.customPhotoUrl !== undefined) {
     try {
       const activitiesRef = collection(db, 'activities');
       const q = query(
@@ -167,16 +168,24 @@ export async function updateArmy(
 
       if (!snapshot.empty) {
         const activityDoc = snapshot.docs[0];
-        const activityUpdates: any = {
-          'metadata.visibility': updates.isPublic ? 'public' : 'private'
-        };
+        const activityUpdates: any = {};
+
+        if (updates.isPublic !== undefined) {
+          activityUpdates['metadata.visibility'] = updates.isPublic ? 'public' : 'private';
+        }
+
+        if (updates.customPhotoUrl !== undefined) {
+          activityUpdates['metadata.armyPhotoUrl'] = updates.customPhotoUrl;
+        }
 
         // If becoming public, bump the createdAt timestamp so it appears at the top of feeds
         if (updates.isPublic) {
           activityUpdates.createdAt = serverTimestamp();
         }
 
-        await updateDoc(activityDoc.ref, activityUpdates);
+        if (Object.keys(activityUpdates).length > 0) {
+          await updateDoc(activityDoc.ref, activityUpdates);
+        }
       }
     } catch (err) {
       console.error('Error updating army activity visibility:', err);

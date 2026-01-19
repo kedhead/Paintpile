@@ -72,6 +72,7 @@ export async function createProject(
         'project',
         {
           projectName: projectData.name,
+          projectPhotoUrl: projectData.coverPhotoUrl, // Add cover photo
           status: projectData.status,
           visibility: 'private', // New projects are private by default
         }
@@ -201,8 +202,8 @@ export async function updateProject(
     updatedAt: serverTimestamp(),
   });
 
-  // If visibility is changing, update the activity metadata
-  if (updates.isPublic !== undefined) {
+  // If visibility or cover photo is changing, update the activity metadata
+  if (updates.isPublic !== undefined || updates.coverPhotoUrl !== undefined) {
     try {
       // Import dynamically to avoid circular dependency
       // We can just query activities directly.
@@ -219,20 +220,29 @@ export async function updateProject(
 
       if (!snapshot.empty) {
         const activityDoc = snapshot.docs[0];
+        const activityUpdates: any = {};
 
-        const activityUpdates: any = {
-          'metadata.visibility': updates.isPublic ? 'public' : 'private'
-        };
+        // Update visibility if changed
+        if (updates.isPublic !== undefined) {
+          activityUpdates['metadata.visibility'] = updates.isPublic ? 'public' : 'private';
+        }
+
+        // Update photo if changed
+        if (updates.coverPhotoUrl !== undefined) {
+          activityUpdates['metadata.projectPhotoUrl'] = updates.coverPhotoUrl;
+        }
 
         // KEY FIX: If becoming public, bump the createdAt timestamp so it appears at the top of feeds
         if (updates.isPublic) {
           activityUpdates.createdAt = serverTimestamp();
         }
 
-        await updateDoc(activityDoc.ref, activityUpdates);
+        if (Object.keys(activityUpdates).length > 0) {
+          await updateDoc(activityDoc.ref, activityUpdates);
+        }
       }
     } catch (err) {
-      console.error('Error updating activity visibility:', err);
+      console.error('Error updating activity visibility/photo:', err);
     }
   }
 }
