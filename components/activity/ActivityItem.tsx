@@ -1,8 +1,16 @@
+'use client';
+
 import { Activity, ACTIVITY_MESSAGES } from '@/types/activity';
-import { Heart, MessageCircle, UserPlus, Shield, Palette, BookOpen, CheckCircle, Globe, MoreHorizontal, Share2, ArrowUpRight } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Shield, Palette, BookOpen, CheckCircle, Globe, MoreHorizontal, Share2, ArrowUpRight, Copy, Eye, Flag } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/Button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface ActivityItemProps {
   activity: Activity;
@@ -26,6 +34,14 @@ export function ActivityItem({ activity }: ActivityItemProps) {
       default:
         return '#';
     }
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}${getTargetUrl()}`;
+    navigator.clipboard.writeText(url);
+    // Could add toast here
   };
 
   const timeAgo = activity.createdAt
@@ -99,9 +115,31 @@ export function ActivityItem({ activity }: ActivityItemProps) {
             </p>
           </div>
         </div>
-        <button className="text-muted-foreground hover:text-foreground">
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
+
+        {/* Action Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="text-muted-foreground hover:text-foreground outline-none transition-colors">
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-[#1a1d24] border-border text-foreground">
+            <DropdownMenuItem asChild className="focus:bg-muted/10 cursor-pointer">
+              <Link href={getTargetUrl()} className="flex items-center w-full">
+                <Eye className="w-4 h-4 mr-2 text-muted-foreground" />
+                <span>View Project</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleShare} className="focus:bg-muted/10 cursor-pointer">
+              <Copy className="w-4 h-4 mr-2 text-muted-foreground" />
+              <span>Share Link</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer">
+              <Flag className="w-4 h-4 mr-2" />
+              <span>Report Content</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Hero Image or Fallback */}

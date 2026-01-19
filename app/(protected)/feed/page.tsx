@@ -4,11 +4,10 @@ import { FeedSidebarLeft } from '@/components/feed/FeedSidebarLeft';
 import { FeedWidgetsRight } from '@/components/feed/FeedWidgetsRight';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
 
-export default function FeedPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
+export default async function FeedPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const searchParams = await props.searchParams;
   const feedType = (searchParams.type as 'following' | 'global') || 'global';
 
   return (
