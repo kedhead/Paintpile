@@ -8,7 +8,7 @@ import Link from 'next/link';
 export default function AdminChallengesPage() {
     return (
         <div className="min-h-screen bg-background p-6 md:p-10">
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-3xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
                         <Shield className="w-8 h-8 text-primary" />
