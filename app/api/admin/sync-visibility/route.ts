@@ -92,6 +92,31 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // 3. Prune Orphaned Activities (Ghost Posts)
+        // We'll check the most recent 100 activities to clean up recently deleted items
+        const recentActivities = await adminDb.collection('activities')
+            .orderBy('createdAt', 'desc')
+            .limit(100)
+            .get();
+
+        console.log(`Checking ${recentActivities.size} recent activities for orphans...`);
+
+        // Use Promise.all to check existence in parallel
+        await Promise.all(recentActivities.docs.map(async (actDoc) => {
+            const act = actDoc.data();
+            if (act.type === 'project_created' || act.type === 'army_created') {
+                const targetCollection = act.type === 'project_created' ? 'projects' : 'armies';
+                const targetRef = adminDb.collection(targetCollection).doc(act.targetId);
+                const targetSnap = await targetRef.get();
+
+                if (!targetSnap.exists) {
+                    console.log(`Deleting orphan activity ${actDoc.id} (Target ${act.targetId} missing)`);
+                    batch.delete(actDoc.ref);
+                    updateCount++;
+                }
+            }
+        }));
+
         if (updateCount > 0) {
             await batch.commit();
         }

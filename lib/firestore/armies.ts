@@ -272,6 +272,22 @@ export async function deleteArmy(armyId: string, userId: string): Promise<void> 
   const armyRef = doc(db, 'armies', armyId);
   batch.delete(armyRef);
 
+  // KEY FIX: Also delete the associated Feed Activity
+  try {
+    const activitiesRef = collection(db, 'activities');
+    const q = query(
+      activitiesRef,
+      where('type', '==', 'army_created'),
+      where('targetId', '==', armyId)
+    );
+    const activitySnap = await getDocs(q);
+    activitySnap.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+  } catch (err) {
+    console.error('Error queuing army activity deletion:', err);
+  }
+
   await batch.commit();
 
   // Decrement user's army count (if we add this stat)

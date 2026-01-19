@@ -358,6 +358,22 @@ export async function deleteProject(projectId: string, userId: string): Promise<
   const projectRef = doc(db, 'projects', projectId);
   batch.delete(projectRef);
 
+  // KEY FIX: Also delete the associated Feed Activity
+  try {
+    const activitiesRef = collection(db, 'activities');
+    const q = query(
+      activitiesRef,
+      where('type', '==', 'project_created'),
+      where('targetId', '==', projectId)
+    );
+    const activitySnap = await getDocs(q);
+    activitySnap.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+  } catch (err) {
+    console.error('Error queuing activity deletion:', err);
+  }
+
   await batch.commit();
 
   // Decrement user's project count
