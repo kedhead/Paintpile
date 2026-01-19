@@ -259,7 +259,8 @@ export class OneMinClient {
     formData.append('asset', blob, 'image.png'); // Filename is required by some APIs
 
     try {
-      const response = await fetch(getApiUrl('/api/ai/onemin-client/generate-image'), {
+      // FIX: Use the constructed external URL, not a local proxy
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           // Do NOT set Content-Type here, let fetch set it with boundary
@@ -330,7 +331,8 @@ export class OneMinClient {
     const url = `${this.baseUrl}${endpoint}`;
 
     try {
-      const response = await fetch(getApiUrl('/api/ai/onemin-client/generate-image'), {
+      // FIX: Use the constructed external URL (baseUrl + endpoint)
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
