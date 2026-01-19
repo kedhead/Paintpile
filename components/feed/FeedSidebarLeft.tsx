@@ -3,14 +3,15 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Home, Users, Bookmark, TrendingUp, Hash } from 'lucide-react';
+import { Home, Users, Bookmark } from 'lucide-react';
 import { getUserFollowing } from '@/lib/firestore/follows';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 interface FollowedUser {
     userId: string;
-    username: string;
+    username: string; // The URL slug
+    displayName: string; // The visual name
     photoUrl?: string;
     isOnline?: boolean; // Mock status
 }
@@ -25,37 +26,26 @@ export function FeedSidebarLeft() {
             if (!currentUser) return;
             try {
                 const follows = await getUserFollowing(currentUser.uid);
-                // Transform to simplified user objects (in a real app, we'd fetch full profiles or cache this)
-                // For now, we'll use the data we have and maybe fetch profiles if needed, 
-                // but follows collection usually has minimal data. 
-                // Actually getUserFollowing returns Follow objects which contain some target data? 
-                // Let's check follows.ts - usually it just has IDs. 
-                // The Follow type has followerId, followingId.
-                // We might need to fetch user profiles. 
-                // For efficiency/demo, I'll mock the hookup or fetch minimal.
-                // Wait, the follows collection DOES NOT store username/photo. 
-                // We need to fetch profiles. 
 
-                // Optimisation: Just mock for now or fetch top 5.
-                // Let's assume we fetch top 5 for the "Followed Artists" list.
+                // Fetch profiles for the followed users
                 const topFollows = follows.slice(0, 5);
-                // We need to fetch user profiles for these IDs.
-                // Importing getUserProfile would be best.
 
-                // Dynamic import to avoid circular dep issues just in case
+                // Dynamic import to avoid circular dep issues
                 const { getUserProfile } = await import('@/lib/firestore/users');
 
                 const users = await Promise.all(topFollows.map(async (f) => {
                     const profile = await getUserProfile(f.followingId);
                     return {
                         userId: f.followingId,
-                        username: profile?.displayName || 'Unknown',
+                        username: profile?.username || '',
+                        displayName: profile?.displayName || 'Unknown',
                         photoUrl: profile?.photoURL,
                         isOnline: Math.random() > 0.5 // Mock status
                     };
                 }));
 
-                setFollowedUsers(users);
+                // Filter out users without valid usernames/profiles
+                setFollowedUsers(users.filter(u => u.username));
             } catch (err) {
                 console.error('Error loading followed users:', err);
             } finally {
@@ -68,13 +58,11 @@ export function FeedSidebarLeft() {
     const navItems = [
         { icon: Home, label: 'Global Feed', href: '/feed' },
         { icon: Users, label: 'Followed Artists', href: '/feed?type=following' },
-        { icon: TrendingUp, label: 'Trending Groups', href: '/feed?type=trending' },
+
         { icon: Bookmark, label: 'Saved Projects', href: '/feed?type=saved' },
     ];
 
-    const trendingGroups = [
-        'SpaceMarines', 'Chaos_Legions', 'Grimdark_Style', 'Oil_Washes', 'NMM_Gold'
-    ];
+
 
     return (
         <div className="space-y-8 sticky top-24">
@@ -126,7 +114,7 @@ export function FeedSidebarLeft() {
                                     )}
                                 </div>
                                 <span className="text-sm font-medium text-foreground group-hover:text-orange-500 transition-colors">
-                                    {user.username}
+                                    {user.displayName}
                                 </span>
                             </Link>
                         ))
@@ -134,24 +122,7 @@ export function FeedSidebarLeft() {
                 </div>
             </div>
 
-            {/* Trending Groups */}
-            <div>
-                <h3 className="px-4 text-xs font-bold text-muted-foreground/50 uppercase tracking-widest mb-4">
-                    Trending Groups
-                </h3>
-                <div className="px-4 flex flex-wrap gap-2">
-                    {trendingGroups.map(tag => (
-                        <Link
-                            key={tag}
-                            href={`/search?q=${tag}`}
-                            className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/20 hover:bg-orange-500/10 hover:text-orange-500 border border-transparent hover:border-orange-500/20 text-[10px] uppercase font-bold tracking-wide transition-all"
-                        >
-                            <Hash className="w-3 h-3 mr-1 opacity-50" />
-                            {tag.replace('_', ' ')}
-                        </Link>
-                    ))}
-                </div>
-            </div>
+
         </div>
     );
 }
