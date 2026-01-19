@@ -19,10 +19,10 @@ export default function FeedPage() {
           <div className="flex items-end justify-between px-2 md:px-0">
             <div>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-foreground">
-                Community <span className="text-primary/50">Feed</span>
+                My <span className="text-primary/50">Feed</span>
               </h1>
               <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mt-1">
-                Updates from the frontline of painting
+                Updates from users you follow
               </p>
             </div>
             {/* Visual Tabs (logic handled in active component, just placeholder for layout match or we can move tabs here later) */}

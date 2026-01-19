@@ -151,6 +151,37 @@ export async function updateArmy(
     ...updates,
     updatedAt: serverTimestamp(),
   });
+
+  // If visibility is changing, update the activity metadata
+  if (updates.isPublic !== undefined) {
+    try {
+      const activitiesRef = collection(db, 'activities');
+      const q = query(
+        activitiesRef,
+        where('type', '==', 'army_created'),
+        where('targetId', '==', armyId),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const activityDoc = snapshot.docs[0];
+        const activityUpdates: any = {
+          'metadata.visibility': updates.isPublic ? 'public' : 'private'
+        };
+
+        // If becoming public, bump the createdAt timestamp so it appears at the top of feeds
+        if (updates.isPublic) {
+          activityUpdates.createdAt = serverTimestamp();
+        }
+
+        await updateDoc(activityDoc.ref, activityUpdates);
+      }
+    } catch (err) {
+      console.error('Error updating army activity visibility:', err);
+    }
+  }
 }
 
 /**

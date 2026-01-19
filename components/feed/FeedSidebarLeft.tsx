@@ -35,17 +35,28 @@ export function FeedSidebarLeft() {
 
                 const users = await Promise.all(topFollows.map(async (f) => {
                     const profile = await getUserProfile(f.followingId);
+
+                    // Fallback username logic if field is missing (legacy users)
+                    let safeUsername = profile?.username || '';
+                    if (!safeUsername && profile?.displayName) {
+                        // Create a temporary slug if username is missing
+                        safeUsername = profile.displayName.toLowerCase().replace(/\s+/g, '-');
+                    }
+                    if (!safeUsername) {
+                        safeUsername = f.followingId; // Last resort: use ID
+                    }
+
                     return {
                         userId: f.followingId,
-                        username: profile?.username || '',
-                        displayName: profile?.displayName || 'Unknown',
+                        username: safeUsername,
+                        displayName: profile?.displayName || 'Unknown Artist',
                         photoUrl: profile?.photoURL,
                         isOnline: Math.random() > 0.5 // Mock status
                     };
                 }));
 
-                // Filter out users without valid usernames/profiles
-                setFollowedUsers(users.filter(u => u.username));
+                // Keep users as long as we have valid ID
+                setFollowedUsers(users);
             } catch (err) {
                 console.error('Error loading followed users:', err);
             } finally {
