@@ -7,8 +7,10 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+    let step = 'init';
     try {
         // 1. Verify Admin Auth
+        step = 'auth_verification';
         const auth = await verifyAuth(request);
         if (!auth) return unauthorizedResponse();
         if (!auth.isAdmin) return forbiddenResponse();
@@ -24,8 +26,10 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Initialize AI Client
+        step = 'ai_client_init';
         const aiClient = createOneMinClient();
         if (!aiClient) {
+            console.error('[BadgeGen] MIN_API_KEY is not set');
             return NextResponse.json(
                 { success: false, error: 'AI service not configured (Missing Key)' },
                 { status: 503 }
@@ -33,45 +37,49 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. Generate Image
-        // Optimize prompt for icons
+        step = 'ai_generation';
         const stylePrompt = style || 'flat vector icon, white background, simple, high contrast, minimalistic, game badge style';
         const fullPrompt = `${prompt}, ${stylePrompt}`;
 
         console.log('[BadgeGen] Generating icon for:', fullPrompt);
 
-        // Usage: generateImage returns a URL
+        // Optimize: Use 'dall-e-3' if 'midjourney' is failing/flakey or verify model
+        // Using 'midjourney' as per original plan
         const imageUrl = await aiClient.generateImage({
             prompt: fullPrompt,
-            model: 'midjourney', // or 'dall-e-3' if preferred, stick to efficient ones
+            model: 'midjourney',
             aspectRatio: '1:1'
         });
 
+        if (!imageUrl) throw new Error("AI Client returned empty URL");
         console.log('[BadgeGen] Generated URL:', imageUrl);
 
         // 4. Download Image
-        // Use the client's download helper if available, or simple fetch
+        step = 'image_download';
         let imageBuffer: Buffer;
         try {
             if (imageUrl.startsWith('https://')) {
                 const res = await fetch(imageUrl);
-                if (!res.ok) throw new Error(`Failed to fetch generated image: ${res.status}`);
+                if (!res.ok) throw new Error(`Failed to fetch generated image: ${res.status} ${res.statusText}`);
                 const arrayBuffer = await res.arrayBuffer();
                 imageBuffer = Buffer.from(arrayBuffer);
             } else {
-                // Should be a URL, but handle potential errors
-                // Attempt to use client download helper if it's a path
                 imageBuffer = await aiClient.downloadAsset(imageUrl);
             }
-        } catch (downloadError) {
+        } catch (downloadError: any) {
             console.error('[BadgeGen] Download failed:', downloadError);
             return NextResponse.json(
-                { success: false, error: 'Failed to download generated image from AI provider' },
+                { success: false, error: `Failed to download: ${downloadError.message}`, debug_url: imageUrl },
                 { status: 502 }
             );
         }
 
         // 5. Upload to Firebase Storage
-        const bucket = getAdminStorage().bucket();
+        step = 'firebase_init';
+        const storage = getAdminStorage(); // Might throw if creds invalid
+        const bucket = storage.bucket();
+
+        step = 'firebase_upload';
         const timestamp = Date.now();
         const random = Math.floor(Math.random() * 10000);
         const fileName = `badges/icons/${timestamp}_${random}.png`;
@@ -94,9 +102,13 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error('[BadgeGen] Error:', error);
+        console.error(`[BadgeGen] Failed at step "${step}":`, error);
         return NextResponse.json(
-            { success: false, error: error.message || 'Internal Server Error' },
+            {
+                success: false,
+                error: `Server Error (${step}): ${error.message}`,
+                details: error.toString()
+            },
             { status: 500 }
         );
     }
