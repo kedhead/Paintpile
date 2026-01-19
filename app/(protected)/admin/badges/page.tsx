@@ -8,14 +8,11 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Spinner } from '@/components/ui/Spinner';
-import { ArrowLeft, Edit2, Trash2, Plus, RefreshCw, Trophy } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, Plus, RefreshCw, Trophy, Sparkles, Loader2, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge, BADGE_DEFINITIONS, BadgeCategory, BadgeTier } from '@/types/badge';
 import { getAllBadges, createBadge, updateBadge, deleteBadge, createBadgeWithId } from '@/lib/firestore/badges';
-
-// ...
-
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
 
 const badgeSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -34,11 +31,137 @@ const badgeSchema = z.object({
 
 type FormData = z.infer<typeof badgeSchema>;
 
+function GenerateIconDialog({
+    open,
+    onOpenChange,
+    onSelect
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSelect: (url: string) => void;
+}) {
+    const [prompt, setPrompt] = useState('');
+    const [style, setStyle] = useState('flat vector icon, white background, simple, high contrast');
+    const [loading, setLoading] = useState(false);
+    const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleGenerate = async () => {
+        if (!prompt.trim()) return;
+
+        setLoading(true);
+        setError(null);
+        setGeneratedUrl(null);
+
+        try {
+            const token = await import('@/lib/firebase/auth').then(m => m.auth.currentUser?.getIdToken());
+            if (!token) throw new Error("Not authenticated");
+
+            const res = await fetch('/api/ai/generate-badge-icon', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ prompt, style })
+            });
+
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.error || 'Generation failed');
+
+            setGeneratedUrl(data.url);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-purple-500" />
+                        Generate AI Icon
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Describe the icon</label>
+                        <Input
+                            placeholder="e.g. Golden paint brush with sparkles"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Style Modifier</label>
+                        <Input
+                            value={style}
+                            onChange={(e) => setStyle(e.target.value)}
+                            className="text-muted-foreground text-xs"
+                        />
+                    </div>
+
+                    {error && (
+                        <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-md">
+                            {error}
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="flex flex-col items-center justify-center py-8 space-y-2">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                            <p className="text-sm text-muted-foreground">Dreaming up your icon...</p>
+                        </div>
+                    )}
+
+                    {generatedUrl && (
+                        <div className="flex flex-col items-center space-y-4 pt-4">
+                            <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-primary/20 shadow-lg">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={generatedUrl} alt="Generated Icon" className="w-full h-full object-cover" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Preview</p>
+                        </div>
+                    )}
+                </div>
+
+                <DialogFooter className="flex gap-2 sm:justify-end">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+
+                    {!generatedUrl ? (
+                        <Button onClick={handleGenerate} disabled={loading || !prompt.trim()}>
+                            {loading ? 'Generating...' : 'Generate'}
+                        </Button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={handleGenerate} disabled={loading}>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Try Again
+                            </Button>
+                            <Button onClick={() => { onSelect(generatedUrl); onOpenChange(false); }}>
+                                Use This Icon
+                            </Button>
+                        </div>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function BadgeManagerPage() {
     const [badges, setBadges] = useState<Badge[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(badgeSchema),
@@ -177,7 +300,18 @@ export default function BadgeManagerPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Icon (Emoji)</label>
-                                        <Input {...register('icon')} placeholder="🏆" />
+                                        <div className="flex gap-2">
+                                            <Input {...register('icon')} placeholder="🏆" />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                title="Generate with AI"
+                                                onClick={() => setIsGenerateDialogOpen(true)}
+                                            >
+                                                <Sparkles className="w-4 h-4 text-purple-500" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -287,7 +421,12 @@ export default function BadgeManagerPage() {
                                             borderColor: watchedColor
                                         }}
                                     >
-                                        {watchedIcon || '🏆'}
+                                        {watchedIcon && watchedIcon.startsWith('http') ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={watchedIcon} alt="Badge" className="w-full h-full object-cover rounded-full" />
+                                        ) : (
+                                            watchedIcon || '🏆'
+                                        )}
                                     </div>
                                     <h4 className="font-bold text-lg">{watchedName || 'Badge Name'}</h4>
                                     <span className="text-xs uppercase tracking-wider px-2 py-0.5 rounded bg-secondary text-secondary-foreground font-semibold">
@@ -320,7 +459,12 @@ export default function BadgeManagerPage() {
                                     borderColor: badge.color
                                 }}
                             >
-                                {badge.icon}
+                                {badge.icon && badge.icon.startsWith('http') ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={badge.icon} alt={badge.name} className="w-full h-full object-cover rounded-full" />
+                                ) : (
+                                    badge.icon || '🏆'
+                                )}
                             </div>
                             <div>
                                 <h3 className="font-bold">{badge.name}</h3>
@@ -342,6 +486,12 @@ export default function BadgeManagerPage() {
                     <p>No badges found. Click "Seed Defaults" to start.</p>
                 </div>
             )}
+
+            <GenerateIconDialog
+                open={isGenerateDialogOpen}
+                onOpenChange={setIsGenerateDialogOpen}
+                onSelect={(url) => setValue('icon', url, { shouldDirty: true })}
+            />
         </div>
     );
 }
