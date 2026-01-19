@@ -102,8 +102,14 @@ export async function getFollowingActivities(
     return [];
   }
 
-  // Extract user IDs
-  const followingIds = following.map((follow) => follow.followingId);
+  // Extract user IDs, explicitly excluding the current user to prevent self-posts in "Following"
+  const followingIds = following
+    .map((follow) => follow.followingId)
+    .filter(id => id !== userId);
+
+  if (followingIds.length === 0) {
+    return [];
+  }
 
   // Firestore 'in' query is limited to 30 items, so we need to chunk if necessary
   const chunkSize = 30;
@@ -245,4 +251,66 @@ export async function pruneOldActivities(daysToKeep: number = 90): Promise<numbe
   }
 
   return deleteCount;
+}
+
+/**
+ * Get activities from projects the user has saved
+ * Acts as a "Saved Projects Feed"
+ */
+export async function getSavedActivities(
+  userId: string,
+  limitCount: number = 50
+): Promise<Activity[]> {
+  // Import dynamically or assume imported
+  const { getUserSavedProjects } = await import('./projects');
+
+  const savedProjects = await getUserSavedProjects(userId);
+
+  if (savedProjects.length === 0) {
+    return [];
+  }
+
+  const projectIds = savedProjects.map(p => p.projectId);
+
+  // Firestore 'in' query limit is 30
+  const chunkSize = 30;
+  const chunks: string[][] = [];
+
+  for (let i = 0; i < projectIds.length; i += chunkSize) {
+    chunks.push(projectIds.slice(i, i + chunkSize));
+  }
+
+  const activitiesRef = collection(db, 'activities');
+  const allActivities: Activity[] = [];
+
+  for (const chunk of chunks) {
+    // We want activities related to these projects.
+    // Usually 'targetId' matches 'projectId'.
+    // We filter for primary activities (project_created) or updates? 
+    // Ideally everything with targetId in chunk.
+    const q = query(
+      activitiesRef,
+      where('targetId', 'in', chunk),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const activities = querySnapshot.docs.map(doc => doc.data() as Activity);
+    allActivities.push(...activities);
+  }
+
+  // Client side sort combined results
+  allActivities.sort((a, b) => {
+    const aTime = a.createdAt?.toMillis?.() || 0;
+    const bTime = b.createdAt?.toMillis?.() || 0;
+    return bTime - aTime;
+  });
+
+  // Filter out private? getUserSavedProjects returns full projects, 
+  // but if a project became private, maybe we shouldn't show it unless owner?
+  // But 'Saved' implies I have access. 
+  // Let's rely on standard activity visibility filtering in UI (which checks if private & not owner).
+
+  return allActivities.slice(0, limitCount);
 }

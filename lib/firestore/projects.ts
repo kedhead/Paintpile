@@ -379,3 +379,102 @@ export async function getPublicProjects(limitCount: number = 10): Promise<Projec
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map((doc) => doc.data() as Project);
 }
+
+// =============================================================================
+// SAVED PROJECTS (Bookmarking)
+// =============================================================================
+
+export interface SavedProject {
+  userId: string;
+  projectId: string;
+  savedAt: any; // Timestamp
+}
+
+/**
+ * Save/bookmark a project
+ */
+export async function saveProject(
+  userId: string,
+  projectId: string
+): Promise<void> {
+  const batch = writeBatch(db);
+
+  // Add to user's saved projects
+  const saveRef = doc(db, 'users', userId, 'savedProjects', projectId);
+  const savedProject: SavedProject = {
+    userId,
+    projectId,
+    savedAt: serverTimestamp(),
+  };
+
+  batch.set(saveRef, savedProject);
+
+  // Increment project save count (if we had one, but we don't seem to track it on Project model yet)
+  // We can add it if we want, but Project type didn't have 'saves' field in createProject.
+  // We'll skip incrementing for now to avoid types error, or just do it blindly if we trust Firestore flexible schema.
+  // Better to skip modifying project doc to avoid "unknown field" confusion in frontend types.
+
+  await batch.commit();
+}
+
+/**
+ * Unsave/unbookmark a project
+ */
+export async function unsaveProject(
+  userId: string,
+  projectId: string
+): Promise<void> {
+  const saveRef = doc(db, 'users', userId, 'savedProjects', projectId);
+  await deleteDoc(saveRef);
+}
+
+/**
+ * Check if user has saved a project
+ */
+export async function isProjectSaved(
+  userId: string,
+  projectId: string
+): Promise<boolean> {
+  const saveRef = doc(db, 'users', userId, 'savedProjects', projectId);
+  const saveSnap = await getDoc(saveRef);
+  return saveSnap.exists();
+}
+
+/**
+ * Get all projects saved by a user
+ */
+export async function getUserSavedProjects(
+  userId: string
+): Promise<Project[]> {
+  const savedProjectsRef = collection(db, 'users', userId, 'savedProjects');
+  const querySnapshot = await getDocs(savedProjectsRef);
+
+  const savedData = querySnapshot.docs.map((doc) => doc.data() as SavedProject);
+
+  if (savedData.length === 0) return [];
+
+  // Fetch full project data
+  // We might need to chunk this if > 10 items (using 'in' query) OR just fetch individually
+  // Fetching individually is safer for unknown array size limits, though slower.
+  // Given we expect < 100 saved projects usually, Promise.all is okay.
+
+  const projectPromises = savedData.map(async (savedItem) => {
+    const project = await getProject(savedItem.projectId);
+    if (project) {
+      // Attach savedAt for sorting if needed, but we return Project[]
+      return { project, savedAt: savedItem.savedAt };
+    }
+    return null;
+  });
+
+  const results = await Promise.all(projectPromises);
+
+  return results
+    .filter((r): r is { project: Project; savedAt: any } => r !== null)
+    .sort((a, b) => {
+      const aTime = a.savedAt?.toMillis?.() || 0;
+      const bTime = b.savedAt?.toMillis?.() || 0;
+      return bTime - aTime; // Descending
+    })
+    .map(r => r.project);
+}

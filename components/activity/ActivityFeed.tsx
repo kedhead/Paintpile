@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserActivities, getFollowingActivities, getGlobalActivities } from '@/lib/firestore/activities';
+import { getUserActivities, getFollowingActivities, getGlobalActivities, getSavedActivities } from '@/lib/firestore/activities';
 import { Activity, ActivityType } from '@/types/activity';
 import { ActivityItem } from './ActivityItem';
 import { Button } from '@/components/ui/Button';
 
 interface ActivityFeedProps {
-  feedType: 'user' | 'following' | 'global';
+  feedType: 'user' | 'following' | 'global' | 'saved';
   userId?: string; // Required for 'user' feed type
   limitCount?: number;
 }
@@ -24,6 +24,7 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
     async function loadActivities() {
       if (feedType === 'user' && !userId) return;
       if (feedType === 'following' && !currentUser) return;
+      if (feedType === 'saved' && !currentUser) return;
 
       try {
         setLoading(true);
@@ -38,6 +39,11 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
           case 'following':
             if (currentUser) {
               loadedActivities = await getFollowingActivities(currentUser.uid, limitCount);
+            }
+            break;
+          case 'saved':
+            if (currentUser) {
+              loadedActivities = await getSavedActivities(currentUser.uid, limitCount);
             }
             break;
           case 'global':
@@ -155,7 +161,9 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
               {filter === 'all'
                 ? feedType === 'following'
                   ? 'No activities from people you follow yet. Follow some users to see their updates!'
-                  : 'No activities yet'
+                  : feedType === 'saved'
+                    ? 'You haven\'t saved any projects yet. Bookmark projects to see their updates here!'
+                    : 'No activities yet'
                 : `No ${filter.replace('_', ' ')} activities`}
             </p>
           </div>

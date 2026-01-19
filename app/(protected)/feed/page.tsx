@@ -7,8 +7,10 @@ import { ActivityFeed } from '@/components/activity/ActivityFeed';
 export default async function FeedPage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const searchParams = await props.searchParams;
-  const feedType = (searchParams.type as 'following' | 'global') || 'global';
+  const resolvedParams = await props.searchParams;
+  const rawType = resolvedParams?.type;
+  const typeString = Array.isArray(rawType) ? rawType[0] : rawType;
+  const feedType = (typeString === 'following' || typeString === 'saved') ? typeString : 'global';
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -24,12 +26,18 @@ export default async function FeedPage(props: {
           <div className="flex items-end justify-between px-2 md:px-0">
             <div>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-foreground">
-                {feedType === 'following' ? 'My' : 'Community'} <span className="text-primary/50">Feed</span>
+                {feedType === 'following'
+                  ? 'My'
+                  : feedType === 'saved'
+                    ? 'Saved'
+                    : 'Community'} <span className="text-primary/50">{feedType === 'saved' ? 'Projects' : 'Feed'}</span>
               </h1>
               <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mt-1">
                 {feedType === 'following'
                   ? 'Updates from users you follow'
-                  : 'Updates from the frontline of painting'}
+                  : feedType === 'saved'
+                    ? 'Updates from your bookmarked projects'
+                    : 'Updates from the frontline of painting'}
               </p>
             </div>
             {/* Visual Tabs (logic handled in active component, just placeholder for layout match or we can move tabs here later) */}
