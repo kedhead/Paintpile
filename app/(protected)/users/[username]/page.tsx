@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { FollowButton } from '@/components/social/FollowButton';
-import { getUserByUsername, getUserPublicProjects } from '@/lib/firestore/users';
+import { getUserByUsername, getUserPublicProjects, getUserProfile } from '@/lib/firestore/users';
 import { getProjectPhotos } from '@/lib/firestore/photos';
 import { User } from '@/types/user';
 import { Project } from '@/types/project';

@@ -17,6 +17,7 @@ export interface Project {
   photoCount: number;
   paintCount: number;
   featuredPhotoId?: string;
+  coverPhotoUrl?: string;      // Denormalized URL for feed/lists
   likeCount: number;
   commentCount: number;
   armyIds?: string[];          // IDs of armies this project belongs to
@@ -24,6 +25,7 @@ export interface Project {
 
 export interface ProjectFormData {
   name: string;
+  coverPhotoUrl?: string;      // Optional cover photo URL
   description?: string;
   status: ProjectStatus;
   quantity?: number;
