@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAnthropicClient } from '@/lib/ai/anthropic-client';
 import { findMatchingPaints } from '@/lib/ai/color-matcher';
 import { checkQuota, trackUsage, OPERATION_COSTS } from '@/lib/ai/usage-tracker';
+import { trackAIUsage } from '@/lib/ai/tracking';
 import { getUserProfile } from '@/lib/firestore/users';
 import { ColorSuggestion } from '@/types/photo';
 
@@ -117,6 +118,7 @@ export async function POST(request: NextRequest) {
     // Track actual usage
     const actualCost = estimatedCost;
     await trackUsage(userId, 'paintSuggestions', actualCost);
+    await trackAIUsage(userId, 'suggest_paints');
 
     const processingTime = Date.now() - startTime;
 

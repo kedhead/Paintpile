@@ -3,6 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createOneMinClient } from '@/lib/ai/onemin-client';
 import { getAdminApp } from '@/lib/firebase/admin';
+import { trackAIUsage } from '@/lib/ai/tracking';
 
 export async function POST(request: NextRequest) {
     getAdminApp();
@@ -130,6 +131,10 @@ export async function POST(request: NextRequest) {
             // Don't fail the whole request if badge awarding fails
         }
         // -------------------------
+
+        // --- TRACK USAGE ---
+        await trackAIUsage(userId, 'critic');
+        // -------------------
 
         return NextResponse.json(jsonResult);
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 import { createOneMinClient } from '@/lib/ai/onemin-client';
 import { getAdminStorage } from '@/lib/firebase/admin';
+import { trackAIUsage } from '@/lib/ai/tracking';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -95,6 +96,11 @@ export async function POST(request: NextRequest) {
         const publicUrl = file.publicUrl();
 
         console.log('[BadgeGen] Uploaded to:', publicUrl);
+
+        // Track Usage
+        if (auth?.uid) {
+            await trackAIUsage(auth.uid, 'badge_icon');
+        }
 
         return NextResponse.json({
             success: true,

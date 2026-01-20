@@ -4,6 +4,7 @@ import { getReplicateClient } from '@/lib/ai/replicate-client';
 import { trackUsage, checkQuota } from '@/lib/ai/usage-tracker';
 import { OPERATION_COSTS } from '@/lib/ai/constants';
 import { getAdminStorage } from '@/lib/firebase/admin';
+import { trackAIUsage } from '@/lib/ai/tracking';
 import sharp from 'sharp';
 
 // Force dynamic to avoid static generation
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
 
         // 8. Track usage (credits deducted)
         await trackUsage(userId, 'recolor', OPERATION_COSTS.recolor);
+        await trackAIUsage(userId, 'recolor');
 
         return NextResponse.json({
             success: true,
