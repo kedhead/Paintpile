@@ -35,8 +35,15 @@ export async function POST(request: NextRequest) {
         const mediaType = imageRes.headers.get('content-type') || 'image/jpeg';
 
         const prompt = `
-        Act as a professional miniature painting judge (Golden Demon standard). 
-        Analyze the painting quality of this miniature. Focus on:
+        Act as a strict and critical miniature painting judge (Golden Demon standard). 
+        Analyze the painting quality of this miniature. Be honest and critical; do not sugarcoat issues.
+        
+        CRITICAL CHECKLIST:
+        - BASING: Is the base painted and finished? If not, the grade cannot be higher than "Beginner".
+        - MOLD LINES: Are there visible mold lines?
+        - COVERAGE: Is primer showing through?
+        
+        Analyze:
         1. Technical application (smoothness, thinning, brush control)
         2. Contrast (volumes, shadows, highlights)
         3. Advanced techniques (NMM, OSL, Weathering, Blending)
@@ -45,8 +52,8 @@ export async function POST(request: NextRequest) {
         Provide the result strictly as a valid JSON object with this schema:
         {
             "grade": "Beginner" | "Tabletop Ready" | "Tabletop Plus" | "Display Standard" | "Competition Level",
-            "score": number, // 1-100
-            "analysis": "Short summary (max 2 sentences)",
+            "score": number, // 1-100. Be strict. 50 is average tabletop.
+            "analysis": "Short summary (max 2 sentences). Mention if base is unfinished.",
             "technical_strengths": ["string", "string"],
             "improvements": ["string", "string"],
             "colors": "Comment on usage of colors"
