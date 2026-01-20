@@ -47,11 +47,18 @@ export default function FeaturesPage() {
             bg: 'bg-amber-500/10',
         },
         {
-            title: 'AI Paint Tools',
-            description: 'Use our AI to identify paints from images, suggest similar colors across brands, or generate recipe ideas.',
+            title: 'AI Paint Critic',
+            description: 'Get instant, competition-level feedback on your miniatures. Our AI judge grades your work and provides specific tips for improvement.',
             icon: Sparkles,
             color: 'text-purple-500',
             bg: 'bg-purple-500/10',
+        },
+        {
+            title: 'AI Paint Tools',
+            description: 'Use our AI to identify paints from images, suggest similar colors across brands, or generate recipe ideas.',
+            icon: Palette,
+            color: 'text-indigo-500',
+            bg: 'bg-indigo-500/10',
         },
 
         {
