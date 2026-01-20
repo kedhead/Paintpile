@@ -216,6 +216,16 @@ export const BADGE_DEFINITIONS: Record<string, Omit<Badge, 'id' | 'createdAt'>> 
     requirement: 'Generate 1 AI recipe',
     points: 25,
   },
+  ai_critic_user: {
+    name: 'Brave Soul',
+    description: 'Sought the harsh judgment of the AI Critic',
+    category: 'special',
+    tier: 'bronze',
+    icon: '⚖️',
+    color: '#9B59B6',
+    requirement: 'Use AI Paint Critic',
+    points: 10,
+  },
 
   // Social badges
   likes_50: {

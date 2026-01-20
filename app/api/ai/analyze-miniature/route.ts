@@ -1,9 +1,8 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createOneMinClient } from '@/lib/ai/onemin-client';
 import { getAdminApp } from '@/lib/firebase/admin';
-
 
 export async function POST(request: NextRequest) {
     getAdminApp();
@@ -14,7 +13,8 @@ export async function POST(request: NextRequest) {
         }
 
         const token = authHeader.split('Bearer ')[1];
-        await getAuth().verifyIdToken(token);
+        const decodedToken = await getAuth().verifyIdToken(token);
+        const userId = decodedToken.uid;
 
         const { imageUrl } = await request.json();
 
@@ -76,6 +76,60 @@ export async function POST(request: NextRequest) {
         }
 
         const jsonResult = JSON.parse(cleanResult);
+
+        // --- AWARD BADGE LOGIC ---
+        try {
+            const db = getFirestore();
+            const badgeId = 'ai_critic_user';
+            const userBadgeRef = db.collection('users').doc(userId).collection('earned_badges').doc(badgeId);
+            const userBadgeSnap = await userBadgeRef.get();
+
+            if (!userBadgeSnap.exists) {
+                const badgeRef = db.collection('badges').doc(badgeId);
+                const badgeSnap = await badgeRef.get();
+                const badgeName = badgeSnap.exists ? badgeSnap.data()?.name : 'Brave Soul';
+
+                const batch = db.batch();
+
+                // 1. Create earned badge
+                batch.set(userBadgeRef, {
+                    badgeId,
+                    userId,
+                    earnedAt: FieldValue.serverTimestamp(),
+                    notificationSent: true,
+                    showcased: false
+                });
+
+                // 2. Increment user stats
+                const userRef = db.collection('users').doc(userId);
+                batch.update(userRef, {
+                    'stats.badgeCount': FieldValue.increment(1)
+                });
+
+                // 3. Create Notification
+                const notificationRef = db.collection('users').doc(userId).collection('notifications').doc();
+                batch.set(notificationRef, {
+                    userId,
+                    type: 'badge_earned',
+                    actorId: 'system',
+                    actorUsername: 'PaintPile',
+                    targetId: badgeId,
+                    targetType: 'badge',
+                    targetName: badgeName,
+                    message: `You earned the "${badgeName}" badge!`,
+                    actionUrl: '/badges',
+                    read: false,
+                    createdAt: FieldValue.serverTimestamp()
+                });
+
+                await batch.commit();
+                console.log(`[AI Critic] Awarded badge ${badgeId} to user ${userId}`);
+            }
+        } catch (badgeError) {
+            console.error('[AI Critic] Failed to award badge:', badgeError);
+            // Don't fail the whole request if badge awarding fails
+        }
+        // -------------------------
 
         return NextResponse.json(jsonResult);
 
