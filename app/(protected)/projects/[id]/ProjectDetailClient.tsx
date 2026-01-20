@@ -34,6 +34,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
 import { ShareButton } from '@/components/ui/ShareButton';
+import { MiniatureAnalyzer } from '@/components/ai/MiniatureAnalyzer';
 
 export default function ProjectDetailClient() {
     const params = useParams();
@@ -459,6 +460,16 @@ export default function ProjectDetailClient() {
                                             <Star className="w-3 h-3" />
                                             Set as Featured
                                         </button>
+                                    )}
+
+                                    {/* AI Critic - Bottom Right */}
+                                    {isOwner && (
+                                        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <MiniatureAnalyzer
+                                                imageUrl={photos[currentPhotoIndex].url}
+                                                projectName={project.name}
+                                            />
+                                        </div>
                                     )}
                                 </>
                             ) : (
