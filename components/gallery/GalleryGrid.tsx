@@ -203,35 +203,41 @@ export function GalleryGrid() {
                 </div>
 
                 {/* Content Type Filter */}
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                    {contentTypeButtons.map((filter) => (
-                        <Button
-                            key={filter.id}
-                            variant={contentTypeFilter === filter.id ? "default" : "outline"}
-                            onClick={() => setContentTypeFilter(filter.id)}
-                            className="whitespace-nowrap"
-                        >
-                            {filter.label}
-                        </Button>
-                    ))}
-                </div>
-
-                {/* Status Filter (Projects Only) */}
-                {contentTypeFilter !== 'armies' && (
-                    <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                        {statusFilterButtons.map((filter) => (
+                <div className="flex flex-col md:flex-row md:items-center gap-4 overflow-x-auto no-scrollbar pb-2 md:pb-0">
+                    {/* Content Type Filter */}
+                    <div className="flex gap-2 shrink-0">
+                        {contentTypeButtons.map((filter) => (
                             <Button
                                 key={filter.id}
-                                variant={statusFilter === filter.id ? "default" : "outline"}
-                                onClick={() => setStatusFilter(filter.id)}
-                                size="sm"
-                                className="capitalize whitespace-nowrap"
+                                variant={contentTypeFilter === filter.id ? "default" : "outline"}
+                                onClick={() => setContentTypeFilter(filter.id)}
+                                className="whitespace-nowrap"
                             >
-                                {filter.label.replace("-", " ")}
+                                {filter.label}
                             </Button>
                         ))}
                     </div>
-                )}
+
+                    {/* Separator & Status Filter */}
+                    {contentTypeFilter !== 'armies' && (
+                        <>
+                            <div className="hidden md:block w-px h-6 bg-border mx-2 shrink-0" />
+                            <div className="flex gap-2 shrink-0">
+                                {statusFilterButtons.map((filter) => (
+                                    <Button
+                                        key={filter.id}
+                                        variant={statusFilter === filter.id ? "default" : "outline"}
+                                        onClick={() => setStatusFilter(filter.id)}
+                                        size="sm"
+                                        className="capitalize whitespace-nowrap"
+                                    >
+                                        {filter.label.replace("-", " ")}
+                                    </Button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Grid */}
