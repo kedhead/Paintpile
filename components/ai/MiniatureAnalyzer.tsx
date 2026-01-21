@@ -137,10 +137,9 @@ export function MiniatureAnalyzer({ imageUrl, projectName }: MiniatureAnalyzerPr
                             </div>
                         )}
 
-                        {/* Result State */}
-                        {result && (
-                            <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-                                {/* Score & Grade Header */}
+                        <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                            {/* Score & Grade Header with Share Button */}
+                            <div className="flex flex-col gap-4">
                                 <div className={`p-6 rounded-xl border-2 flex flex-col md:flex-row items-center justify-between gap-4 ${getGradeColor(result.grade)}`}>
                                     <div className="text-center md:text-left">
                                         <div className="text-sm uppercase tracking-wider font-semibold opacity-70">Assessed Level</div>
@@ -155,50 +154,128 @@ export function MiniatureAnalyzer({ imageUrl, projectName }: MiniatureAnalyzerPr
                                     </div>
                                 </div>
 
-                                {/* Analysis Summary */}
-                                <div className="bg-muted/30 p-4 rounded-lg italic text-muted-foreground border border-border/50">
-                                    "{result.analysis}"
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    {/* Strengths */}
-                                    <div className="space-y-3">
-                                        <h3 className="font-semibold flex items-center gap-2 text-green-500">
-                                            <CheckCircle2 className="w-5 h-5" />
-                                            Strengths
-                                        </h3>
-                                        <ul className="space-y-2">
-                                            {result.technical_strengths.map((item, i) => (
-                                                <li key={i} className="text-sm bg-green-500/5 border border-green-500/10 p-2 rounded">
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    {/* Improvements */}
-                                    <div className="space-y-3">
-                                        <h3 className="font-semibold flex items-center gap-2 text-amber-500">
-                                            <XCircle className="w-5 h-5" />
-                                            Areas for Improvement
-                                        </h3>
-                                        <ul className="space-y-2">
-                                            {result.improvements.map((item, i) => (
-                                                <li key={i} className="text-sm bg-amber-500/5 border border-amber-500/10 p-2 rounded">
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                {/* Color Comments */}
-                                <div className="space-y-2">
-                                    <h3 className="font-semibold text-sm uppercase text-muted-foreground">Color Composition</h3>
-                                    <p className="text-sm leading-relaxed">{result.colors}</p>
+                                <div className="flex justify-end">
+                                    <ShareScoreButton result={result} projectName={projectName} imageUrl={imageUrl} />
                                 </div>
                             </div>
+
+                            {/* Analysis Summary */}
+                            <div className="bg-muted/30 p-4 rounded-lg italic text-muted-foreground border border-border/50">
+                                "{result.analysis}"
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Strengths */}
+                                <div className="space-y-3">
+                                    <h3 className="font-semibold flex items-center gap-2 text-green-500">
+                                        <CheckCircle2 className="w-5 h-5" />
+                                        Strengths
+                                    </h3>
+                                    <ul className="space-y-2">
+                                        {result.technical_strengths.map((item, i) => (
+                                            <li key={i} className="text-sm bg-green-500/5 border border-green-500/10 p-2 rounded">
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Improvements */}
+                                <div className="space-y-3">
+                                    <h3 className="font-semibold flex items-center gap-2 text-amber-500">
+                                        <XCircle className="w-5 h-5" />
+                                        Areas for Improvement
+                                    </h3>
+                                    <ul className="space-y-2">
+                                        {result.improvements.map((item, i) => (
+                                            <li key={i} className="text-sm bg-amber-500/5 border border-amber-500/10 p-2 rounded">
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            {/* Color Comments */}
+                            <div className="space-y-2">
+                                <h3 className="font-semibold text-sm uppercase text-muted-foreground">Color Composition</h3>
+                                <p className="text-sm leading-relaxed">{result.colors}</p>
+                            </div>
+                        </div>
                         )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+}
+
+function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisResult, projectName: string, imageUrl: string }) {
+    const [open, setOpen] = useState(false);
+    const [downloading, setDownloading] = useState(false);
+
+    // Construct OG URL
+    const params = new URLSearchParams({
+        score: result.score.toString(),
+        grade: result.grade,
+        project: projectName,
+        analysis: result.analysis,
+        // We might want to skip image URL here if it's huge/Blob, but for now assuming firestore URL is fine
+        // If it's too long, next/og might complain. Let's try it.
+        image: imageUrl
+    });
+    const ogUrl = `/api/og/critic-card?${params.toString()}`;
+
+    const handleShare = async () => {
+        try {
+            setDownloading(true);
+            const response = await fetch(ogUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'paintpile-critic-score.png', { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: `AI Critic Score: ${result.score}/100`,
+                    text: `My miniature "${projectName}" got a ${result.score}/100 from the AI Critic!`,
+                    files: [file]
+                });
+            } else {
+                // Fallback to download
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'paintpile-critic-score.png';
+                link.click();
+            }
+        } catch (error) {
+            console.error('Sharing failed:', error);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    return (
+        <>
+            <Button size="sm" variant="secondary" onClick={() => setOpen(true)} className="gap-2">
+                <Sparkles className="w-4 h-4" />
+                Share Brag Card
+            </Button>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Share Your Result</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                        <div className="rounded-xl overflow-hidden border shadow-lg bg-slate-900 aspect-[1200/630]">
+                            <img src={ogUrl} alt="Brag Card" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
+                            <Button onClick={handleShare} disabled={downloading} className="gap-2">
+                                {downloading ? <Spinner className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                                {typeof navigator !== 'undefined' && navigator.canShare ? 'Share Image' : 'Download Image'}
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
