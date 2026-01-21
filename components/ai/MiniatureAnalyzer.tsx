@@ -137,71 +137,73 @@ export function MiniatureAnalyzer({ imageUrl, projectName }: MiniatureAnalyzerPr
                             </div>
                         )}
 
-                        <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-                            {/* Score & Grade Header with Share Button */}
-                            <div className="flex flex-col gap-4">
-                                <div className={`p-6 rounded-xl border-2 flex flex-col md:flex-row items-center justify-between gap-4 ${getGradeColor(result.grade)}`}>
-                                    <div className="text-center md:text-left">
-                                        <div className="text-sm uppercase tracking-wider font-semibold opacity-70">Assessed Level</div>
-                                        <div className="text-3xl font-bold">{result.grade}</div>
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-background/50 p-3 rounded-lg backdrop-blur-sm">
-                                        <Trophy className={`w-8 h-8 ${getScoreColor(result.score)}`} />
-                                        <div>
-                                            <div className="text-xs uppercase font-bold opacity-50">Score</div>
-                                            <div className={`text-2xl font-black ${getScoreColor(result.score)}`}>{result.score}/100</div>
+                        {/* Result State */}
+                        {result && (
+                            <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                                {/* Score & Grade Header with Share Button */}
+                                <div className="flex flex-col gap-4">
+                                    <div className={`p-6 rounded-xl border-2 flex flex-col md:flex-row items-center justify-between gap-4 ${getGradeColor(result.grade)}`}>
+                                        <div className="text-center md:text-left">
+                                            <div className="text-sm uppercase tracking-wider font-semibold opacity-70">Assessed Level</div>
+                                            <div className="text-3xl font-bold">{result.grade}</div>
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-background/50 p-3 rounded-lg backdrop-blur-sm">
+                                            <Trophy className={`w-8 h-8 ${getScoreColor(result.score)}`} />
+                                            <div>
+                                                <div className="text-xs uppercase font-bold opacity-50">Score</div>
+                                                <div className={`text-2xl font-black ${getScoreColor(result.score)}`}>{result.score}/100</div>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    <div className="flex justify-end">
+                                        <ShareScoreButton result={result} projectName={projectName} imageUrl={imageUrl} />
+                                    </div>
                                 </div>
 
-                                <div className="flex justify-end">
-                                    <ShareScoreButton result={result} projectName={projectName} imageUrl={imageUrl} />
-                                </div>
-                            </div>
-
-                            {/* Analysis Summary */}
-                            <div className="bg-muted/30 p-4 rounded-lg italic text-muted-foreground border border-border/50">
-                                "{result.analysis}"
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {/* Strengths */}
-                                <div className="space-y-3">
-                                    <h3 className="font-semibold flex items-center gap-2 text-green-500">
-                                        <CheckCircle2 className="w-5 h-5" />
-                                        Strengths
-                                    </h3>
-                                    <ul className="space-y-2">
-                                        {result.technical_strengths.map((item, i) => (
-                                            <li key={i} className="text-sm bg-green-500/5 border border-green-500/10 p-2 rounded">
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                {/* Analysis Summary */}
+                                <div className="bg-muted/30 p-4 rounded-lg italic text-muted-foreground border border-border/50">
+                                    "{result.analysis}"
                                 </div>
 
-                                {/* Improvements */}
-                                <div className="space-y-3">
-                                    <h3 className="font-semibold flex items-center gap-2 text-amber-500">
-                                        <XCircle className="w-5 h-5" />
-                                        Areas for Improvement
-                                    </h3>
-                                    <ul className="space-y-2">
-                                        {result.improvements.map((item, i) => (
-                                            <li key={i} className="text-sm bg-amber-500/5 border border-amber-500/10 p-2 rounded">
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {/* Strengths */}
+                                    <div className="space-y-3">
+                                        <h3 className="font-semibold flex items-center gap-2 text-green-500">
+                                            <CheckCircle2 className="w-5 h-5" />
+                                            Strengths
+                                        </h3>
+                                        <ul className="space-y-2">
+                                            {result.technical_strengths.map((item, i) => (
+                                                <li key={i} className="text-sm bg-green-500/5 border border-green-500/10 p-2 rounded">
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    {/* Improvements */}
+                                    <div className="space-y-3">
+                                        <h3 className="font-semibold flex items-center gap-2 text-amber-500">
+                                            <XCircle className="w-5 h-5" />
+                                            Areas for Improvement
+                                        </h3>
+                                        <ul className="space-y-2">
+                                            {result.improvements.map((item, i) => (
+                                                <li key={i} className="text-sm bg-amber-500/5 border border-amber-500/10 p-2 rounded">
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Color Comments */}
+                                <div className="space-y-2">
+                                    <h3 className="font-semibold text-sm uppercase text-muted-foreground">Color Composition</h3>
+                                    <p className="text-sm leading-relaxed">{result.colors}</p>
                                 </div>
                             </div>
-
-                            {/* Color Comments */}
-                            <div className="space-y-2">
-                                <h3 className="font-semibold text-sm uppercase text-muted-foreground">Color Composition</h3>
-                                <p className="text-sm leading-relaxed">{result.colors}</p>
-                            </div>
-                        </div>
                         )}
                     </div>
                 </DialogContent>
@@ -233,7 +235,7 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
             const blob = await response.blob();
             const file = new File([blob], 'paintpile-critic-score.png', { type: 'image/png' });
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     title: `AI Critic Score: ${result.score}/100`,
                     text: `My miniature "${projectName}" got a ${result.score}/100 from the AI Critic!`,
@@ -273,7 +275,7 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
                             <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
                             <Button onClick={handleShare} disabled={downloading} className="gap-2">
                                 {downloading ? <Spinner className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                                {typeof navigator !== 'undefined' && navigator.canShare ? 'Share Image' : 'Download Image'}
+                                {typeof navigator !== 'undefined' && typeof navigator.canShare === 'function' ? 'Share Image' : 'Download Image'}
                             </Button>
                         </div>
                     </div>
