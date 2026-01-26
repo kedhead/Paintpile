@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Trophy, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Sparkles, Trophy, AlertTriangle, CheckCircle2, XCircle, Share2, Download, Facebook, Twitter } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
     Dialog,
@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/Dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
+import { createActivity } from '@/lib/firestore/activities';
+import { getUserProfile } from '@/lib/firestore/users';
 
 interface AnalysisResult {
     grade: 'Beginner' | 'Tabletop Ready' | 'Tabletop Plus' | 'Display Standard' | 'Competition Level';
@@ -24,10 +26,11 @@ interface AnalysisResult {
 
 interface MiniatureAnalyzerProps {
     imageUrl: string;
+    thumbnailUrl?: string;
     projectName: string;
 }
 
-export function MiniatureAnalyzer({ imageUrl, projectName }: MiniatureAnalyzerProps) {
+export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName }: MiniatureAnalyzerProps) {
     const { getAuthToken } = useAuth();
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -157,7 +160,11 @@ export function MiniatureAnalyzer({ imageUrl, projectName }: MiniatureAnalyzerPr
                                     </div>
 
                                     <div className="flex justify-end">
-                                        <ShareScoreButton result={result} projectName={projectName} imageUrl={imageUrl} />
+                                        <ShareScoreButton
+                                            result={result}
+                                            projectName={projectName}
+                                            imageUrl={thumbnailUrl || imageUrl}
+                                        />
                                     </div>
                                 </div>
 
@@ -213,8 +220,12 @@ export function MiniatureAnalyzer({ imageUrl, projectName }: MiniatureAnalyzerPr
 }
 
 function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisResult, projectName: string, imageUrl: string }) {
+    const { currentUser } = useAuth();
     const [open, setOpen] = useState(false);
     const [downloading, setDownloading] = useState(false);
+    const [postingToFeed, setPostingToFeed] = useState(false);
+    const [shareError, setShareError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     // Construct OG URL
     const params = new URLSearchParams({
@@ -222,44 +233,95 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
         grade: result.grade,
         project: projectName,
         analysis: result.analysis,
-        // We might want to skip image URL here if it's huge/Blob, but for now assuming firestore URL is fine
-        // If it's too long, next/og might complain. Let's try it.
         image: imageUrl
     });
     const ogUrl = `/api/og/critic-card?${params.toString()}`;
 
-    const handleShare = async () => {
+    const handleDownload = async () => {
         try {
             setDownloading(true);
-            const response = await fetch(ogUrl);
-            const blob = await response.blob();
-            const file = new File([blob], 'paintpile-critic-score.png', { type: 'image/png' });
+            setShareError(null);
 
-            if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    title: `AI Critic Score: ${result.score}/100`,
-                    text: `My miniature "${projectName}" got a ${result.score}/100 from the AI Critic!`,
-                    files: [file]
-                });
-            } else {
-                // Fallback to download
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'paintpile-critic-score.png';
-                link.click();
-            }
+            const response = await fetch(ogUrl);
+            if (!response.ok) throw new Error('Failed to generate image');
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `paintpile-critic-${result.score}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Sharing failed:', error);
+            console.error('Download failed:', error);
+            setShareError('Failed to download image.');
         } finally {
             setDownloading(false);
         }
     };
 
+    const handlePostToFeed = async () => {
+        if (!currentUser) return;
+
+        try {
+            setPostingToFeed(true);
+            setShareError(null);
+
+            const userProfile = await getUserProfile(currentUser.uid);
+
+            await createActivity(
+                currentUser.uid,
+                userProfile?.displayName || 'Unknown Artist',
+                userProfile?.photoURL,
+                'project_critique_shared',
+                projectName,
+                'project',
+                {
+                    projectName: projectName,
+                    projectPhotoUrl: imageUrl,
+                    critiqueScore: result.score,
+                    critiqueGrade: result.grade,
+                    visibility: 'public'
+                }
+            );
+
+            setSuccessMessage('Posted to your activity feed!');
+            setTimeout(() => setSuccessMessage(null), 3000);
+        } catch (error) {
+            console.error('Feed post failed:', error);
+            setShareError('Failed to post to feed.');
+        } finally {
+            setPostingToFeed(false);
+        }
+    };
+
+    const handleSocialShare = (platform: 'twitter' | 'facebook' | 'reddit') => {
+        const text = `I just got a ${result.score}/100 on my miniature "${projectName}" from the PaintPile AI Critic! 🎨✨`;
+        const url = typeof window !== 'undefined' ? window.location.href : 'https://paintpile.app';
+
+        let shareUrl = '';
+        switch (platform) {
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+                break;
+            case 'facebook':
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+                break;
+            case 'reddit':
+                shareUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
+                break;
+        }
+
+        window.open(shareUrl, '_blank', 'width=600,height=400');
+    };
+
     return (
         <>
             <Button size="sm" variant="secondary" onClick={() => setOpen(true)} className="gap-2">
-                <Sparkles className="w-4 h-4" />
-                Share Brag Card
+                <Share2 className="w-4 h-4" />
+                Share Result
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
@@ -267,16 +329,85 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
                     <DialogHeader>
                         <DialogTitle>Share Your Result</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-6">
-                        <div className="rounded-xl overflow-hidden border shadow-lg bg-slate-900 aspect-[1200/630]">
-                            <img src={ogUrl} alt="Brag Card" className="w-full h-full object-cover" />
+
+                    <div className="grid md:grid-cols-5 gap-6">
+                        {/* Preview Image */}
+                        <div className="md:col-span-3">
+                            <div className="rounded-xl overflow-hidden border shadow-lg bg-slate-900 aspect-[1200/630] relative group">
+                                <img
+                                    src={ogUrl}
+                                    alt="Brag Card"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        // Fallback if OG generation fails
+                                        e.currentTarget.src = imageUrl;
+                                        e.currentTarget.style.opacity = "0.5";
+                                    }}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="secondary" size="sm" onClick={handleDownload} disabled={downloading}>
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Save Image
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
-                            <Button onClick={handleShare} disabled={downloading} className="gap-2">
-                                {downloading ? <Spinner className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                                {typeof navigator !== 'undefined' && typeof navigator.canShare === 'function' ? 'Share Image' : 'Download Image'}
-                            </Button>
+
+                        {/* Actions */}
+                        <div className="md:col-span-2 space-y-4">
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">PaintPile Community</h4>
+                                <Button
+                                    className="w-full justify-start"
+                                    variant="outline"
+                                    onClick={handlePostToFeed}
+                                    disabled={postingToFeed || !!successMessage}
+                                >
+                                    {postingToFeed ? (
+                                        <Spinner className="w-4 h-4 mr-2" />
+                                    ) : (
+                                        <Sparkles className="w-4 h-4 mr-2 text-primary" />
+                                    )}
+                                    {successMessage || 'Post to Activity Feed'}
+                                </Button>
+                            </div>
+
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Social Media</h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button variant="outline" className="w-full justify-start" onClick={() => handleSocialShare('twitter')}>
+                                        <Twitter className="w-4 h-4 mr-2 text-sky-500" />
+                                        Twitter
+                                    </Button>
+                                    <Button variant="outline" className="w-full justify-start" onClick={() => handleSocialShare('facebook')}>
+                                        <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+                                        Facebook
+                                    </Button>
+                                    <Button variant="outline" className="w-full justify-start" onClick={() => handleSocialShare('reddit')}>
+                                        <div className="w-4 h-4 mr-2 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">r/</div>
+                                        Reddit
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Downloads</h4>
+                                <Button variant="secondary" className="w-full justify-start" onClick={handleDownload} disabled={downloading}>
+                                    {downloading ? (
+                                        <Spinner className="w-4 h-4 mr-2" />
+                                    ) : (
+                                        <Download className="w-4 h-4 mr-2" />
+                                    )}
+                                    Download Image
+                                </Button>
+                            </div>
+
+                            {shareError && (
+                                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    {shareError}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </DialogContent>

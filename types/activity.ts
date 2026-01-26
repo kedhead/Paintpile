@@ -14,7 +14,8 @@ export type ActivityType =
   | 'user_followed'        // User followed another user
   | 'comment_created'      // User commented on a project/army
   | 'project_updated'      // User updated a project (optional, could be noisy)
-  | 'army_updated';        // User updated an army (optional, could be noisy)
+  | 'army_updated'         // User updated an army (optional, could be noisy)
+  | 'project_critique_shared'; // User shared their AI critique score
 
 /**
  * Type of entity being referenced in activity
@@ -50,6 +51,10 @@ export interface ActivityMetadata {
   commentText?: string;
   commentPreview?: string;    // Truncated version
   targetName?: string;        // Generic target name (polymorphic)
+
+  // For critique activities
+  critiqueScore?: number;
+  critiqueGrade?: string;
 
   // Additional context
   status?: string;            // Project status (for project_completed)
@@ -129,4 +134,5 @@ export const ACTIVITY_MESSAGES: Record<ActivityType, (metadata: ActivityMetadata
   comment_created: (m) => `commented: "${m.commentPreview || m.commentText}"`,
   project_updated: (m) => `updated project: ${m.projectName}`,
   army_updated: (m) => `updated army: ${m.armyName}`,
+  project_critique_shared: (m) => `scored a ${m.critiqueScore}/100 on ${m.projectName}`,
 };

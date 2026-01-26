@@ -73,7 +73,7 @@ export function ActivityItem({ activity }: ActivityItemProps) {
   // Activity context message (e.g. "created a project")
   const actionText = ACTIVITY_MESSAGES[activity.type](activity.metadata).split(':')[0]; // Get just the action part
 
-  const isRichActivity = ['project_created', 'army_created', 'recipe_created'].includes(activity.type);
+  const isRichActivity = ['project_created', 'army_created', 'recipe_created', 'project_critique_shared'].includes(activity.type);
   const heroImage = activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl || (activity.type === 'recipe_created' ? activity.metadata.targetPhotoUrl : null); // Recipe might have one too
   const title = activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName;
   const description = activity.metadata.description || ''; // We might not have this in metadata yet, but good to fallback

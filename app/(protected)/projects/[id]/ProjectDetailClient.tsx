@@ -467,6 +467,7 @@ export default function ProjectDetailClient() {
                                         <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <MiniatureAnalyzer
                                                 imageUrl={photos[currentPhotoIndex].url}
+                                                thumbnailUrl={photos[currentPhotoIndex].thumbnailUrl}
                                                 projectName={project.name}
                                             />
                                         </div>
