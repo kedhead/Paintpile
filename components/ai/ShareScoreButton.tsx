@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Share2, Download, Facebook, Twitter, Instagram, Sparkles, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
@@ -15,6 +15,8 @@ import { createActivity } from '@/lib/firestore/activities';
 import { getUserProfile } from '@/lib/firestore/users';
 import { updateProject } from '@/lib/firestore/projects';
 import { Timestamp } from 'firebase/firestore';
+import { BragCard } from '@/components/ai/BragCard';
+import html2canvas from 'html2canvas';
 
 interface ShareScoreButtonProps {
     result: {
@@ -37,32 +39,35 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
     const [postingToFeed, setPostingToFeed] = useState(false);
     const [shareError, setShareError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const captureRef = useRef<HTMLDivElement>(null);
 
-    // Construct OG URL
-    const params = new URLSearchParams({
-        score: result.score.toString(),
-        grade: result.grade,
-        project: projectName,
-        analysis: result.analysis,
-        // image: imageUrl // Disabled to prevent URL length errors
-    });
-    const ogUrl = `/api/og/critic-card?${params.toString()}`;
+    const generateImageBlob = async (): Promise<Blob> => {
+        if (!captureRef.current) throw new Error('Capture element not found');
+
+        // Wait a brief moment to ensure images are loaded/rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const canvas = await html2canvas(captureRef.current, {
+            useCORS: true, // Important for loading external images (firebase storage)
+            scale: 2, // Higher quality
+            backgroundColor: '#0f172a', // Ensure background is dark
+            logging: false,
+        });
+
+        return new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => {
+                if (blob) resolve(blob);
+                else reject(new Error('Failed to generate image blob'));
+            }, 'image/png');
+        });
+    };
 
     const handleDownload = async () => {
         try {
             setDownloading(true);
             setShareError(null);
 
-            // Explicitly request image/png
-            const response = await fetch(ogUrl, {
-                headers: {
-                    'Accept': 'image/png'
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to generate image');
-
-            const blob = await response.blob();
+            const blob = await generateImageBlob();
 
             if (blob.size === 0) {
                 throw new Error('Generated image is empty');
@@ -130,8 +135,6 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
                 });
             } catch (projectUpdateError) {
                 console.error("Failed to update project with critique:", projectUpdateError);
-                // We still consider the share successful if the feed post worked, 
-                // but we might want to alert if the persistence failed.
             }
 
             setSuccessMessage('Posted to your activity feed!');
@@ -150,32 +153,27 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
 
         // Special handling for Instagram
         if (platform === 'instagram') {
-            // Try native sharing first (best for mobile Instagram Stories)
-            if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-                try {
-                    // We need the file to share to Instagram properly
-                    setDownloading(true);
-                    const response = await fetch(ogUrl);
-                    const blob = await response.blob();
-                    const file = new File([blob], 'paintpile-score.png', { type: 'image/png' });
+            try {
+                setDownloading(true);
+                // Generate the image client-side
+                const blob = await generateImageBlob();
+                const file = new File([blob], 'paintpile-score.png', { type: 'image/png' });
 
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'My PaintPile Score',
-                            text: text
-                        });
-                        return;
-                    }
-                } catch (err) {
-                    console.error('Instagram native share failed:', err);
-                    // Fallthrough to download fallback
-                } finally {
-                    setDownloading(false);
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'My PaintPile Score',
+                        text: text
+                    });
+                    return;
                 }
+            } catch (err) {
+                console.error('Instagram native share failed:', err);
+            } finally {
+                setDownloading(false);
             }
 
-            // Fallback for Desktop or if native share fails: Download + Alert
+            // Fallback: Download + Alert
             await handleDownload();
             setSuccessMessage("Image downloaded! You can now post it to Instagram.");
             setTimeout(() => setSuccessMessage(null), 5000);
@@ -200,6 +198,22 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
 
     return (
         <>
+            {/* Hidden Element for Capture */}
+            {open && (
+                <div style={{ position: 'absolute', top: -9999, left: -9999, width: 1200, height: 630 }}>
+                    <div ref={captureRef} style={{ width: '100%', height: '100%' }}>
+                        <BragCard
+                            score={result.score}
+                            grade={result.grade}
+                            analysis={result.analysis}
+                            projectName={projectName}
+                            imageUrl={imageUrl}
+                        // No date for the share card, cleaner look
+                        />
+                    </div>
+                </div>
+            )}
+
             <Button size="sm" variant="secondary" onClick={() => setOpen(true)} className="gap-2">
                 <Share2 className="w-4 h-4" />
                 Share Result
@@ -212,25 +226,16 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
                     </DialogHeader>
 
                     <div className="grid md:grid-cols-5 gap-6">
-                        {/* Preview Image */}
+                        {/* Preview */}
                         <div className="md:col-span-3">
-                            <div className="rounded-xl overflow-hidden border shadow-lg bg-slate-900 aspect-[1200/630] relative group">
-                                <img
-                                    src={ogUrl}
-                                    alt="Brag Card"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        // Fallback if OG generation fails
-                                        e.currentTarget.src = imageUrl;
-                                        e.currentTarget.style.opacity = "0.5";
-                                    }}
+                            <div className="rounded-xl overflow-hidden border shadow-lg bg-slate-900 group">
+                                <BragCard
+                                    score={result.score}
+                                    grade={result.grade}
+                                    analysis={result.analysis}
+                                    projectName={projectName}
+                                    imageUrl={imageUrl}
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="secondary" size="sm" onClick={handleDownload} disabled={downloading}>
-                                        <Download className="w-4 h-4 mr-2" />
-                                        Save Image
-                                    </Button>
-                                </div>
                             </div>
                         </div>
 
