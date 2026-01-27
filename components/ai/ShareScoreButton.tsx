@@ -216,8 +216,12 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
                         {/* Footer Branding for Capture */}
                         <div className="mt-8 pt-4 border-t border-slate-900/50 flex items-center justify-between text-slate-500">
                             <div className="flex items-center gap-2">
-                                <span className="text-xl">⚖️</span>
-                                <span className="font-bold">PaintPile.app</span>
+                                <img
+                                    src="/paintpile-logo.png"
+                                    alt="PaintPile Logo"
+                                    className="w-8 h-8 object-contain opacity-80"
+                                />
+                                <span className="font-bold tracking-wider text-slate-400">PaintPile.com</span>
                             </div>
                             {/* Optional: Add date? */}
                         </div>
