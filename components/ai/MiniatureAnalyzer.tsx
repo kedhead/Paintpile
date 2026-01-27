@@ -28,9 +28,10 @@ interface MiniatureAnalyzerProps {
     imageUrl: string;
     thumbnailUrl?: string;
     projectName: string;
+    projectId: string;
 }
 
-export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName }: MiniatureAnalyzerProps) {
+export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName, projectId }: MiniatureAnalyzerProps) {
     const { getAuthToken } = useAuth();
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -163,6 +164,7 @@ export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName }: Minia
                                         <ShareScoreButton
                                             result={result}
                                             projectName={projectName}
+                                            projectId={projectId}
                                             imageUrl={thumbnailUrl || imageUrl}
                                         />
                                     </div>
@@ -219,7 +221,7 @@ export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName }: Minia
     );
 }
 
-function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisResult, projectName: string, imageUrl: string }) {
+function ShareScoreButton({ result, projectName, projectId, imageUrl }: { result: AnalysisResult, projectName: string, projectId: string, imageUrl: string }) {
     const { currentUser } = useAuth();
     const [open, setOpen] = useState(false);
     const [downloading, setDownloading] = useState(false);
@@ -287,7 +289,7 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
                 userProfile?.displayName || 'Unknown Artist',
                 userProfile?.photoURL,
                 'project_critique_shared',
-                projectName,
+                projectId,
                 'project',
                 {
                     projectName: projectName,

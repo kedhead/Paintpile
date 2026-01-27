@@ -469,6 +469,7 @@ export default function ProjectDetailClient() {
                                                 imageUrl={photos[currentPhotoIndex].url}
                                                 thumbnailUrl={photos[currentPhotoIndex].thumbnailUrl}
                                                 projectName={project.name}
+                                                projectId={project.projectId}
                                             />
                                         </div>
                                     )}
