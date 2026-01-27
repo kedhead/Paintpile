@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Share2, Link as LinkIcon, Facebook, Twitter, Check } from 'lucide-react';
+import { Share2, Link as LinkIcon, Facebook, Twitter, Check, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
     DropdownMenu,
@@ -97,6 +97,10 @@ export function ShareButton({ title, text, url, className }: ShareButtonProps) {
                 <DropdownMenuItem onClick={() => openSocial('twitter')} className="cursor-pointer">
                     <Twitter className="w-4 h-4 mr-2 text-sky-500" />
                     Twitter
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopy} className="cursor-pointer">
+                    <Instagram className="w-4 h-4 mr-2 text-pink-500" />
+                    Instagram
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

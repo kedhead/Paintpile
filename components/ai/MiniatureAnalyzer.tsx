@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Trophy, AlertTriangle, CheckCircle2, XCircle, Share2, Download, Facebook, Twitter } from 'lucide-react';
+import { Sparkles, Trophy, AlertTriangle, CheckCircle2, XCircle, Share2, Download, Facebook, Twitter, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
     Dialog,
@@ -242,10 +242,21 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
             setDownloading(true);
             setShareError(null);
 
-            const response = await fetch(ogUrl);
+            // Explicitly request image/png
+            const response = await fetch(ogUrl, {
+                headers: {
+                    'Accept': 'image/png'
+                }
+            });
+
             if (!response.ok) throw new Error('Failed to generate image');
 
             const blob = await response.blob();
+
+            if (blob.size === 0) {
+                throw new Error('Generated image is empty');
+            }
+
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -256,7 +267,7 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
             URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Download failed:', error);
-            setShareError('Failed to download image.');
+            setShareError('Failed to download image. Please try again.');
         } finally {
             setDownloading(false);
         }
@@ -297,9 +308,43 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
         }
     };
 
-    const handleSocialShare = (platform: 'twitter' | 'facebook' | 'reddit') => {
+    const handleSocialShare = async (platform: 'twitter' | 'facebook' | 'reddit' | 'instagram') => {
         const text = `I just got a ${result.score}/100 on my miniature "${projectName}" from the PaintPile AI Critic! 🎨✨`;
         const url = typeof window !== 'undefined' ? window.location.href : 'https://paintpile.app';
+
+        // Special handling for Instagram
+        if (platform === 'instagram') {
+            // Try native sharing first (best for mobile Instagram Stories)
+            if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+                try {
+                    // We need the file to share to Instagram properly
+                    setDownloading(true);
+                    const response = await fetch(ogUrl);
+                    const blob = await response.blob();
+                    const file = new File([blob], 'paintpile-score.png', { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'My PaintPile Score',
+                            text: text
+                        });
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Instagram native share failed:', err);
+                    // Fallthrough to download fallback
+                } finally {
+                    setDownloading(false);
+                }
+            }
+
+            // Fallback for Desktop or if native share fails: Download + Alert
+            await handleDownload();
+            setSuccessMessage("Image downloaded! You can now post it to Instagram.");
+            setTimeout(() => setSuccessMessage(null), 5000);
+            return;
+        }
 
         let shareUrl = '';
         switch (platform) {
@@ -386,6 +431,10 @@ function ShareScoreButton({ result, projectName, imageUrl }: { result: AnalysisR
                                     <Button variant="outline" className="w-full justify-start" onClick={() => handleSocialShare('reddit')}>
                                         <div className="w-4 h-4 mr-2 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">r/</div>
                                         Reddit
+                                    </Button>
+                                    <Button variant="outline" className="w-full justify-start" onClick={() => handleSocialShare('instagram')}>
+                                        <Instagram className="w-4 h-4 mr-2 text-pink-500" />
+                                        Instagram
                                     </Button>
                                 </div>
                             </div>
