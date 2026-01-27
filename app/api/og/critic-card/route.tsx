@@ -2,7 +2,7 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
-export const runtime = 'nodejs'; // Changed from 'edge' to 'nodejs' for better fetch stability
+export const runtime = 'edge'; // Revert to edge for standard OG behavior
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
