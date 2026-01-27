@@ -100,7 +100,7 @@ export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
       grade: activity.metadata.critiqueGrade || 'Unranked',
       project: activity.metadata.projectName || 'Project',
       analysis: 'Check out my AI critique score!',
-      image: activity.metadata.projectPhotoUrl || ''
+      // image: activity.metadata.projectPhotoUrl || '' // Disabled to prevent URL length errors
     });
     // Use the API route to generate the image on the fly
     heroImage = `/api/og/critic-card?${params.toString()}`;

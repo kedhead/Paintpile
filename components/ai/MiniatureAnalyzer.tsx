@@ -235,7 +235,7 @@ function ShareScoreButton({ result, projectName, projectId, imageUrl }: { result
         grade: result.grade,
         project: projectName,
         analysis: result.analysis,
-        image: imageUrl
+        // image: imageUrl // Disabled to prevent URL length errors
     });
     const ogUrl = `/api/og/critic-card?${params.toString()}`;
 
