@@ -16,6 +16,7 @@ import { getUserProfile } from '@/lib/firestore/users';
 import { updateProject } from '@/lib/firestore/projects';
 import { Timestamp } from 'firebase/firestore';
 import { BragCard } from '@/components/ai/BragCard';
+import { CritiqueDetails } from '@/components/ai/CritiqueDetails';
 import html2canvas from 'html2canvas';
 
 interface ShareScoreButtonProps {
@@ -200,16 +201,26 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
         <>
             {/* Hidden Element for Capture */}
             {open && (
-                <div style={{ position: 'absolute', top: -9999, left: -9999, width: 1200, height: 630 }}>
-                    <div ref={captureRef} style={{ width: '100%', height: '100%' }}>
-                        <BragCard
-                            score={result.score}
-                            grade={result.grade}
-                            analysis={result.analysis}
-                            projectName={projectName}
-                            imageUrl={imageUrl}
-                        // No date for the share card, cleaner look
+                <div style={{ position: 'absolute', top: -9999, left: -9999, width: 900 }}>
+                    <div ref={captureRef} className="bg-slate-950 p-8 rounded-xl border border-slate-800 text-slate-100">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+                            <Sparkles className="w-8 h-8 text-purple-500" />
+                            <h2 className="text-2xl font-bold uppercase tracking-wide">AI Paint Critic: {projectName}</h2>
+                        </div>
+
+                        <CritiqueDetails
+                            result={result}
+                        // Do not pass share props to hide share button in capture
                         />
+
+                        {/* Footer Branding for Capture */}
+                        <div className="mt-8 pt-4 border-t border-slate-900/50 flex items-center justify-between text-slate-500">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl">⚖️</span>
+                                <span className="font-bold">PaintPile.app</span>
+                            </div>
+                            {/* Optional: Add date? */}
+                        </div>
                     </div>
                 </div>
             )}
@@ -228,7 +239,19 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
                     <div className="grid md:grid-cols-5 gap-6">
                         {/* Preview */}
                         <div className="md:col-span-3">
-                            <div className="rounded-xl overflow-hidden border shadow-lg bg-slate-900 group">
+                            <div className="rounded-xl overflow-hidden border shadow-lg bg-slate-900 group relative">
+                                {/* Use BragCard for the small preview, or switch to full view if preferred. 
+                                    User asked for download to match. 
+                                    Let's keep BragCard here for "card" preview but download gets full details?
+                                    Actually user said "It should match the critic completely for the download".
+                                    The preview currently shows BragCard.
+                                    Maybe we should show the full report in preview too? 
+                                    But BragCard is better for "Feed" preview.
+                                    Let's keep BragCard in preview as it represents the "Social Card", 
+                                    but the Download button explicitly says "Download Image".
+                                    Wait, if I download a full report, maybe the preview should reflect that?
+                                    Let's just change the capture logic first as requested.
+                                */}
                                 <BragCard
                                     score={result.score}
                                     grade={result.grade}
@@ -236,7 +259,13 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
                                     projectName={projectName}
                                     imageUrl={imageUrl}
                                 />
+                                <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-white">
+                                    Preview (Feed Card)
+                                </div>
                             </div>
+                            <p className="text-xs text-muted-foreground mt-2 text-center">
+                                * Download will include the full critique details.
+                            </p>
                         </div>
 
                         {/* Actions */}
@@ -288,7 +317,7 @@ export function ShareScoreButton({ result, projectName, projectId, imageUrl }: S
                                     ) : (
                                         <Download className="w-4 h-4 mr-2" />
                                     )}
-                                    Download Image
+                                    Download Full Report
                                 </Button>
                             </div>
 
