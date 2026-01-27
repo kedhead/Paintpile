@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
+
 import { saveProject } from '@/lib/firestore/projects';
+import { deleteActivity } from '@/lib/firestore/activities';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,9 +18,10 @@ import {
 
 interface ActivityItemProps {
   activity: Activity;
+  onDelete?: (activityId: string) => void;
 }
 
-export function ActivityItem({ activity }: ActivityItemProps) {
+export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
   const { currentUser } = useAuth();
 
   // Get the target URL
@@ -63,6 +66,19 @@ export function ActivityItem({ activity }: ActivityItemProps) {
       }
     } catch (error) {
       console.error('Error saving project:', error);
+    }
+  }
+
+
+  const handleDelete = async () => {
+    if (!currentUser || currentUser.uid !== activity.userId) return;
+    if (!confirm('Are you sure you want to delete this post?')) return;
+
+    try {
+      await deleteActivity(activity.activityId);
+      onDelete?.(activity.activityId);
+    } catch (error) {
+      console.error('Error deleting activity:', error);
     }
   };
 
@@ -169,6 +185,13 @@ export function ActivityItem({ activity }: ActivityItemProps) {
               <Flag className="w-4 h-4 mr-2" />
               <span>Report Content</span>
             </DropdownMenuItem>
+
+            {(currentUser?.uid === activity.userId || (currentUser as any)?.isAdmin) && (
+              <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer">
+                <Flag className="w-4 h-4 mr-2" />
+                <span>Delete Post</span>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

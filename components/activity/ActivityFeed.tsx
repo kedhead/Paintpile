@@ -80,6 +80,10 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
     return a.type === filter;
   });
 
+  const handleDelete = (activityId: string) => {
+    setActivities(prev => prev.filter(a => a.activityId !== activityId));
+  };
+
   return (
     <div className="space-y-4">
       {/* Filter Tabs */}
@@ -170,7 +174,11 @@ export function ActivityFeed({ feedType, userId, limitCount = 50 }: ActivityFeed
         ) : (
           <div>
             {filteredActivities.map((activity) => (
-              <ActivityItem key={activity.activityId} activity={activity} />
+              <ActivityItem
+                key={activity.activityId}
+                activity={activity}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}

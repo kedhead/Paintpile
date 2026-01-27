@@ -192,6 +192,15 @@ export async function getBragBoardActivities(
 }
 
 /**
+ * Delete a single activity
+ * Used for removing individual posts/shares
+ */
+export async function deleteActivity(activityId: string): Promise<void> {
+  const activityRef = doc(db, 'activities', activityId);
+  await deleteDoc(activityRef);
+}
+
+/**
  * Delete all activities for a specific target entity
  * Used when a project/army/recipe is deleted
  */

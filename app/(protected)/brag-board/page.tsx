@@ -56,7 +56,11 @@ export default function BragBoardPage() {
             ) : (
                 <div className="space-y-6">
                     {activities.map((activity) => (
-                        <ActivityItem key={activity.activityId} activity={activity} />
+                        <ActivityItem
+                            key={activity.activityId}
+                            activity={activity}
+                            onDelete={(id) => setActivities(prev => prev.filter(a => a.activityId !== id))}
+                        />
                     ))}
                 </div>
             )}
