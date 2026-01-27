@@ -35,7 +35,8 @@ export async function GET(req: NextRequest) {
             >
                 {/* Background Image (Blurred) if provided */}
                 {/* Background Image (Blurred) if provided */}
-                {imageUrl && (
+                {/* Background Image (Blurred) if provided */}
+                {/* {imageUrl && (
                     <img
                         src={imageUrl}
                         alt="Background"
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
                             filter: 'blur(8px)',
                         }}
                     />
-                )}
+                )} */}
 
                 {/* Content Container */}
                 <div
