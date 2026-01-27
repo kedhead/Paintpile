@@ -36,6 +36,13 @@ import { TagInput } from '@/components/ui/TagInput';
 import { ShareButton } from '@/components/ui/ShareButton';
 import { MiniatureAnalyzer } from '@/components/ai/MiniatureAnalyzer';
 import { BragCard } from '@/components/ai/BragCard';
+import { CritiqueDetails } from '@/components/ai/CritiqueDetails';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/Dialog';
 
 export default function ProjectDetailClient() {
     const params = useParams();
@@ -62,6 +69,7 @@ export default function ProjectDetailClient() {
     const [editedStatus, setEditedStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
     const [editedTags, setEditedTags] = useState<string[]>([]);
     const [showAddRecipe, setShowAddRecipe] = useState(false);
+    const [critiqueOpen, setCritiqueOpen] = useState(false);
     const heroImageRef = useRef<HTMLImageElement>(null);
 
     useEffect(() => {
@@ -696,14 +704,37 @@ export default function ProjectDetailClient() {
                                                 <Star className="w-4 h-4 text-yellow-500" />
                                                 AI Critique
                                             </h4>
-                                            <BragCard
-                                                score={project.lastCritique.score}
-                                                grade={project.lastCritique.grade}
-                                                analysis={project.lastCritique.analysis}
-                                                projectName={project.name}
-                                                imageUrl={project.coverPhotoUrl || (photos.length > 0 ? photos[0].url : undefined)}
-                                                date={formatDate(project.lastCritique.createdAt)}
-                                            />
+
+                                            <div
+                                                className="cursor-pointer hover:opacity-90 transition-opacity transform hover:scale-[1.02] duration-300"
+                                                onClick={() => setCritiqueOpen(true)}
+                                            >
+                                                <BragCard
+                                                    score={project.lastCritique.score}
+                                                    grade={project.lastCritique.grade}
+                                                    analysis={project.lastCritique.analysis}
+                                                    projectName={project.name}
+                                                    imageUrl={project.coverPhotoUrl || (photos.length > 0 ? photos[0].url : undefined)}
+                                                    date={formatDate(project.lastCritique.createdAt)}
+                                                />
+                                            </div>
+
+                                            <Dialog open={critiqueOpen} onOpenChange={setCritiqueOpen}>
+                                                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                                    <DialogHeader>
+                                                        <DialogTitle className="flex items-center gap-2">
+                                                            <Star className="w-5 h-5 text-yellow-500" />
+                                                            AI Paint Critic: {project.name}
+                                                        </DialogTitle>
+                                                    </DialogHeader>
+                                                    <CritiqueDetails
+                                                        result={project.lastCritique}
+                                                        projectName={project.name}
+                                                        projectId={project.projectId}
+                                                        imageUrl={project.coverPhotoUrl || (photos.length > 0 ? photos[0].url : undefined)}
+                                                    />
+                                                </DialogContent>
+                                            </Dialog>
                                         </div>
                                     )}
 
