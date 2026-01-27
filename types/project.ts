@@ -21,6 +21,15 @@ export interface Project {
   likeCount: number;
   commentCount: number;
   armyIds?: string[];          // IDs of armies this project belongs to
+  lastCritique?: {
+    score: number;
+    grade: string;
+    analysis: string;
+    colors: string;
+    technical_strengths: string[];
+    improvements: string[];
+    createdAt: Timestamp;
+  };
 }
 
 export interface ProjectFormData {

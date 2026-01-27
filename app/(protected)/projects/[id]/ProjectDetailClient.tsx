@@ -35,6 +35,7 @@ import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
 import { ShareButton } from '@/components/ui/ShareButton';
 import { MiniatureAnalyzer } from '@/components/ai/MiniatureAnalyzer';
+import { BragCard } from '@/components/ai/BragCard';
 
 export default function ProjectDetailClient() {
     const params = useParams();
@@ -685,6 +686,24 @@ export default function ProjectDetailClient() {
                                                     </Link>
                                                 ))}
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* AI Critique Brag Card */}
+                                    {project.lastCritique && (
+                                        <div className="mt-8">
+                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                <Star className="w-4 h-4 text-yellow-500" />
+                                                AI Critique
+                                            </h4>
+                                            <BragCard
+                                                score={project.lastCritique.score}
+                                                grade={project.lastCritique.grade}
+                                                analysis={project.lastCritique.analysis}
+                                                projectName={project.name}
+                                                imageUrl={project.coverPhotoUrl || (photos.length > 0 ? photos[0].url : undefined)}
+                                                date={formatDate(project.lastCritique.createdAt)}
+                                            />
                                         </div>
                                     )}
 

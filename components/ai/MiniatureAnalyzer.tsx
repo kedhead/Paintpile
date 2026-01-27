@@ -289,6 +289,7 @@ function ShareScoreButton({ result, projectName, projectId, imageUrl }: { result
 
             const userProfile = await getUserProfile(currentUser.uid);
 
+            // 1. Create the activity
             await createActivity(
                 currentUser.uid,
                 userProfile?.displayName || 'Unknown Artist',
@@ -304,6 +305,28 @@ function ShareScoreButton({ result, projectName, projectId, imageUrl }: { result
                     visibility: 'public'
                 }
             );
+
+            // 2. Save the critique to the Project itself for permanent display
+            try {
+                // Dynamically import to avoid circular dependency issues at top level if any
+                const { updateProject } = await import('@/lib/firestore/projects');
+                const { Timestamp } = await import('firebase/firestore');
+
+                await updateProject(projectId, {
+                    lastCritique: {
+                        score: result.score,
+                        grade: result.grade,
+                        analysis: result.analysis,
+                        colors: result.colors,
+                        technical_strengths: result.technical_strengths,
+                        improvements: result.improvements,
+                        createdAt: Timestamp.now()
+                    }
+                });
+            } catch (projectUpdateError) {
+                console.error("Failed to update project with critique:", projectUpdateError);
+                // We don't fail the whole share action if this fails, but we log it.
+            }
 
             setSuccessMessage('Posted to your activity feed!');
             setTimeout(() => setSuccessMessage(null), 3000);

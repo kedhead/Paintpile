@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { BragCard } from '@/components/ai/BragCard';
 
 interface ActivityItemProps {
   activity: Activity;
@@ -212,27 +213,39 @@ export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
       </div>
 
       {/* Hero Image or Fallback */}
-      {
-        isRichActivity && (
-          <Link href={getTargetUrl()} className="block relative aspect-video w-full overflow-hidden bg-black group-image">
-            {heroImage ? (
-              <img
-                src={heroImage}
-                alt={title || 'Project Image'}
-                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+      {isRichActivity && (
+        <Link href={getTargetUrl()} className="block relative aspect-video w-full overflow-hidden bg-black group-image">
+          {activity.type === 'project_critique_shared' && activity.metadata.critiqueScore ? (
+            <div className="absolute inset-0">
+              <BragCard
+                score={activity.metadata.critiqueScore}
+                grade={activity.metadata.critiqueGrade || 'Unranked'}
+                analysis="Check out my AI critique score!"
+                projectName={activity.metadata.projectName || 'Project'}
+                imageUrl={activity.metadata.projectPhotoUrl}
+                date={timeAgo}
               />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-zinc-700 via-zinc-900 to-black flex items-center justify-center group-hover:scale-105 transition-all duration-700">
-                <div className="text-white/20">
-                  {activity.targetType === 'army' ? <Shield className="w-20 h-20" /> : <Palette className="w-20 h-20" />}
-                </div>
+            </div>
+          ) : heroImage ? (
+            <img
+              src={heroImage}
+              alt={title || 'Project Image'}
+              className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-zinc-700 via-zinc-900 to-black flex items-center justify-center group-hover:scale-105 transition-all duration-700">
+              <div className="text-white/20">
+                {activity.targetType === 'army' ? <Shield className="w-20 h-20" /> : <Palette className="w-20 h-20" />}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Overlay Gradient */}
+          {/* Overlay Gradient - Hide for Brag Cards as they have their own */}
+          {activity.type !== 'project_critique_shared' && (
             <div className="absolute inset-0 bg-gradient-to-t from-[#0f1115] via-transparent to-transparent opacity-60" />
-          </Link>
-        )
+          )}
+        </Link>
+      )
       }
 
       {/* Content */}
