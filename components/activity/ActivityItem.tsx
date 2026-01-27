@@ -90,7 +90,22 @@ export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
   const actionText = ACTIVITY_MESSAGES[activity.type](activity.metadata).split(':')[0]; // Get just the action part
 
   const isRichActivity = ['project_created', 'army_created', 'recipe_created', 'project_critique_shared'].includes(activity.type);
-  const heroImage = activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl || (activity.type === 'recipe_created' ? activity.metadata.targetPhotoUrl : null); // Recipe might have one too
+  // Calculate Hero Image
+  let heroImage = activity.metadata.projectPhotoUrl || activity.metadata.armyPhotoUrl || (activity.type === 'recipe_created' ? activity.metadata.targetPhotoUrl : null);
+
+  // Special case: If it's a critique share, we want to show the generated Brag Card
+  if (activity.type === 'project_critique_shared' && activity.metadata.critiqueScore) {
+    const params = new URLSearchParams({
+      score: activity.metadata.critiqueScore.toString(),
+      grade: activity.metadata.critiqueGrade || 'Unranked',
+      project: activity.metadata.projectName || 'Project',
+      analysis: 'Check out my AI critique score!',
+      image: activity.metadata.projectPhotoUrl || ''
+    });
+    // Use the API route to generate the image on the fly
+    heroImage = `/api/og/critic-card?${params.toString()}`;
+  }
+
   const title = activity.metadata.projectName || activity.metadata.armyName || activity.metadata.recipeName;
   const description = activity.metadata.description || ''; // We might not have this in metadata yet, but good to fallback
 
