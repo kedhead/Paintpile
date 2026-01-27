@@ -278,6 +278,11 @@ function ShareScoreButton({ result, projectName, projectId, imageUrl }: { result
     const handlePostToFeed = async () => {
         if (!currentUser) return;
 
+        if (!projectId) {
+            setShareError('Project ID is missing. Please refresh the page and try again.');
+            return;
+        }
+
         try {
             setPostingToFeed(true);
             setShareError(null);
