@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
 import { createActivity } from '@/lib/firestore/activities';
 import { getUserProfile } from '@/lib/firestore/users';
+import { updateProject } from '@/lib/firestore/projects';
+import { Timestamp } from 'firebase/firestore';
 
 interface AnalysisResult {
     grade: 'Beginner' | 'Tabletop Ready' | 'Tabletop Plus' | 'Display Standard' | 'Competition Level';
@@ -308,10 +310,6 @@ function ShareScoreButton({ result, projectName, projectId, imageUrl }: { result
 
             // 2. Save the critique to the Project itself for permanent display
             try {
-                // Dynamically import to avoid circular dependency issues at top level if any
-                const { updateProject } = await import('@/lib/firestore/projects');
-                const { Timestamp } = await import('firebase/firestore');
-
                 await updateProject(projectId, {
                     lastCritique: {
                         score: result.score,
@@ -325,7 +323,8 @@ function ShareScoreButton({ result, projectName, projectId, imageUrl }: { result
                 });
             } catch (projectUpdateError) {
                 console.error("Failed to update project with critique:", projectUpdateError);
-                // We don't fail the whole share action if this fails, but we log it.
+                // We still consider the share successful if the feed post worked, 
+                // but we might want to alert if the persistence failed.
             }
 
             setSuccessMessage('Posted to your activity feed!');
