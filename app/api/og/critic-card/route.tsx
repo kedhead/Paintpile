@@ -2,7 +2,7 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs'; // Changed from 'edge' to 'nodejs' for better fetch stability
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
                     position: 'relative',
                 }}
             >
+                {/* Background Image (Blurred) if provided */}
                 {/* Background Image (Blurred) if provided */}
                 {imageUrl && (
                     <img

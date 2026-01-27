@@ -173,6 +173,25 @@ export async function getGlobalActivities(
 }
 
 /**
+ * Get brag board activities (shared critiques)
+ */
+export async function getBragBoardActivities(
+  limitCount: number = 50
+): Promise<Activity[]> {
+  const activitiesRef = collection(db, 'activities');
+
+  const q = query(
+    activitiesRef,
+    where('type', '==', 'project_critique_shared'),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount)
+  );
+
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => doc.data() as Activity);
+}
+
+/**
  * Delete all activities for a specific target entity
  * Used when a project/army/recipe is deleted
  */

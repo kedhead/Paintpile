@@ -64,6 +64,12 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
       current: pathname === '/community',
     },
     {
+      name: 'Brag Board',
+      href: '/brag-board',
+      icon: Trophy,
+      current: pathname === '/brag-board',
+    },
+    {
       name: 'Paint Library',
       href: '/paints',
       icon: Palette,
