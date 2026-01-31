@@ -78,7 +78,7 @@ export default function FeaturesPage() {
     ];
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 pb-12 animate-in fade-in duration-500">
+        <div className="max-w-6xl mx-auto space-y-12 pb-12 px-4 animate-in fade-in duration-500">
             {/* Hero Section */}
             <div className="text-center space-y-4 pt-8">
                 <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">

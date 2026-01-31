@@ -36,7 +36,7 @@ export function ProjectStatusList({ projects, status }: ProjectStatusListProps) 
                         href={`/projects/${project.projectId}`}
                         className="block group"
                     >
-                        <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                        <div className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h4 className="font-medium text-foreground group-hover:text-primary transition-colors">
@@ -51,7 +51,7 @@ export function ProjectStatusList({ projects, status }: ProjectStatusListProps) 
                                 <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
                             </div>
 
-                            <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                     <Calendar className="w-3 h-3" />
                                     <span>

@@ -114,7 +114,7 @@ export function ColorMatcher({ allPaints, userInventory }: ColorMatcherProps) {
                     {!image ? (
                         <div
                             {...getRootProps()}
-                            className={`border-2 border-dashed rounded-xl h-[400px] flex flex-col items-center justify-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-card/50'
+                            className={`border-2 border-dashed rounded-xl h-[300px] md:h-[400px] flex flex-col items-center justify-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-card/50'
                                 }`}
                         >
                             <input {...getInputProps()} />
@@ -128,7 +128,7 @@ export function ColorMatcher({ allPaints, userInventory }: ColorMatcherProps) {
                                 ref={displayImageRef}
                                 src={image}
                                 alt="Reference"
-                                className="w-full h-auto max-h-[500px] object-contain cursor-crosshair"
+                                className="w-full h-auto max-h-[300px] md:max-h-[500px] object-contain cursor-crosshair"
                                 onClick={handleImageClick}
                             />
 
