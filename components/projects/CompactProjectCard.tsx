@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { Project } from '@/types/project';
 import { formatDistanceToNow } from 'date-fns';
 import { Clock, Image as ImageIcon, CheckCircle, Circle, PlayCircle } from 'lucide-react';

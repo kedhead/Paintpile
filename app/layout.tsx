@@ -47,21 +47,25 @@ import { Toaster } from 'sonner';
 
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 
+import { ViewTransitions } from 'next-view-transitions';
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${cinzel.variable} ${caveat.variable}`}>
-      <body className="antialiased font-sans">
-        <AuthProvider>
-          {children}
-          <CommandMenu />
-          <Toaster position="top-center" richColors />
-          <InstallPrompt />
-        </AuthProvider>
-      </body>
-    </html>
+    <ViewTransitions>
+      <html lang="en" className={`${inter.variable} ${cinzel.variable} ${caveat.variable}`}>
+        <body className="antialiased font-sans">
+          <AuthProvider>
+            {children}
+            <CommandMenu />
+            <Toaster position="top-center" richColors />
+            <InstallPrompt />
+          </AuthProvider>
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }

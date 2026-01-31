@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from 'next-view-transitions';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProjectCard } from '@/components/projects/ProjectCard';
@@ -11,7 +11,7 @@ import { Project } from '@/types/project';
 import { Search, Plus, Filter, FolderKanban, Palette, Beaker, Trophy, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
 import { WelcomeBackModal } from '@/components/notifications/WelcomeBackModal';
@@ -20,7 +20,7 @@ import { LayoutGrid, Kanban } from 'lucide-react';
 import { KanbanBoard } from '@/components/dashboard/KanbanBoard';
 
 export default function DashboardPage() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [coverPhotos, setCoverPhotos] = useState<Record<string, string>>({});

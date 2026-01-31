@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { useAuth } from '@/contexts/AuthContext';
 import { Project } from '@/types/project';
 import { formatDistanceToNow } from 'date-fns';
