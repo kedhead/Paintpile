@@ -45,6 +45,8 @@ export const metadata: Metadata = {
 
 import { Toaster } from 'sonner';
 
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,6 +59,7 @@ export default function RootLayout({
           {children}
           <CommandMenu />
           <Toaster position="top-center" richColors />
+          <InstallPrompt />
         </AuthProvider>
       </body>
     </html>

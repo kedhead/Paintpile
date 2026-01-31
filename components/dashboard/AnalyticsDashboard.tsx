@@ -21,7 +21,7 @@ import {
 import { TrendingUp, DollarSign, Palette, Archive, Layers, CheckCircle2 } from 'lucide-react';
 import { getUserProjects } from '@/lib/firestore/projects';
 import { Project } from '@/types/project';
-import { ProjectStatusList } from './ProjectStatusList';
+
 
 // Estimated average price per paint pot
 const ESTIMATED_PRICE_PER_PAINT = 4.50;
@@ -331,10 +331,17 @@ export function AnalyticsDashboard() {
                             </button>
                         </div>
                         <div className="p-4 overflow-y-auto">
-                            <ProjectStatusList
-                                projects={projects.filter(p => p.status === 'not-started')}
-                                status="not-started"
-                            />
+                            <div className="space-y-2">
+                                {projects.filter(p => p.status === 'not-started').map(project => (
+                                    <div key={project.projectId} className="p-3 bg-card border border-border rounded-lg">
+                                        <h4 className="font-medium">{project.name}</h4>
+                                        <p className="text-xs text-muted-foreground line-clamp-1">{project.description || 'No description'}</p>
+                                    </div>
+                                ))}
+                                {projects.filter(p => p.status === 'not-started').length === 0 && (
+                                    <p className="text-center text-muted-foreground py-4">No projects in the pile!</p>
+                                )}
+                            </div>
                         </div>
                         <div className="p-4 border-t bg-muted/30 flex justify-end">
                             <button

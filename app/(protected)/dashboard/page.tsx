@@ -16,6 +16,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
 import { WelcomeBackModal } from '@/components/notifications/WelcomeBackModal';
 
+import { LayoutGrid, Kanban } from 'lucide-react';
+import { KanbanBoard } from '@/components/dashboard/KanbanBoard';
+
 export default function DashboardPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
@@ -24,6 +27,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'board'>('grid');
 
   useEffect(() => {
     async function loadProjects() {
@@ -33,30 +37,7 @@ export default function DashboardPage() {
         setLoading(true);
         const userProjects = await getUserProjects(currentUser.uid);
         setProjects(userProjects);
-
-        // Load cover photos for each project
-        const photoMap: Record<string, string> = {};
-        await Promise.all(
-          userProjects.map(async (project) => {
-            try {
-              const photos = await getProjectPhotos(project.projectId);
-              if (photos.length > 0) {
-                // Use featured photo if set, otherwise use first photo
-                let coverPhoto = photos[0];
-                if (project.featuredPhotoId) {
-                  const featuredPhoto = photos.find(p => p.photoId === project.featuredPhotoId);
-                  if (featuredPhoto) {
-                    coverPhoto = featuredPhoto;
-                  }
-                }
-                photoMap[project.projectId] = coverPhoto.thumbnailUrl || coverPhoto.url;
-              }
-            } catch (err) {
-              console.error(`Error loading photos for project ${project.projectId}:`, err);
-            }
-          })
-        );
-        setCoverPhotos(photoMap);
+        await loadCoverPhotos(userProjects);
       } catch (error) {
         console.error('Error loading projects:', error);
       } finally {
@@ -67,6 +48,35 @@ export default function DashboardPage() {
     loadProjects();
   }, [currentUser]);
 
+  async function loadCoverPhotos(projectList: Project[]) {
+    const photoMap: Record<string, string> = {};
+    await Promise.all(
+      projectList.map(async (project) => {
+        try {
+          const photos = await getProjectPhotos(project.projectId);
+          if (photos.length > 0) {
+            let coverPhoto = photos[0];
+            if (project.featuredPhotoId) {
+              const featuredPhoto = photos.find(p => p.photoId === project.featuredPhotoId);
+              if (featuredPhoto) coverPhoto = featuredPhoto;
+            }
+            photoMap[project.projectId] = coverPhoto.thumbnailUrl || coverPhoto.url;
+          }
+        } catch (err) {
+          console.error(`Error loading photos for project ${project.projectId}:`, err);
+        }
+      })
+    );
+    setCoverPhotos(prev => ({ ...prev, ...photoMap }));
+  }
+
+  // Reload projects when a status change happens in Kanban
+  const handleProjectUpdate = async () => {
+    if (!currentUser) return;
+    const userProjects = await getUserProjects(currentUser.uid);
+    setProjects(userProjects);
+  };
+
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
       searchQuery === '' ||
@@ -74,7 +84,8 @@ export default function DashboardPage() {
       project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    // Status filter applies to GRID view only, Board view shows all columns
+    const matchesStatus = viewMode === 'board' || statusFilter === 'all' || project.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -125,81 +136,115 @@ export default function DashboardPage() {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects, techniques..."
-              className="pl-10 bg-card border-border/50 shadow-sm focus:ring-primary"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+        <div className="flex flex-col md:flex-row gap-4 mb-8 justify-between items-end md:items-center">
+          <div className="w-full md:w-auto flex flex-col md:flex-row gap-4 flex-1">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search projects, techniques..."
+                className="pl-10 bg-card border-border/50 shadow-sm focus:ring-primary"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Filters (Grid View Only) */}
+            {viewMode === 'grid' && (
+              <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                {filterButtons.map((filter) => (
+                  <Button
+                    key={filter.id}
+                    variant={statusFilter === filter.id ? "default" : "outline"}
+                    onClick={() => setStatusFilter(filter.id)}
+                    className="capitalize whitespace-nowrap"
+                  >
+                    {filter.label.replace("-", " ")}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-            {filterButtons.map((filter) => (
-              <Button
-                key={filter.id}
-                variant={statusFilter === filter.id ? "default" : "outline"}
-                onClick={() => setStatusFilter(filter.id)}
-                className="capitalize whitespace-nowrap"
-              >
-                {filter.label.replace("-", " ")}
-              </Button>
-            ))}
-            <Button variant="outline" size="icon">
-              <Filter className="w-4 h-4" />
-            </Button>
+
+          {/* View Toggle */}
+          <div className="bg-muted p-1 rounded-lg flex gap-1 shrink-0">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              title="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('board')}
+              className={`p-2 rounded-md transition-all ${viewMode === 'board' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              title="Kanban Board View"
+            >
+              <Kanban className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Grid */}
+        {/* Content Area */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Spinner size="lg" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard
-                key={project.projectId}
-                project={project}
-                coverPhotoUrl={coverPhotos[project.projectId]}
+          <>
+            {viewMode === 'grid' ? (
+              // GRID VIEW
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProjects.map((project) => (
+                  <ProjectCard
+                    key={project.projectId}
+                    project={project}
+                    coverPhotoUrl={coverPhotos[project.projectId]}
+                  />
+                ))}
+
+                {/* New Project Card */}
+                <Link href="/projects/new">
+                  <div className="block h-full min-h-[300px] border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6">
+                    <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <span className="text-4xl font-light">+</span>
+                    </div>
+                    <h3 className="font-display font-bold text-lg">New Project</h3>
+                    <p className="text-sm opacity-70">Start a new journey</p>
+                  </div>
+                </Link>
+
+                {/* Snap & Match Tool Card */}
+                <Link href="/tools/color-match">
+                  <div className="block h-full min-h-[300px] border border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6 bg-card">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <span className="text-2xl">📸</span>
+                    </div>
+                    <h3 className="font-display font-bold text-lg">Snap & Match</h3>
+                    <p className="text-sm opacity-70">Match real colors to your paints</p>
+                  </div>
+                </Link>
+
+                {/* Smart Mixer Tool Card */}
+                <Link href="/tools/paint-mixer">
+                  <div className="block h-full min-h-[300px] border border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6 bg-card">
+                    <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <span className="text-2xl">🧪</span>
+                    </div>
+                    <h3 className="font-display font-bold text-lg">Smart Mixer</h3>
+                    <p className="text-sm opacity-70">AI mixing recipes</p>
+                  </div>
+                </Link>
+              </div>
+            ) : (
+              // BOARD VIEW
+              <KanbanBoard
+                projects={filteredProjects}
+                coverPhotos={coverPhotos}
+                onProjectUpdated={handleProjectUpdate}
               />
-            ))}
-
-            {/* New Project Card */}
-            <Link href="/projects/new">
-              <div className="block h-full min-h-[300px] border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-4xl font-light">+</span>
-                </div>
-                <h3 className="font-display font-bold text-lg">New Project</h3>
-                <p className="text-sm opacity-70">Start a new journey</p>
-              </div>
-            </Link>
-
-            {/* Snap & Match Tool Card */}
-            <Link href="/tools/color-match">
-              <div className="block h-full min-h-[300px] border border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6 bg-card">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-2xl">📸</span>
-                </div>
-                <h3 className="font-display font-bold text-lg">Snap & Match</h3>
-                <p className="text-sm opacity-70">Match real colors to your paints</p>
-              </div>
-            </Link>
-
-            {/* Smart Mixer Tool Card */}
-            <Link href="/tools/paint-mixer">
-              <div className="block h-full min-h-[300px] border border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-card/50 transition-all cursor-pointer p-6 bg-card">
-                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-2xl">🧪</span>
-                </div>
-                <h3 className="font-display font-bold text-lg">Smart Mixer</h3>
-                <p className="text-sm opacity-70">AI mixing recipes</p>
-              </div>
-            </Link>
-          </div>
+            )}
+          </>
         )}
 
         {/* Empty State */}
@@ -207,12 +252,12 @@ export default function DashboardPage() {
           <div className="py-12">
             <EmptyState
               icon={Sparkles}
-              title={searchQuery || statusFilter !== 'all' ? "No matches found" : "Welcome to PaintPile!"}
-              description={searchQuery || statusFilter !== 'all'
+              title={searchQuery || (statusFilter !== 'all' && viewMode === 'grid') ? "No matches found" : "Welcome to PaintPile!"}
+              description={searchQuery || (statusFilter !== 'all' && viewMode === 'grid')
                 ? "Try adjusting your filters or search terms."
                 : "It looks like you're new here. Start by adding some paints to your inventory or creating your first project."}
-              actionLabel={!(searchQuery || statusFilter !== 'all') ? "Add Your First Paint" : undefined}
-              onAction={!(searchQuery || statusFilter !== 'all') ? () => router.push('/paints') : undefined}
+              actionLabel={!(searchQuery || (statusFilter !== 'all' && viewMode === 'grid')) ? "Add Your First Paint" : undefined}
+              onAction={!(searchQuery || (statusFilter !== 'all' && viewMode === 'grid')) ? () => router.push('/paints') : undefined}
             />
           </div>
         )}
