@@ -16,6 +16,7 @@ import { profileSchema } from '@/lib/validation/schemas';
 import { ProfileFormData } from '@/lib/validation/schemas';
 import { Upload, X, ArrowLeft, CheckCircle2, XCircle, Lock, Trash2, LogOut, AlertTriangle } from 'lucide-react';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from 'firebase/auth';
+import { toast } from 'sonner';
 
 export default function EditProfilePage() {
   const { currentUser, signOut } = useAuth();
@@ -94,12 +95,12 @@ export default function EditProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be less than 5MB');
+      toast.error('Image must be less than 5MB');
       return;
     }
 
@@ -161,7 +162,7 @@ export default function EditProfilePage() {
   const onSubmit = async (data: ProfileFormData) => {
     // Check if username is taken before submitting
     if (data.username && usernameCheckStatus === 'taken') {
-      alert('Username is already taken. Please choose another one.');
+      toast.error('Username is already taken. Please choose another one.');
       return;
     }
 
@@ -200,7 +201,7 @@ export default function EditProfilePage() {
       router.push('/profile');
     } catch (err) {
       console.error('Error updating profile:', err);
-      alert('Failed to update profile');
+      toast.error('Failed to update profile');
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
@@ -233,7 +234,7 @@ export default function EditProfilePage() {
       // Update password
       await updatePassword(currentUser!, newPassword);
 
-      alert('Password changed successfully!');
+      toast.error('Password changed successfully!');
       setShowPasswordModal(false);
       setCurrentPassword('');
       setNewPassword('');
@@ -252,7 +253,7 @@ export default function EditProfilePage() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') {
-      alert('Please type DELETE to confirm');
+      toast.error('Please type DELETE to confirm');
       return;
     }
 
@@ -277,9 +278,9 @@ export default function EditProfilePage() {
     } catch (err: any) {
       console.error('Error deleting account:', err);
       if (err.code === 'auth/wrong-password') {
-        alert('Incorrect password');
+        toast.error('Incorrect password');
       } else {
-        alert('Failed to delete account. Please try again.');
+        toast.error('Failed to delete account. Please try again.');
       }
     } finally {
       setIsDeletingAccount(false);
@@ -292,7 +293,7 @@ export default function EditProfilePage() {
       router.push('/');
     } catch (err) {
       console.error('Error signing out:', err);
-      alert('Failed to sign out');
+      toast.error('Failed to sign out');
     }
   };
 
@@ -514,14 +515,12 @@ export default function EditProfilePage() {
               <button
                 type="button"
                 onClick={() => setIsPublic(!isPublic)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isPublic ? 'bg-primary-600' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPublic ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isPublic ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>

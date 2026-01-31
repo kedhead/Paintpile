@@ -14,6 +14,7 @@ import { AIRecipeGenerator } from './AIRecipeGenerator';
 import { GeneratedRecipe } from '@/types/ai-recipe';
 import { X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { ImageInput } from '@/components/ui/ImageInput';
+import { toast } from 'sonner';
 
 interface RecipeFormProps {
   userId: string;
@@ -186,7 +187,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
 
     if (formIngredients.length === 0) {
       console.warn('[Recipe Form] WARNING: No ingredients with matched paints!');
-      alert('Warning: Could not match any paints for the detected colors. You will need to add paints manually before saving the recipe.');
+      toast.error('Warning: Could not match any paints for the detected colors. You will need to add paints manually before saving the recipe.');
     }
 
     setValue('ingredients', formIngredients);
@@ -285,7 +286,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
       onClose();
     } catch (err) {
       console.error('[Recipe Form] Error saving recipe:', err);
-      alert('Failed to save recipe: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      toast.error('Failed to save recipe: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -320,7 +321,7 @@ export function RecipeForm({ userId, editingRecipe, onClose, onSuccess }: Recipe
     console.error('[Recipe Form] Total errors:', errorMessages.length);
     console.error('[Recipe Form] Error summary:', errorMessages);
 
-    alert('Please fix the following errors before submitting:\n\n' + errorMessages.slice(0, 10).join('\n') +
+    toast.error('Please fix the following errors before submitting:\n\n' + errorMessages.slice(0, 10).join('\n') +
       (errorMessages.length > 10 ? `\n\n... and ${errorMessages.length - 10} more errors` : ''));
 
     // Scroll to first error

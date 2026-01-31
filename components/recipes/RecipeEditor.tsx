@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { PaintRecipeFormData, PaintRole, PaintRecipeEntry } from '@/types/paint-recipe';
 import { Button } from '@/components/ui/Button';
@@ -91,7 +92,7 @@ export function RecipeEditor({ initialData, onSave, onCancel }: RecipeEditorProp
       await onSave(data);
     } catch (err) {
       console.error('Error saving recipe:', err);
-      alert('Failed to save recipe');
+      toast.error('Failed to save recipe');
     } finally {
       setIsSubmitting(false);
     }

@@ -15,6 +15,10 @@ import { Search, Trash2, Palette, CheckCircle, Package, Plus } from 'lucide-reac
 import { cn } from '@/lib/utils/cn';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+
+// ... imports
+import Fuse from 'fuse.js';
 
 export default function PaintsPage() {
   const { currentUser } = useAuth();
@@ -34,7 +38,6 @@ export default function PaintsPage() {
     if (!currentUser) return;
 
     try {
-      setLoading(true);
       setLoading(true);
 
       const [globalResult, customResult, inventoryResult] = await Promise.allSettled([
@@ -59,10 +62,10 @@ export default function PaintsPage() {
         setUserInventory(new Set(inventoryResult.value.map(p => p.paintId)));
       } else {
         console.error('Failed to load inventory', inventoryResult.reason);
-        // Don't crash, just show empty inventory
       }
     } catch (error) {
       console.error('Error loading paints:', error);
+      toast.error('Failed to load paints');
     } finally {
       setLoading(false);
     }
@@ -75,16 +78,16 @@ export default function PaintsPage() {
     try {
       await deleteCustomPaint(paintId, currentUser.uid);
       setCustomPaints((prev) => prev.filter((p) => p.paintId !== paintId));
+      toast.success('Custom paint deleted');
     } catch (error) {
       console.error('Error deleting custom paint:', error);
-      alert('Failed to delete custom paint');
+      toast.error('Failed to delete custom paint');
     }
   }
 
   async function toggleInventory(paintId: string) {
     if (!currentUser) return;
 
-    // optimistic update
     const isOwned = userInventory.has(paintId);
     const newInventory = new Set(userInventory);
 
@@ -95,7 +98,8 @@ export default function PaintsPage() {
         await removeFromInventory(currentUser.uid, paintId);
       } catch (err) {
         console.error('Failed to remove from inventory', err);
-        setUserInventory(prev => new Set(prev).add(paintId)); // revert
+        setUserInventory(prev => new Set(prev).add(paintId));
+        toast.error('Failed to update inventory');
       }
     } else {
       newInventory.add(paintId);
@@ -108,7 +112,8 @@ export default function PaintsPage() {
           const revert = new Set(prev);
           revert.delete(paintId);
           return revert;
-        }); // revert
+        });
+        toast.error('Failed to update inventory');
       }
     }
   }
@@ -121,26 +126,37 @@ export default function PaintsPage() {
     ])
   ).sort();
 
-  // Filter paints
-  const filteredGlobalPaints = globalPaints.filter((paint) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      paint.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      paint.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesBrand = selectedBrand === 'all' || paint.brand === selectedBrand;
-    const matchesInventory = !showInventoryOnly || userInventory.has(paint.paintId);
-    return matchesSearch && matchesBrand && matchesInventory;
-  });
+  // Fuzzy Search Configuration
+  const fuseOptions = {
+    keys: ['name', 'brand'],
+    threshold: 0.4, // Matches typos (0.0 = exact, 1.0 = match anything)
+    distance: 100,
+  };
 
-  const filteredCustomPaints = customPaints.filter((paint) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      paint.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      paint.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesBrand = selectedBrand === 'all' || paint.brand === selectedBrand;
-    const matchesInventory = !showInventoryOnly || userInventory.has(paint.paintId);
-    return matchesSearch && matchesBrand && matchesInventory;
-  });
+  const getFilteredPaints = <T extends Paint | CustomPaint>(paints: T[]) => {
+    let result = paints;
+
+    // 1. Brand Filter (Strict)
+    if (selectedBrand !== 'all') {
+      result = result.filter(p => p.brand === selectedBrand);
+    }
+
+    // 2. Inventory Filter
+    if (showInventoryOnly) {
+      result = result.filter(p => userInventory.has(p.paintId));
+    }
+
+    // 3. Search Filter (Fuzzy)
+    if (searchQuery.trim()) {
+      const fuse = new Fuse(result, fuseOptions);
+      result = fuse.search(searchQuery).map(r => r.item);
+    }
+
+    return result;
+  };
+
+  const filteredGlobalPaints = getFilteredPaints(globalPaints);
+  const filteredCustomPaints = getFilteredPaints(customPaints);
 
   if (!currentUser) {
     return (
@@ -175,7 +191,7 @@ export default function PaintsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search paints..."
+                placeholder="Search paints (e.g., 'mephiston', 'blue')..."
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -254,12 +270,8 @@ export default function PaintsPage() {
                 <EmptyState
                   icon={Search}
                   title="No paints found"
-                  description="Try adjusting your search terms or brand filters. Can't find what you need?"
+                  description="Try adjusting your search terms or brand filters."
                   actionLabel="Add Custom Paint"
-                // We can't easily open the dialog from here without refactoring, so maybe just show text or
-                // trigger the button click via ref (hacky), or just leave action empty.
-                // Actually, we can use the 'Add Custom Paint' dialog which is up top.
-                // For now let's just make it a friendly message.
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

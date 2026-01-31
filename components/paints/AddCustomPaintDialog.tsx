@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -26,7 +27,7 @@ export function AddCustomPaintDialog({ userId, onPaintAdded }: AddCustomPaintDia
     e.preventDefault();
 
     if (!brand.trim() || !name.trim()) {
-      alert('Please enter both brand and paint name');
+      toast.error('Please enter both brand and paint name');
       return;
     }
 
@@ -46,7 +47,7 @@ export function AddCustomPaintDialog({ userId, onPaintAdded }: AddCustomPaintDia
       }
     } catch (error) {
       console.error('Error creating custom paint:', error);
-      alert('Failed to create custom paint');
+      toast.error('Failed to create custom paint');
     } finally {
       setLoading(false);
     }

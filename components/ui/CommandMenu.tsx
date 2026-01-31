@@ -104,26 +104,40 @@ export function CommandMenu() {
 
                         <Command.Separator className="my-1 h-px bg-border" />
 
-                        <Command.Group heading="Quick Actions" className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                        <Command.Group heading="Create" className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
                             <Command.Item
                                 onSelect={() => runCommand(() => router.push('/projects/new'))}
                                 className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                             >
                                 <Plus className="mr-2 h-4 w-4" />
-                                <span>Create New Project</span>
+                                <span>New Project</span>
                             </Command.Item>
                             <Command.Item
                                 onSelect={() => runCommand(() => router.push('/recipes/new'))}
                                 className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                             >
                                 <Plus className="mr-2 h-4 w-4" />
-                                <span>Create New Recipe</span>
+                                <span>New Recipe</span>
+                            </Command.Item>
+                            <Command.Item
+                                onSelect={() => runCommand(() => router.push('/paints?action=add'))}
+                                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                <span>Add Custom Paint</span>
                             </Command.Item>
                         </Command.Group>
 
                         <Command.Separator className="my-1 h-px bg-border" />
 
                         <Command.Group heading="Settings" className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            <Command.Item
+                                onSelect={() => runCommand(() => window.location.href = '/profile/edit')}
+                                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                            >
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Settings</span>
+                            </Command.Item>
                             <Command.Item
                                 onSelect={() => runCommand(() => signOut())}
                                 className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-destructive"
@@ -133,6 +147,11 @@ export function CommandMenu() {
                             </Command.Item>
                         </Command.Group>
                     </Command.List>
+                    <div className="border-t border-border px-3 py-2">
+                        <p className="text-xs text-muted-foreground text-center">
+                            Press <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100"><span className="text-xs">⌘</span>K</kbd> to open
+                        </p>
+                    </div>
                 </Command>
             </div>
         </div>
