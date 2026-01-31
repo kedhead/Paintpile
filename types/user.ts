@@ -11,6 +11,7 @@ export interface User {
   photoURL?: string;
   createdAt: Timestamp;
   lastLoginAt?: Timestamp; // timestamp of last login session
+  lastActiveAt?: Timestamp; // timestamp of last user activity
   settings: UserSettings;
   stats: UserStats;
   subscription?: UserSubscription;

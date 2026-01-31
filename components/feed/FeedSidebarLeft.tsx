@@ -5,15 +5,14 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Home, Users, Bookmark } from 'lucide-react';
 import { getUserFollowing } from '@/lib/firestore/follows';
+import { getUsersByIds } from '@/lib/firestore/users';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { OnlineIndicator } from '@/components/social/OnlineIndicator';
+import { User } from '@/types/user';
 
-interface FollowedUser {
-    userId: string;
-    username: string; // The URL slug
-    displayName: string; // The visual name
-    photoUrl?: string;
-    isOnline?: boolean; // Mock status
+interface FollowedUser extends User {
+    // Extends User to include lastActiveAt
 }
 
 export function FeedSidebarLeft() {
@@ -27,32 +26,18 @@ export function FeedSidebarLeft() {
             try {
                 const follows = await getUserFollowing(currentUser.uid);
 
-                // Fetch profiles for the followed users
-                const topFollows = follows.slice(0, 5);
+                if (follows.length === 0) {
+                    setFollowedUsers([]);
+                    return;
+                }
 
-                // Dynamic import to avoid circular dep issues
-                const { getUserProfile } = await import('@/lib/firestore/users');
+                // Get IDs of top 5 followed users
+                const followingIds = follows.slice(0, 5).map(f => f.followingId);
 
-                const users = await Promise.all(topFollows.map(async (f) => {
-                    const profile = await getUserProfile(f.followingId);
-
-                    // Fallback username logic if field is missing (legacy users)
-                    // CRITICAL FIX: Do NOT generate a slug from display name. 
-                    // It creates broken links because we can't map the slug back to an ID.
-                    // Always use ID if real username is missing.
-                    const safeUsername = profile?.username || f.followingId;
-
-                    return {
-                        userId: f.followingId,
-                        username: safeUsername,
-                        displayName: profile?.displayName || 'Unknown Artist',
-                        photoUrl: profile?.photoURL,
-                        isOnline: Math.random() > 0.5 // Mock status
-                    };
-                }));
-
-                // Keep users as long as we have valid ID
+                // Fetch full profiles efficiently
+                const users = await getUsersByIds(followingIds);
                 setFollowedUsers(users);
+
             } catch (err) {
                 console.error('Error loading followed users:', err);
             } finally {
@@ -66,8 +51,6 @@ export function FeedSidebarLeft() {
         { icon: Home, label: 'Activity', href: '/feed' },
         { icon: Bookmark, label: 'Saved Projects', href: '/feed?type=saved' },
     ];
-
-
 
     return (
         <div className="space-y-8 sticky top-24">
@@ -106,28 +89,24 @@ export function FeedSidebarLeft() {
                         followedUsers.map((user) => (
                             <Link
                                 key={user.userId}
-                                href={`/users/${user.username}`}
+                                href={`/users/${user.username || user.userId}`}
                                 className="flex items-center gap-3 px-4 py-2 hover:bg-muted/10 rounded-lg transition-colors group"
                             >
                                 <div className="relative">
                                     <Avatar className="w-8 h-8 border border-border group-hover:border-orange-500/50 transition-colors">
-                                        <AvatarImage src={user.photoUrl} />
-                                        <AvatarFallback>{user.username[0]}</AvatarFallback>
+                                        <AvatarImage src={user.photoURL} />
+                                        <AvatarFallback>{(user.displayName || user.email || '?')[0].toUpperCase()}</AvatarFallback>
                                     </Avatar>
-                                    {user.isOnline && (
-                                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full" />
-                                    )}
+                                    <OnlineIndicator lastActiveAt={user.lastActiveAt} />
                                 </div>
-                                <span className="text-sm font-medium text-foreground group-hover:text-orange-500 transition-colors">
-                                    {user.displayName}
+                                <span className="text-sm font-medium text-foreground group-hover:text-orange-500 transition-colors truncate max-w-[140px]">
+                                    {user.displayName || 'Unknown Artist'}
                                 </span>
                             </Link>
                         ))
                     )}
                 </div>
             </div>
-
-
         </div>
     );
 }

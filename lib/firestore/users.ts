@@ -222,3 +222,49 @@ export async function syncUserStats(userId: string): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * Update user's last active timestamp.
+ * This should be called periodically (e.g., every 5 minutes) while the user is using the app.
+ */
+export async function updatePresence(userId: string): Promise<void> {
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    lastActiveAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Fetch multiple user profiles by ID.
+ * Useful for resolving lists of users (e.g., followers, online friends).
+ */
+export async function getUsersByIds(userIds: string[]): Promise<User[]> {
+  if (!userIds.length) return [];
+
+  // Firestore "in" queries are limited to 10 items (or 30 depending on version, but 10 is safe).
+  // For larger lists, we need to batch or just parallel fetch by ID (which is often simpler/faster for < 100 items).
+  // Given we are fetching "top 5 followers" in the sidebar, parallel getDoc is fine.
+
+  const chunks = [];
+  const chunkSize = 10;
+
+  // Actually, for "in" query limits, let's just stick to parallel getDoc for simplicity 
+  // unless we expect massive lists, which we don't for the sidebar.
+  // However, documentId() 'in' query is efficient.
+
+  if (userIds.length <= 10) {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('userId', 'in', userIds));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data() as User);
+  }
+
+  // Fallback for > 10: Parallel requests (Project status list logic style)
+  const users: User[] = [];
+  await Promise.all(userIds.map(async (uid) => {
+    const u = await getUserProfile(uid);
+    if (u) users.push(u);
+  }));
+
+  return users;
+}

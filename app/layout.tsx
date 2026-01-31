@@ -49,6 +49,8 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 
 import { ViewTransitions } from 'next-view-transitions';
 
+import { PresenceTracker } from '@/components/social/PresenceTracker';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -63,6 +65,7 @@ export default function RootLayout({
             <CommandMenu />
             <Toaster position="top-center" richColors />
             <InstallPrompt />
+            <PresenceTracker />
           </AuthProvider>
         </body>
       </html>
