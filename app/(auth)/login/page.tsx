@@ -59,7 +59,14 @@ export default function LoginPage() {
 
       {/* Background Image */}
       {/* Background Image */}
-      <div className="absolute inset-0 z-0">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          maskImage: 'radial-gradient(circle at center, black 40%, transparent 90%)',
+          WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 90%)'
+        }}
+      >
         <Image
           src="/login-bg-v4.png"
           alt="Abstract decorative background"
@@ -75,8 +82,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
         <div className="absolute inset-0 hidden lg:block bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
-        {/* Ultra-Wide Vignette: Fades edges to solid background color to hide hard image boundaries */}
-        <div className="absolute inset-0 hidden min-[2000px]:block bg-gradient-to-r from-[#0E0E12] via-transparent to-[#0E0E12]" />
+        {/* Desktop Gradients: Stronger contrast for split layout */}
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-t from-black/80 via-transparent to-transparent" />
       </div>
 
       {/* Header */}
