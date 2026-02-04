@@ -9,7 +9,7 @@ export default function Home() {
       {/* Background Image - Matching Login Page */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/login-bg-v3.png"
+          src="/login-bg-v4.png"
           alt="Abstract decorative background"
           fill
           className="object-cover object-center"
