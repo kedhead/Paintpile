@@ -62,7 +62,7 @@ export default function Home() {
       </div>
 
       {/* Footer / Credits */}
-      <div className="absolute bottom-6 text-sm text-gray-500 relative z-10">
+      <div className="mt-12 md:absolute md:bottom-6 text-sm text-gray-500 relative z-10">
         <p>© {new Date().getFullYear()} PaintPile. All rights reserved.</p>
       </div>
     </div>
