@@ -7,7 +7,14 @@ export default function Home() {
     <div className="min-h-screen bg-[#0E0E12] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-amber-500/30">
 
       {/* Background Image - Matching Login Page */}
-      <div className="absolute inset-0 z-0">
+      {/* Background Image - Matching Login Page */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)'
+        }}
+      >
         <Image
           src="/login-bg-v4.png"
           alt="Abstract decorative background"
