@@ -12,8 +12,8 @@ export default function Home() {
       <div
         className="absolute inset-0 z-0"
         style={{
-          maskImage: 'radial-gradient(circle at center, black 40%, transparent 90%)',
-          WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 90%)'
+          maskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)',
+          WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)'
         }}
       >
         <Image
