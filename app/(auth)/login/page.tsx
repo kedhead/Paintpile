@@ -63,13 +63,16 @@ export default function LoginPage() {
           src="/login-bg-v3.png"
           alt="Abstract decorative background"
           fill
-          className="object-cover"
+          className="object-cover object-center"
           priority
           quality={100}
         />
-        {/* Gradient overlay to ensure text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        {/* Mobile Gradient: Top/Bottom darkness for text/card readability, clear middle */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 lg:hidden" />
+
+        {/* Desktop Gradients: Stronger contrast for split layout */}
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-t from-black/80 via-transparent to-transparent" />
       </div>
 
       {/* Header */}
@@ -104,7 +107,7 @@ export default function LoginPage() {
 
           {/* Headline */}
           <div className="space-y-4">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white tracking-tight leading-[1.1]">
               Turn your <br />
               Grey Plastic <br />
               into <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-500 to-amber-600 drop-shadow-[0_0_10px_rgba(217,119,6,0.3)]">Art.</span>
@@ -112,7 +115,7 @@ export default function LoginPage() {
           </div>
 
           {/* Subtext */}
-          <p className="text-lg text-gray-400 leading-relaxed max-w-lg mx-auto lg:mx-0 font-light">
+          <p className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-lg mx-auto lg:mx-0 font-light">
             The ultimate companion for miniature painters. <br className="hidden lg:block" />
             Track your backlog, document your recipes, and <br className="hidden lg:block" />
             share your gallery with the world.
