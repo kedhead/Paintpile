@@ -57,51 +57,17 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0E0E12] flex flex-col relative overflow-hidden font-sans selection:bg-amber-500/30">
 
-      {/* Background Gradients */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-blue-900/10 blur-[150px] rounded-full pointer-events-none" />
-
-      {/* Decorative Brush Strokes - Enhanced */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <svg
-          className="absolute bottom-0 left-0 w-full h-[80%] opacity-80"
-          viewBox="0 0 1440 800"
-          fill="none"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#d4a84b" stopOpacity="0" />
-              <stop offset="20%" stopColor="#d4a84b" stopOpacity="0.8" />
-              <stop offset="80%" stopColor="#b8892f" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#d4a84b" stopOpacity="0" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          <path
-            d="M-200 600 C100 550, 400 650, 700 600 S1200 450, 1600 500"
-            stroke="url(#goldGradient)"
-            strokeWidth="1.5"
-            fill="none"
-            filter="url(#glow)"
-            opacity="0.6"
-          />
-          <path
-            d="M-100 650 C200 600, 500 700, 800 650 S1300 500, 1700 550"
-            stroke="url(#goldGradient)"
-            strokeWidth="1"
-            fill="none"
-            filter="url(#glow)"
-            opacity="0.4"
-          />
-        </svg>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/login-bg.jpg"
+          alt="Abstract decorative background"
+          fill
+          className="object-cover opacity-90"
+          priority
+        />
+        {/* Subtle overlay to ensure text contrast if needed, though image looks dark enough */}
+        <div className="absolute inset-0 bg-background/20" />
       </div>
 
       {/* Header */}
