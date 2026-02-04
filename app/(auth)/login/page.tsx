@@ -118,27 +118,7 @@ export default function LoginPage() {
             share your gallery with the world.
           </p>
 
-          {/* Trust Indicators */}
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-8 gap-y-3 text-sm font-medium text-gray-400">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full border border-gray-600 flex items-center justify-center group-hover:border-amber-500 transition-colors">
-                <Check className="w-3 h-3 text-gray-400" />
-              </div>
-              Free forever
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full border border-gray-600 flex items-center justify-center">
-                <Check className="w-3 h-3 text-gray-400" />
-              </div>
-              No ads
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full border border-gray-600 flex items-center justify-center">
-                <Check className="w-3 h-3 text-gray-400" />
-              </div>
-              Community driven
-            </div>
-          </div>
+
         </div>
 
         {/* Right Side - Login Card */}
