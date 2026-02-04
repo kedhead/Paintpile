@@ -60,11 +60,12 @@ export default function LoginPage() {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/login-bg.jpg"
+          src="/login-bg-highres.png"
           alt="Abstract decorative background"
           fill
           className="object-cover opacity-90"
           priority
+          quality={100}
         />
         {/* Subtle overlay to ensure text contrast if needed, though image looks dark enough */}
         <div className="absolute inset-0 bg-background/20" />
