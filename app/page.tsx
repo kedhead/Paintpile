@@ -12,7 +12,7 @@ export default function Home() {
           src="/login-bg-v4.png"
           alt="Abstract decorative background"
           fill
-          className="object-cover object-bottom"
+          className="object-cover object-bottom min-[2000px]:object-contain"
           priority
           quality={100}
         />
