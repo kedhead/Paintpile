@@ -63,7 +63,7 @@ export default function LoginPage() {
           src="/login-bg-v4.png"
           alt="Abstract decorative background"
           fill
-          className="object-cover object-center"
+          className="object-cover object-bottom"
           priority
           quality={100}
         />
