@@ -71,20 +71,16 @@ export default function LoginPage() {
           src="/login-bg-v4.png"
           alt="Abstract decorative background"
           fill
-          className="object-cover object-bottom min-[2000px]:object-contain"
+          className="object-cover object-bottom min-[2000px]:object-contain brightness-110"
           priority
           quality={100}
         />
         {/* Mobile Gradient: Top/Bottom darkness for text/card readability, clear middle */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 lg:hidden" />
 
-        {/* Desktop Gradients: Stronger contrast for split layout */}
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-
-        {/* Desktop Gradients: Stronger contrast for split layout */}
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        {/* Desktop Gradients: Reduced opacity for brightness */}
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       </div>
 
       {/* Header */}

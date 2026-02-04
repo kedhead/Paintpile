@@ -20,18 +20,15 @@ export default function Home() {
           src="/login-bg-v4.png"
           alt="Abstract decorative background"
           fill
-          className="object-cover object-bottom min-[2000px]:object-contain"
+          className="object-cover object-bottom min-[2000px]:object-contain brightness-110"
           priority
           quality={100}
         />
         {/* Mobile Gradient: Top/Bottom darkness for readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90 lg:hidden" />
 
-        {/* Desktop Gradients: Subtle overlay */}
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
-
-        {/* Desktop Gradients: Subtle overlay */}
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
+        {/* Desktop Gradients: Reduced opacity */}
+        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/60 via-black/30 to-black/60" />
       </div>
 
       <div className="w-full max-w-4xl flex flex-col items-center space-y-12 relative z-10">
