@@ -55,7 +55,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       {/* Header */}
       <header className="w-full px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
@@ -74,8 +74,61 @@ export default function LoginPage() {
         </Link>
       </header>
 
+      {/* Decorative Brush Strokes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Main flowing brush stroke */}
+        <svg
+          className="absolute bottom-0 left-0 w-full h-[60%] opacity-30"
+          viewBox="0 0 1200 600"
+          fill="none"
+          preserveAspectRatio="xMidYMax slice"
+        >
+          <defs>
+            <linearGradient id="brushGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+              <stop offset="30%" stopColor="hsl(var(--primary))" stopOpacity="0.6" />
+              <stop offset="70%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="brushGradient2" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+              <stop offset="40%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {/* Primary flowing curve */}
+          <path
+            d="M-100 400 Q200 350, 400 380 T700 320 T1000 360 T1300 300"
+            stroke="url(#brushGradient1)"
+            strokeWidth="2"
+            fill="none"
+          />
+          {/* Secondary curve */}
+          <path
+            d="M-50 450 Q250 400, 500 420 T850 360 T1200 400"
+            stroke="url(#brushGradient2)"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          {/* Tertiary accent */}
+          <path
+            d="M100 500 Q400 450, 600 470 T900 420 T1100 450"
+            stroke="url(#brushGradient1)"
+            strokeWidth="1"
+            fill="none"
+            opacity="0.5"
+          />
+        </svg>
+
+        {/* Scattered paint dots */}
+        <div className="absolute bottom-[20%] left-[10%] w-1 h-1 rounded-full bg-primary/40" />
+        <div className="absolute bottom-[30%] left-[25%] w-2 h-2 rounded-full bg-primary/20" />
+        <div className="absolute bottom-[15%] right-[30%] w-1.5 h-1.5 rounded-full bg-primary/30" />
+        <div className="absolute bottom-[25%] right-[15%] w-1 h-1 rounded-full bg-primary/50" />
+      </div>
+
       {/* Main Content */}
-      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center px-6 py-8 lg:py-0 gap-12 lg:gap-20 max-w-7xl mx-auto w-full">
+      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center px-6 py-8 lg:py-0 gap-12 lg:gap-20 max-w-7xl mx-auto w-full relative z-10">
 
         {/* Left Side - Hero Content */}
         <div className="flex-1 max-w-xl text-center lg:text-left">
