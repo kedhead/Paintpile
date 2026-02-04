@@ -10,10 +10,6 @@ export default function Home() {
       {/* Background Image - Matching Login Page */}
       <div
         className="absolute inset-0 z-0"
-        style={{
-          maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)'
-        }}
       >
         <Image
           src="/login-bg-v4.png"
@@ -28,6 +24,9 @@ export default function Home() {
 
         {/* Desktop Gradients: Subtle overlay */}
         <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
+
+        {/* Ultra-Wide Vignette: Fades edges to solid background color */}
+        <div className="absolute inset-0 hidden min-[2000px]:block bg-gradient-to-r from-[#0E0E12] via-transparent to-[#0E0E12]" />
       </div>
 
       <div className="w-full max-w-4xl flex flex-col items-center space-y-12 relative z-10">
