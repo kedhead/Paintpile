@@ -63,12 +63,13 @@ export default function LoginPage() {
           src="/login-bg-highres.png"
           alt="Abstract decorative background"
           fill
-          className="object-cover opacity-90"
+          className="object-cover"
           priority
           quality={100}
         />
-        {/* Subtle overlay to ensure text contrast if needed, though image looks dark enough */}
-        <div className="absolute inset-0 bg-background/20" />
+        {/* Gradient overlay to ensure text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
       </div>
 
       {/* Header */}
@@ -146,7 +147,7 @@ export default function LoginPage() {
             {/* Card Glow */}
             <div className="absolute -inset-0.5 bg-gradient-to-b from-amber-500/10 to-transparent rounded-[32px] blur-xl opacity-50" />
 
-            <div className="relative bg-[#18181B]/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 lg:p-10 shadow-2xl ring-1 ring-white/5">
+            <div className="relative bg-[#18181B]/70 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 lg:p-10 shadow-2xl ring-1 ring-white/5">
 
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-white mb-2 tracking-wide">Welcome Back</h2>
