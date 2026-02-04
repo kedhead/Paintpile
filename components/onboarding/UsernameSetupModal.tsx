@@ -14,17 +14,39 @@ export function UsernameSetupModal({ currentUser }: { currentUser: FirebaseUser 
     const [error, setError] = useState('');
 
     // Check if user needs to set a username
+    // Flow: localStorage cache (per-device) → Firestore (cross-device source of truth)
     useEffect(() => {
         async function checkUsername() {
             if (!currentUser) return;
+
+            // Check localStorage first - this is a per-device cache to avoid DB reads
+            // For cross-device support, we always fall back to Firestore on new devices
+            const storageKey = `username_set_${currentUser.uid}`;
+            const usernameAlreadySet = localStorage.getItem(storageKey);
+
+            if (usernameAlreadySet === 'true') {
+                console.log('[UsernameSetup] Username already cached locally, skipping check');
+                setLoading(false);
+                return;
+            }
+
             try {
+                console.log('[UsernameSetup] Checking Firestore for username...');
                 const profile = await getUserProfile(currentUser.uid);
+
                 // Open modal if username is missing or empty
                 if (!profile?.username) {
+                    console.log('[UsernameSetup] No username found, showing modal');
                     setIsOpen(true);
+                } else {
+                    // User has a username in DB, permanently cache this locally
+                    console.log('[UsernameSetup] Username found in DB, caching locally:', profile.username);
+                    localStorage.setItem(storageKey, 'true');
                 }
             } catch (err) {
-                console.error('Error checking username:', err);
+                console.error('[UsernameSetup] Error checking username:', err);
+                // On error, don't show modal to avoid false positives
+                // The user can set their username manually in settings if needed
             } finally {
                 setLoading(false);
             }
@@ -67,7 +89,11 @@ export function UsernameSetupModal({ currentUser }: { currentUser: FirebaseUser 
                 usernameLower: username.toLowerCase()
             });
 
-            // 3. Close Modal
+            // 3. Permanently cache that username is set - never ask again
+            const storageKey = `username_set_${currentUser.uid}`;
+            localStorage.setItem(storageKey, 'true');
+
+            // 4. Close Modal
             setIsOpen(false);
 
             // Optional: Refresh page to update links across the app

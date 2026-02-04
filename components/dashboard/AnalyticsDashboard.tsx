@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserInventory } from '@/lib/firestore/inventory';
 import { getAllPaints } from '@/lib/firestore/paints';
@@ -41,6 +42,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 export function AnalyticsDashboard() {
     const { currentUser } = useAuth();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<{
         totalPaints: number;
@@ -333,10 +335,17 @@ export function AnalyticsDashboard() {
                         <div className="p-4 overflow-y-auto">
                             <div className="space-y-2">
                                 {projects.filter(p => p.status === 'not-started').map(project => (
-                                    <div key={project.projectId} className="p-3 bg-card border border-border rounded-lg">
+                                    <button
+                                        key={project.projectId}
+                                        onClick={() => {
+                                            setShowPileDetails(false);
+                                            router.push(`/projects/${project.projectId}`);
+                                        }}
+                                        className="w-full text-left p-3 bg-card border border-border rounded-lg hover:bg-muted/50 hover:border-primary/50 transition-colors cursor-pointer active:scale-[0.98]"
+                                    >
                                         <h4 className="font-medium">{project.name}</h4>
                                         <p className="text-xs text-muted-foreground line-clamp-1">{project.description || 'No description'}</p>
-                                    </div>
+                                    </button>
                                 ))}
                                 {projects.filter(p => p.status === 'not-started').length === 0 && (
                                     <p className="text-center text-muted-foreground py-4">No projects in the pile!</p>
