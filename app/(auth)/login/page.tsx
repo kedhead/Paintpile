@@ -61,7 +61,7 @@ export default function LoginPage() {
       {/* Background Image */}
       {/* Background Image */}
       <div
-        className="absolute inset-0 z-0 min-[2000px]:[mask-image:radial-gradient(circle_closest-side,black_40%,transparent)] min-[2000px]:[-webkit-mask-image:radial-gradient(circle_closest-side,black_40%,transparent)]"
+        className="absolute inset-0 z-0 min-[2000px]:[mask-image:linear-gradient(to_right,transparent_15%,black_40%,black_60%,transparent_85%)] min-[2000px]:[-webkit-mask-image:linear-gradient(to_right,transparent_15%,black_40%,black_60%,transparent_85%)]"
       >
         <Image
           src="/login-bg-v4.png"
@@ -262,6 +262,6 @@ export default function LoginPage() {
 
         </div>
       </div>
-    </div>
+    </div >
   );
 }
