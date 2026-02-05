@@ -2,13 +2,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Trophy, AlertTriangle, CheckCircle2, XCircle, Share2, Download, Facebook, Twitter, Instagram } from 'lucide-react';
+import { Sparkles, Trophy, AlertTriangle, CheckCircle2, XCircle, Share2, Download, Facebook, Twitter, Instagram, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from '@/components/ui/Dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
@@ -17,6 +18,7 @@ import { getUserProfile } from '@/lib/firestore/users';
 import { updateProject } from '@/lib/firestore/projects';
 import { Timestamp } from 'firebase/firestore';
 import { CritiqueDetails, CritiqueResult } from './CritiqueDetails';
+import { Photo } from '@/types/photo';
 
 interface AnalysisResult {
     grade: 'Beginner' | 'Tabletop Ready' | 'Tabletop Plus' | 'Display Standard' | 'Competition Level';
@@ -32,14 +34,31 @@ interface MiniatureAnalyzerProps {
     thumbnailUrl?: string;
     projectName: string;
     projectId: string;
+    projectPhotos?: Photo[];
 }
 
-export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName, projectId }: MiniatureAnalyzerProps) {
+export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName, projectId, projectPhotos = [] }: MiniatureAnalyzerProps) {
     const { getAuthToken } = useAuth();
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isOpen, setIsOpen] = useState(false);
+
+    // Default to the current image if no others, or empty if we want them to pick
+    const [selectedPhotos, setSelectedPhotos] = useState<string[]>([imageUrl]);
+
+    const togglePhotoSelection = (url: string) => {
+        if (selectedPhotos.includes(url)) {
+            // Prevent deselecting the last one
+            if (selectedPhotos.length > 1) {
+                setSelectedPhotos(prev => prev.filter(p => p !== url));
+            }
+        } else {
+            if (selectedPhotos.length < 4) {
+                setSelectedPhotos(prev => [...prev, url]);
+            }
+        }
+    };
 
     const handleAnalyze = async () => {
         try {
@@ -48,13 +67,23 @@ export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName, project
             const token = await getAuthToken();
             if (!token) throw new Error('Not authenticated');
 
+            // Format images for API
+            // Simple labeling based on order for now (Image 1, Image 2...)
+            // Ideally UI would ask "Is this front or back?" but selection is a good MVP step
+            const imagesPayload = selectedPhotos.map((url, idx) => ({
+                url,
+                label: `Angle ${idx + 1}`
+            }));
+
             const response = await fetch('/api/ai/analyze-miniature', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ imageUrl })
+                body: JSON.stringify({
+                    images: imagesPayload
+                })
             });
 
             const data = await response.json();
@@ -69,31 +98,17 @@ export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName, project
         }
     };
 
-    const getGradeColor = (grade: string) => {
-        switch (grade) {
-            case 'Competition Level': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-            case 'Display Standard': return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
-            case 'Tabletop Plus': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-            case 'Tabletop Ready': return 'text-green-500 bg-green-500/10 border-green-500/20';
-            default: return 'text-slate-500 bg-slate-500/10 border-slate-500/20';
-        }
-    };
-
-    const getScoreColor = (score: number) => {
-        if (score >= 90) return 'text-yellow-500';
-        if (score >= 80) return 'text-purple-500';
-        if (score >= 70) return 'text-blue-500';
-        if (score >= 50) return 'text-green-500';
-        return 'text-slate-500';
-    };
-
     return (
         <>
             <Button
                 variant="outline"
                 size="sm"
                 className="gap-2"
-                onClick={() => setIsOpen(true)}
+                onClick={() => {
+                    setIsOpen(true);
+                    // Reset selection to current image when opening if empty
+                    if (selectedPhotos.length === 0) setSelectedPhotos([imageUrl]);
+                }}
             >
                 <Sparkles className="w-4 h-4 text-purple-500" />
                 AI Critique
@@ -106,22 +121,56 @@ export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName, project
                             <Sparkles className="w-5 h-5 text-purple-500" />
                             AI Paint Critic: {projectName}
                         </DialogTitle>
+                        <DialogDescription>
+                            Select up to 4 angles (Front, Back, Side) for the most accurate critique.
+                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-6">
-                        {/* Initial State / Image Preview */}
+                        {/* Initial State / Image Selection */}
                         {!result && !loading && !error && (
-                            <div className="text-center space-y-4 py-8">
-                                <div className="relative w-48 h-48 mx-auto rounded-lg overflow-hidden border">
-                                    <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                                </div>
-                                <p className="text-muted-foreground">
-                                    Our AI judge will analyze your painting technique, contrast, and style to give you a grade and constructive feedback.
+                            <div className="space-y-6">
+                                {/* Selection Grid */}
+                                {projectPhotos.length > 0 ? (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
+                                        {projectPhotos.map((photo) => {
+                                            const isSelected = selectedPhotos.includes(photo.url);
+                                            return (
+                                                <div
+                                                    key={photo.photoId}
+                                                    onClick={() => togglePhotoSelection(photo.url)}
+                                                    className={`
+                                                        relative aspect-square cursor-pointer rounded-md overflow-hidden border-2 transition-all
+                                                        ${isSelected ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-transparent opacity-60 hover:opacity-100'}
+                                                    `}
+                                                >
+                                                    <img src={photo.thumbnailUrl || photo.url} alt="" className="w-full h-full object-cover" />
+                                                    {isSelected && (
+                                                        <div className="absolute top-1 right-1 bg-purple-500 text-white rounded-full p-0.5">
+                                                            <Check className="w-3 h-3" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="relative w-48 h-48 mx-auto rounded-lg overflow-hidden border">
+                                        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+
+                                <p className="text-center text-sm text-muted-foreground">
+                                    {selectedPhotos.length} photo{selectedPhotos.length !== 1 ? 's' : ''} selected.
+                                    Our AI judge will analyze consistency, technique, and contrast.
                                 </p>
-                                <Button onClick={handleAnalyze} size="lg" className="w-full max-w-xs gap-2">
-                                    <Sparkles className="w-4 h-4" />
-                                    Analyze Paint Job
-                                </Button>
+
+                                <div className="flex justify-center">
+                                    <Button onClick={handleAnalyze} size="lg" className="w-full max-w-sm gap-2" disabled={selectedPhotos.length === 0}>
+                                        <Sparkles className="w-4 h-4" />
+                                        Analyze Paint Job
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
@@ -130,7 +179,8 @@ export function MiniatureAnalyzer({ imageUrl, thumbnailUrl, projectName, project
                             <div className="text-center py-12 space-y-4">
                                 <Spinner size="lg" className="mx-auto" />
                                 <p className="text-muted-foreground animate-pulse">
-                                    Analyzing brush strokes... Calculating contrast... Judging highlights...
+                                    Analyzing {selectedPhotos.length} viewing angles...<br />
+                                    Checking consistency and technique...
                                 </p>
                             </div>
                         )}

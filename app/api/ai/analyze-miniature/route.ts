@@ -17,10 +17,21 @@ export async function POST(request: NextRequest) {
         const decodedToken = await getAuth().verifyIdToken(token);
         const userId = decodedToken.uid;
 
-        const { imageUrl } = await request.json();
+        // Support both legacy single image and new multi-image format
+        const body = await request.json();
+        const { imageUrl, images } = body;
 
-        if (!imageUrl) {
-            return NextResponse.json({ error: 'Image URL is required' }, { status: 400 });
+        // Normalize to array of objects { url, label? }
+        const inputImages: Array<{ url: string; label?: string }> = [];
+
+        if (images && Array.isArray(images) && images.length > 0) {
+            inputImages.push(...images);
+        } else if (imageUrl) {
+            inputImages.push({ url: imageUrl, label: 'Main View' });
+        }
+
+        if (inputImages.length === 0) {
+            return NextResponse.json({ error: 'Image URL(s) required' }, { status: 400 });
         }
 
         const oneMin = createOneMinClient();
@@ -28,15 +39,34 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'AI Client not configured' }, { status: 500 });
         }
 
-        // Fetch the image and convert to base64
-        const imageRes = await fetch(imageUrl);
-        if (!imageRes.ok) throw new Error('Failed to fetch image');
-        const buffer = await imageRes.arrayBuffer();
-        const base64Image = Buffer.from(buffer).toString('base64');
-        const mediaType = imageRes.headers.get('content-type') || 'image/jpeg';
+        // Fetch and convert all images to base64
+        console.log(`[AI Critic] Processing ${inputImages.length} images for user ${userId}`);
+
+        const processedImages: Array<{ base64: string; mediaType: string }> = [];
+
+        await Promise.all(inputImages.map(async (img) => {
+            const imageRes = await fetch(img.url);
+            if (!imageRes.ok) throw new Error(`Failed to fetch image: ${img.url}`);
+            const buffer = await imageRes.arrayBuffer();
+            const base64 = Buffer.from(buffer).toString('base64');
+            const mediaType = imageRes.headers.get('content-type') || 'image/jpeg';
+            processedImages.push({ base64, mediaType });
+        }));
+
+        // Construct dynamic prompt based on inputs
+        let contextDescription = "";
+        if (inputImages.length > 1) {
+            contextDescription = "You are provided with multiple angles of the SAME miniature. Use them to form a complete opinion of the paint job consistency.\n";
+            inputImages.forEach((img, idx) => {
+                if (img.label) {
+                    contextDescription += `- Image ${idx + 1}: ${img.label}\n`;
+                }
+            });
+        }
 
         const prompt = `
         Act as a strict and critical miniature painting judge (Golden Demon standard). 
+        ${contextDescription}
         Analyze the painting quality of this miniature. Be honest and critical; do not sugarcoat issues.
         
         CRITICAL CHECKLIST:
@@ -49,6 +79,7 @@ export async function POST(request: NextRequest) {
         2. Contrast (volumes, shadows, highlights)
         3. Advanced techniques (NMM, OSL, Weathering, Blending)
         4. Color choice and harmony.
+        5. Consistency across angles (if multiple provided).
         
         Provide the result strictly as a valid JSON object with this schema:
         {
@@ -63,10 +94,9 @@ export async function POST(request: NextRequest) {
         `;
 
         const result = await oneMin.chatWithImage({
-            model: 'gpt-4o', // Best for vision
+            model: 'gpt-4o',
             prompt,
-            imageBase64: base64Image,
-            imageMediaType: mediaType,
+            images: processedImages,
             maxTokens: 1000
         });
 

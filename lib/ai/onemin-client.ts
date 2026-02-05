@@ -101,8 +101,11 @@ export class OneMinClient {
   async chatWithImage(options: {
     model: string;
     prompt: string;
-    imageBase64: string;
-    imageMediaType: string;
+    // Legacy single image support
+    imageBase64?: string;
+    imageMediaType?: string;
+    // New multi-image support
+    images?: Array<{ base64: string; mediaType: string }>;
     maxTokens?: number;
   }): Promise<string> {
     let model = this.mapModel(options.model);
@@ -116,16 +119,32 @@ export class OneMinClient {
 
     console.log(`[1min.ai] Sending image chat request with model: ${model}`);
 
-    // 1min.ai expects images to be uploaded as assets first
-    // Step 1: Upload the image
-    let imageKey: string;
+    // normalize input to array
+    const imagesToUpload: Array<{ base64: string; mediaType: string }> = [];
+    if (options.images && options.images.length > 0) {
+      imagesToUpload.push(...options.images);
+    } else if (options.imageBase64 && options.imageMediaType) {
+      imagesToUpload.push({ base64: options.imageBase64, mediaType: options.imageMediaType });
+    }
+
+    if (imagesToUpload.length === 0) {
+      throw new Error('No images provided for chatWithImage');
+    }
+
+    // Upload all images
+    const imageKeys: string[] = [];
     try {
-      console.log('[1min.ai] Uploading image asset...');
-      imageKey = await this.uploadAsset(options.imageBase64, options.imageMediaType);
-      console.log(`[1min.ai] Image uploaded successfully, key: ${imageKey}`);
+      console.log(`[1min.ai] Uploading ${imagesToUpload.length} image assets...`);
+      // Run uploads in parallel
+      const uploadPromises = imagesToUpload.map(img =>
+        this.uploadAsset(img.base64, img.mediaType)
+      );
+      const keys = await Promise.all(uploadPromises);
+      imageKeys.push(...keys);
+      console.log(`[1min.ai] All images uploaded successfully. Keys: ${imageKeys.join(', ')}`);
     } catch (error: any) {
       console.error('[1min.ai] Asset upload failed:', error);
-      throw new Error(`Failed to upload image to 1min.ai: ${error.message}`);
+      throw new Error(`Failed to upload images to 1min.ai: ${error.message}`);
     }
 
     const request: OneMinChatRequest = {
@@ -135,7 +154,7 @@ export class OneMinClient {
         prompt: options.prompt,
         isMixed: false,
         webSearch: false,
-        imageList: [imageKey], // Use the provided key/path
+        imageList: imageKeys,
       },
     };
 
