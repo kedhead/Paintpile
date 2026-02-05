@@ -128,10 +128,11 @@ export default function ProjectDetailClient() {
             }
         }
 
+        loadProject();
+        loadArmies();
+
         if (currentUser) {
-            loadProject();
             loadUserProfile();
-            loadArmies();
         }
     }, [projectId, currentUser]);
 
