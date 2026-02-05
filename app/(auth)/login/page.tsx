@@ -62,7 +62,7 @@ export default function LoginPage() {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/login-bg-ultrawide.png"
+          src="/login-bg-ultrawide.jpg"
           alt="Abstract decorative background"
           fill
           className="object-cover object-center brightness-110"
