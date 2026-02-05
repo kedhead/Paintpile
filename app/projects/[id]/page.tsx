@@ -66,7 +66,6 @@ export async function generateMetadata(
         title: `${project.name} | PaintPile`,
         description: project.description || `Check out ${project.name} on PaintPile!`,
         images: [imageUrl],
-        type: 'article',
       },
     };
   } catch (error) {
