@@ -135,6 +135,26 @@ export function PaintSelector({
     return selectedPaints.some((p) => p.paintId === paint.paintId);
   }
 
+  // Sort brands - Memoized at top level to be safe from early returns
+  const sortedBrands = useMemo(() => {
+    // Get all unique brands from the actual data
+    const uniqueBrands = Array.from(new Set(allPaints.map(p => p.brand)));
+
+    // Sort: Popular brands first (based on PAINT_BRANDS order), then alphabetical
+    return uniqueBrands.sort((a, b) => {
+      const indexA = PAINT_BRANDS.indexOf(a);
+      const indexB = PAINT_BRANDS.indexOf(b);
+
+      const isPopularA = indexA !== -1;
+      const isPopularB = indexB !== -1;
+
+      if (isPopularA && isPopularB) return indexA - indexB;
+      if (isPopularA) return -1;
+      if (isPopularB) return 1;
+      return a.localeCompare(b);
+    });
+  }, [allPaints]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -170,24 +190,7 @@ export function PaintSelector({
           </button>
 
           {/* Dynamic Brand List */}
-          {useMemo(() => {
-            // Get all unique brands from the actual data
-            const uniqueBrands = Array.from(new Set(allPaints.map(p => p.brand)));
-
-            // Sort: Popular brands first (based on PAINT_BRANDS order), then alphabetical
-            return uniqueBrands.sort((a, b) => {
-              const indexA = PAINT_BRANDS.indexOf(a);
-              const indexB = PAINT_BRANDS.indexOf(b);
-
-              const isPopularA = indexA !== -1;
-              const isPopularB = indexB !== -1;
-
-              if (isPopularA && isPopularB) return indexA - indexB;
-              if (isPopularA) return -1;
-              if (isPopularB) return 1;
-              return a.localeCompare(b);
-            });
-          }, [allPaints]).map((brand) => (
+          {sortedBrands.map((brand) => (
             <button
               key={brand}
               onClick={() => setSelectedBrand(brand)}
