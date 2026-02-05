@@ -81,11 +81,11 @@ export default function LoginPage() {
       <header className="w-full px-6 lg:px-12 py-6 flex items-center justify-between relative z-20">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/paintpile-logo.png"
+            src="/images/paintpile-logo-main.png"
             alt="PaintPile"
-            width={220}
-            height={64}
-            className="h-16 w-auto"
+            width={320}
+            height={96}
+            className="h-20 md:h-24 w-auto"
           />
         </Link>
         <Link href="/signup">
