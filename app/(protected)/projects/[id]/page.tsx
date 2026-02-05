@@ -19,7 +19,13 @@ export async function generateMetadata(
     // Note: This runs on the server. If the project is private, the unauthenticated fetch 
     // might fail or return null depending on Firestore Rules.
     // If it fails, we fall back to generic metadata.
-    const project = await getProject(id);
+    let project = null;
+    try {
+      project = await getProject(id);
+    } catch (err) {
+      console.warn('Metadata fetch failed (likely private/permissions):', err);
+      // Project not accessible = treat as private/not found for OG tags
+    }
 
     if (!project || !project.isPublic) {
       return {
@@ -43,7 +49,7 @@ export async function generateMetadata(
         }
       }
     } catch (err) {
-      console.warn('Error fetching photos for metadata:', err);
+      // Ignore photo fetch errors for metadata
     }
 
     return {
