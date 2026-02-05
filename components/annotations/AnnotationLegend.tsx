@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { PhotoAnnotation } from '@/types/photo';
 import { Paint } from '@/types/paint';
 import { getPaintsByIds } from '@/lib/firestore/paints';
@@ -24,42 +24,61 @@ export function AnnotationLegend({
     onSelectAnnotation,
     className = '',
 }: AnnotationLegendProps) {
-    const [annotationsWithPaints, setAnnotationsWithPaints] = useState<AnnotationWithPaints[]>([]);
+    const [paintMap, setPaintMap] = useState<Map<string, Paint>>(new Map());
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadPaints();
+    // Memoize paint IDs to prevent unnecessary fetches
+    const paintIds = useMemo(() => {
+        const ids = new Set<string>();
+        annotations.forEach((ann) => {
+            ann.paints.forEach((p) => ids.add(p.paintId));
+        });
+        return Array.from(ids);
     }, [annotations]);
 
-    async function loadPaints() {
-        setLoading(true);
-        try {
-            // Collect all unique paint IDs from all annotations
-            const allPaintIds = new Set<string>();
-            annotations.forEach((ann) => {
-                ann.paints.forEach((p) => allPaintIds.add(p.paintId));
-            });
+    // Load paints when paint IDs change
+    useEffect(() => {
+        let cancelled = false;
 
-            // Fetch all paints at once
-            const paints = await getPaintsByIds(Array.from(allPaintIds));
-            const paintMap = new Map(paints.map((p) => [p.paintId, p]));
+        async function fetchPaints() {
+            if (paintIds.length === 0) {
+                setPaintMap(new Map());
+                setLoading(false);
+                return;
+            }
 
-            // Build annotationsWithPaints array
-            const withPaints: AnnotationWithPaints[] = annotations.map((ann, idx) => ({
-                annotation: ann,
-                index: idx + 1,
-                paints: ann.paints
-                    .map((p) => paintMap.get(p.paintId))
-                    .filter((p): p is Paint => p !== undefined),
-            }));
-
-            setAnnotationsWithPaints(withPaints);
-        } catch (err) {
-            console.error('Error loading paints for legend:', err);
-        } finally {
-            setLoading(false);
+            setLoading(true);
+            try {
+                const paints = await getPaintsByIds(paintIds);
+                if (!cancelled) {
+                    setPaintMap(new Map(paints.map((p) => [p.paintId, p])));
+                }
+            } catch (err) {
+                console.error('Error loading paints for legend:', err);
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
         }
-    }
+
+        fetchPaints();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [paintIds]);
+
+    // Build annotationsWithPaints from current state
+    const annotationsWithPaints: AnnotationWithPaints[] = useMemo(() => {
+        return annotations.map((ann, idx) => ({
+            annotation: ann,
+            index: idx + 1,
+            paints: ann.paints
+                .map((p) => paintMap.get(p.paintId))
+                .filter((p): p is Paint => p !== undefined),
+        }));
+    }, [annotations, paintMap]);
 
     // Generate consistent color for annotation based on ID
     function getAnnotationColor(annotationId: string): string {
@@ -118,8 +137,8 @@ export function AnnotationLegend({
                         key={annotation.id}
                         onClick={() => onSelectAnnotation(annotation.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left ${isSelected
-                                ? 'bg-white/10 ring-1 ring-white/30'
-                                : 'hover:bg-white/5'
+                            ? 'bg-white/10 ring-1 ring-white/30'
+                            : 'hover:bg-white/5'
                             }`}
                     >
                         {/* Numbered Badge - Pentagon style */}
