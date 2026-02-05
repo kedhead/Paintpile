@@ -5,6 +5,8 @@ import { PhotoAnnotation } from '@/types/photo';
 
 interface AnnotationMarkerProps {
   annotation: PhotoAnnotation;
+  index: number;                    // Display number (1, 2, 3...)
+  markerColor?: string;             // Optional hex color from paint
   isSelected: boolean;
   showLabel: boolean;
   isDraggable: boolean;
@@ -16,6 +18,8 @@ interface AnnotationMarkerProps {
 
 export function AnnotationMarker({
   annotation,
+  index,
+  markerColor,
   isSelected,
   showLabel,
   isDraggable,
@@ -27,25 +31,39 @@ export function AnnotationMarker({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const markerRef = useRef<HTMLDivElement>(null);
-  const lastMoveTime = useRef<number>(0);
-  const pendingMove = useRef<{ x: number; y: number } | null>(null);
 
   // Calculate pixel position from percentage
   const pixelX = (annotation.x / 100) * containerWidth;
   const pixelY = (annotation.y / 100) * containerHeight;
 
-  // Get color from first paint in annotation (if any)
+  // Get marker color - use provided color or generate from hash
   const getMarkerColor = () => {
-    if (annotation.paints.length > 0) {
-      // Use a hash of the annotation ID to generate a consistent color
-      const hash = annotation.id.split('').reduce((acc, char) => {
-        return char.charCodeAt(0) + ((acc << 5) - acc);
-      }, 0);
-      const hue = Math.abs(hash % 360);
-      return `hsl(${hue}, 70%, 50%)`;
-    }
-    return '#3b82f6'; // Default blue
+    if (markerColor) return markerColor;
+
+    // Fallback: generate consistent color from annotation ID
+    const hash = annotation.id.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 50%)`;
   };
+
+  // Determine text color based on background brightness
+  const getTextColor = (bgColor: string) => {
+    // Simple check - if color looks dark, use white text
+    if (bgColor.startsWith('#')) {
+      const hex = bgColor.slice(1);
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness > 128 ? '#000000' : '#ffffff';
+    }
+    return '#ffffff'; // Default to white for HSL colors
+  };
+
+  const bgColor = getMarkerColor();
+  const textColor = getTextColor(bgColor);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isDraggable) {
@@ -103,9 +121,8 @@ export function AnnotationMarker({
   return (
     <div
       ref={markerRef}
-      className={`absolute flex items-center gap-2 ${
-        isDraggable ? 'cursor-move' : 'cursor-pointer'
-      } ${isDragging ? 'z-50' : 'z-10'}`}
+      className={`absolute flex items-center gap-1 ${isDraggable ? 'cursor-move' : 'cursor-pointer'
+        } ${isDragging ? 'z-50' : 'z-10'}`}
       style={{
         left: `${pixelX}px`,
         top: `${pixelY}px`,
@@ -113,24 +130,32 @@ export function AnnotationMarker({
       }}
       onMouseDown={handleMouseDown}
     >
-      {/* Marker Dot */}
+      {/* Numbered Badge - Pentagon/Hexagon style like reference */}
       <div
-        className={`w-6 h-6 rounded-full border-2 transition-all ${
-          isSelected
-            ? 'border-white shadow-lg scale-125'
-            : 'border-white/80 shadow-md'
-        }`}
-        style={{ backgroundColor: getMarkerColor() }}
-      />
+        className={`relative flex items-center justify-center transition-all ${isSelected ? 'scale-125' : ''
+          }`}
+      >
+        {/* Pentagon shape using clip-path */}
+        <div
+          className={`w-7 h-7 flex items-center justify-center font-bold text-sm shadow-lg border-2 ${isSelected ? 'border-white' : 'border-white/60'
+            }`}
+          style={{
+            backgroundColor: bgColor,
+            color: textColor,
+            clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
+          }}
+        >
+          {index}
+        </div>
+      </div>
 
-      {/* Label */}
+      {/* Optional Label (for editing mode) */}
       {showLabel && annotation.label && (
         <div
-          className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap transition-all ${
-            isSelected
+          className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap transition-all ${isSelected
               ? 'bg-white text-gray-900 shadow-lg'
-              : 'bg-black/70 text-white'
-          }`}
+              : 'bg-black/80 text-white'
+            }`}
         >
           {annotation.label}
         </div>
@@ -138,3 +163,4 @@ export function AnnotationMarker({
     </div>
   );
 }
+

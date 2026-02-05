@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Photo, PhotoAnnotation } from '@/types/photo';
 import { AnnotationMarker } from './AnnotationMarker';
+import { AnnotationLegend } from './AnnotationLegend';
 import { AnnotationPanel } from './AnnotationPanel';
 import { Button } from '@/components/ui/Button';
 import { X, Eye, EyeOff, Move, Plus } from 'lucide-react';
@@ -215,9 +216,19 @@ export function PhotoAnnotator({
               Close
             </Button>
           </div>
-
-          {/* Photo Container */}
+          {/* Photo Container with Legend Overlay */}
           <div className="flex-1 relative flex items-center justify-center p-4 overflow-hidden">
+            {/* Legend Overlay - Top Left */}
+            {annotations.length > 0 && (
+              <div className="absolute top-6 left-6 z-20 max-w-xs bg-black/70 backdrop-blur-sm rounded-lg p-3 max-h-[40%] overflow-y-auto">
+                <AnnotationLegend
+                  annotations={annotations}
+                  selectedAnnotationId={selectedAnnotationId}
+                  onSelectAnnotation={setSelectedAnnotationId}
+                />
+              </div>
+            )}
+
             <div
               ref={imageContainerRef}
               className={`relative ${isAdding ? 'cursor-crosshair' : ''}`}
@@ -232,10 +243,11 @@ export function PhotoAnnotator({
               />
 
               {/* Annotation Markers */}
-              {annotations.map((annotation) => (
+              {annotations.map((annotation, idx) => (
                 <AnnotationMarker
                   key={annotation.id}
                   annotation={annotation}
+                  index={idx + 1}
                   isSelected={annotation.id === selectedAnnotationId}
                   showLabel={showLabels}
                   isDraggable={isDraggable}
