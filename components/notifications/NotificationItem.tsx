@@ -54,11 +54,10 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
 
   return (
     <Link
-      href={notification.actionUrl}
+      href={notification.actionUrl || '#'}
       onClick={handleClick}
-      className={`block px-4 py-3 hover:bg-muted/50 transition-colors ${
-        !notification.read ? 'bg-primary/5' : ''
-      }`}
+      className={`block px-4 py-3 hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-primary/5' : ''
+        }`}
     >
       <div className="flex items-start gap-3">
         {/* Actor Avatar */}
