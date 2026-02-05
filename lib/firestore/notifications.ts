@@ -46,14 +46,14 @@ export async function createNotification(
     type: notificationData.type,
     actorId: notificationData.actorId,
     actorUsername: notificationData.actorUsername,
-    actorPhotoURL: notificationData.actorPhotoURL,
+    actorPhotoURL: notificationData.actorPhotoURL || null,
     targetId: notificationData.targetId,
     targetType: notificationData.targetType,
-    targetName: notificationData.targetName,
+    targetName: notificationData.targetName || null,
     message: notificationData.message,
     read: false,
     createdAt: serverTimestamp(),
-    actionUrl: notificationData.actionUrl,
+    actionUrl: notificationData.actionUrl || null,
   };
 
   await setDoc(newNotificationRef, notification);

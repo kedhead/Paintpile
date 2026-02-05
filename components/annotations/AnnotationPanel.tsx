@@ -31,30 +31,44 @@ export function AnnotationPanel({
   const [selectedRole, setSelectedRole] = useState<'base' | 'highlight' | 'shadow'>('base');
 
   useEffect(() => {
+    let cancelled = false;
+
     if (annotation) {
       setEditedLabel(annotation.label);
       setEditedNotes(annotation.notes || '');
-      loadPaints();
-    }
-  }, [annotation]);
 
-  async function loadPaints() {
-    if (!annotation || annotation.paints.length === 0) {
+      const fetchPaints = async () => {
+        if (!annotation.paints || annotation.paints.length === 0) {
+          setPaints([]);
+          return;
+        }
+
+        try {
+          setLoading(true);
+          const paintIds = annotation.paints.map((p) => p.paintId);
+          const paintData = await getPaintsByIds(paintIds);
+
+          if (!cancelled) {
+            setPaints(paintData);
+          }
+        } catch (err) {
+          console.error('Error loading paints:', err);
+        } finally {
+          if (!cancelled) {
+            setLoading(false);
+          }
+        }
+      };
+
+      fetchPaints();
+    } else {
       setPaints([]);
-      return;
     }
 
-    try {
-      setLoading(true);
-      const paintIds = annotation.paints.map((p) => p.paintId);
-      const paintData = await getPaintsByIds(paintIds);
-      setPaints(paintData);
-    } catch (err) {
-      console.error('Error loading paints:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [annotation]);
 
   function handleLabelChange() {
     if (!annotation || !editedLabel.trim()) return;
@@ -93,7 +107,6 @@ export function AnnotationPanel({
     });
 
     setShowPaintSelector(false);
-    loadPaints();
   }
 
   function handleRemovePaint(paintId: string) {
@@ -103,8 +116,6 @@ export function AnnotationPanel({
       ...annotation,
       paints: annotation.paints.filter((p) => p.paintId !== paintId),
     });
-
-    loadPaints();
   }
 
   function handleUpdateRatio(paintId: string, ratio: string) {

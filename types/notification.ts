@@ -35,17 +35,17 @@ export interface Notification {
   // Actor (person who triggered the notification)
   actorId: string;
   actorUsername: string;
-  actorPhotoURL?: string;
+  actorPhotoURL?: string | null;
 
   // Target entity
   targetId: string;            // ID of project, army, recipe, etc.
   targetType: NotificationTargetType;
-  targetName?: string;         // Name of the target entity
+  targetName?: string | null;         // Name of the target entity
 
   message: string;             // Human-readable message
   read: boolean;
   createdAt: Timestamp;
-  actionUrl: string;           // URL to navigate to when clicked
+  actionUrl: string | null;           // URL to navigate to when clicked
 }
 
 /**
