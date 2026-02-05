@@ -110,9 +110,7 @@ export default function LoginPage() {
           {/* Headline */}
           <div className="space-y-4">
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white tracking-tight leading-[1.1]">
-              Turn your <br />
-              Grey Plastic <br />
-              into <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-500 to-amber-600 drop-shadow-[0_0_10px_rgba(217,119,6,0.3)]">Art.</span>
+              From Pile to <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-500 to-amber-600 drop-shadow-[0_0_10px_rgba(217,119,6,0.3)]">Painted</span>
             </h1>
           </div>
 
