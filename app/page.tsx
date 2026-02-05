@@ -9,14 +9,12 @@ export default function Home() {
       {/* Background Image - Matching Login Page */}
       {/* Background Image - Matching Login Page */}
       {/* Background Image - Matching Login Page */}
-      <div
-        className="absolute inset-0 z-0 min-[2000px]:[mask-image:linear-gradient(to_right,transparent_15%,black_40%,black_60%,transparent_85%)] min-[2000px]:[-webkit-mask-image:linear-gradient(to_right,transparent_15%,black_40%,black_60%,transparent_85%)]"
-      >
+      <div className="absolute inset-0 z-0">
         <Image
-          src="/login-bg-v4.png"
+          src="/login-bg-ultrawide.png"
           alt="Abstract decorative background"
           fill
-          className="object-cover object-bottom min-[2000px]:object-contain brightness-110"
+          className="object-cover object-center brightness-110"
           priority
           quality={100}
         />
