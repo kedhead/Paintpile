@@ -10,11 +10,7 @@ export default function Home() {
       {/* Background Image - Matching Login Page */}
       {/* Background Image - Matching Login Page */}
       <div
-        className="absolute inset-0 z-0"
-        style={{
-          maskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)',
-          WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)'
-        }}
+        className="absolute inset-0 z-0 min-[2000px]:[mask-image:radial-gradient(circle_closest-side,black_40%,transparent)] min-[2000px]:[-webkit-mask-image:radial-gradient(circle_closest-side,black_40%,transparent)]"
       >
         <Image
           src="/login-bg-v4.png"
@@ -73,6 +69,6 @@ export default function Home() {
       <div className="mt-12 md:absolute md:bottom-6 text-sm text-gray-500 relative z-10">
         <p>© {new Date().getFullYear()} PaintPile. All rights reserved.</p>
       </div>
-    </div>
+    </div >
   );
 }
