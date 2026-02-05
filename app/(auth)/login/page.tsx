@@ -65,7 +65,7 @@ export default function LoginPage() {
           src="/login-bg-ultrawide.jpg"
           alt="Abstract decorative background"
           fill
-          className="object-cover object-center brightness-110"
+          className="object-cover object-bottom lg:object-center brightness-110"
           priority
           quality={100}
         />
@@ -83,9 +83,9 @@ export default function LoginPage() {
           <Image
             src="/paintpile-logo.png"
             alt="PaintPile"
-            width={140}
-            height={40}
-            className="h-10 w-auto"
+            width={220}
+            height={64}
+            className="h-16 w-auto"
           />
         </Link>
         <Link href="/signup">
