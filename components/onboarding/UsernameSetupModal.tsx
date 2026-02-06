@@ -25,22 +25,18 @@ export function UsernameSetupModal({ currentUser }: { currentUser: FirebaseUser 
             const usernameAlreadySet = localStorage.getItem(storageKey);
 
             if (usernameAlreadySet === 'true') {
-                console.log('[UsernameSetup] Username already cached locally, skipping check');
                 setLoading(false);
                 return;
             }
 
             try {
-                console.log('[UsernameSetup] Checking Firestore for username...');
                 const profile = await getUserProfile(currentUser.uid);
 
                 // Open modal if username is missing or empty
                 if (!profile?.username) {
-                    console.log('[UsernameSetup] No username found, showing modal');
                     setIsOpen(true);
                 } else {
                     // User has a username in DB, permanently cache this locally
-                    console.log('[UsernameSetup] Username found in DB, caching locally:', profile.username);
                     localStorage.setItem(storageKey, 'true');
                 }
             } catch (err) {
