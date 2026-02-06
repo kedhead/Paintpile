@@ -133,13 +133,21 @@ export default function BadgesPage() {
                                     )}
                                 >
                                     <div
-                                        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3 shadow-inner"
+                                        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3 shadow-inner overflow-hidden"
                                         style={{
                                             backgroundColor: earned ? `${badge.color}20` : undefined,
                                             borderColor: badge.color
                                         }}
                                     >
-                                        {earned ? badge.icon : <Lock className="w-5 h-5 opacity-50" />}
+                                        {earned ? (
+                                            (badge.icon.startsWith('http') || badge.icon.startsWith('/')) ? (
+                                                <img src={badge.icon} alt={badge.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                badge.icon
+                                            )
+                                        ) : (
+                                            <Lock className="w-5 h-5 opacity-50" />
+                                        )}
                                     </div>
                                     <h3 className="font-bold text-sm mb-1">{badge.name}</h3>
                                     <p className="text-[10px] text-muted-foreground line-clamp-3 mb-2">{badge.description}</p>
