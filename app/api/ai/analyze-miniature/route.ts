@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         
         CRITICAL CHECKLIST:
         - BASING: Is the base painted and finished? If not, the grade cannot be higher than "Beginner".
-        - MOLD LINES: Are there visible mold lines?
+        - MOLD LINES: Are there visible mold lines? (Be careful not to mistake sharp highlights or texture for mold lines. Only flag if obvious.)
         - COVERAGE: Is primer showing through?
         
         Analyze:
