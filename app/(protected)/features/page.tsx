@@ -24,6 +24,7 @@ export default function FeaturesPage() {
             icon: Boxes,
             color: 'text-blue-500',
             bg: 'bg-blue-500/10',
+            href: '/pile',
         },
         {
             title: 'Smart Paint Recipes',
@@ -31,6 +32,7 @@ export default function FeaturesPage() {
             icon: Palette,
             color: 'text-emerald-500',
             bg: 'bg-emerald-500/10',
+            href: '/recipes',
         },
         {
             title: 'Army Management',
@@ -38,6 +40,7 @@ export default function FeaturesPage() {
             icon: Swords,
             color: 'text-red-500',
             bg: 'bg-red-500/10',
+            href: '/armies',
         },
         {
             title: 'Paint Diary',
@@ -45,6 +48,7 @@ export default function FeaturesPage() {
             icon: BookMarked,
             color: 'text-amber-500',
             bg: 'bg-amber-500/10',
+            href: '/diary',
         },
         {
             title: 'AI Paint Critic',
@@ -52,6 +56,7 @@ export default function FeaturesPage() {
             icon: Sparkles,
             color: 'text-purple-500',
             bg: 'bg-purple-500/10',
+            href: '/guides/ai-critic',
         },
         {
             title: 'AI Paint Tools',
@@ -59,6 +64,7 @@ export default function FeaturesPage() {
             icon: Palette,
             color: 'text-indigo-500',
             bg: 'bg-indigo-500/10',
+            href: '/guides/ai-tools',
         },
 
         {
@@ -67,6 +73,7 @@ export default function FeaturesPage() {
             icon: Share2,
             color: 'text-pink-500',
             bg: 'bg-pink-500/10',
+            href: '/community',
         },
         {
             title: 'Discovery',
@@ -74,6 +81,7 @@ export default function FeaturesPage() {
             icon: Search,
             color: 'text-indigo-500',
             bg: 'bg-indigo-500/10',
+            href: '/guides/paint-database',
         },
     ];
 
@@ -104,21 +112,23 @@ export default function FeaturesPage() {
             {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {features.map((feature, index) => (
-                    <Card key={index} className="border-border/50 hover:border-primary/50 transition-colors">
-                        <CardHeader>
-                            <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-xl ${feature.bg} ${feature.color}`}>
-                                    <feature.icon className="w-6 h-6" />
+                    <Link key={index} href={feature.href} className="block h-full">
+                        <Card className="h-full border-border/50 hover:border-primary/50 transition-colors cursor-pointer hover:bg-accent/5">
+                            <CardHeader>
+                                <div className="flex items-center gap-4">
+                                    <div className={`p-3 rounded-xl ${feature.bg} ${feature.color}`}>
+                                        <feature.icon className="w-6 h-6" />
+                                    </div>
+                                    <CardTitle className="text-lg">{feature.title}</CardTitle>
                                 </div>
-                                <CardTitle className="text-lg">{feature.title}</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground leading-relaxed">
-                                {feature.description}
-                            </p>
-                        </CardContent>
-                    </Card>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground leading-relaxed">
+                                    {feature.description}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 ))}
             </div>
 

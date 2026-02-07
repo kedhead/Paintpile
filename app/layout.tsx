@@ -46,6 +46,7 @@ export const metadata: Metadata = {
 import { Toaster } from 'sonner';
 
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
+import { PWAProvider } from '@/contexts/PWAContext';
 
 import { ViewTransitions } from 'next-view-transitions';
 
@@ -61,11 +62,13 @@ export default function RootLayout({
       <html lang="en" className={`${inter.variable} ${cinzel.variable} ${caveat.variable}`}>
         <body className="antialiased font-sans">
           <AuthProvider>
-            {children}
-            <CommandMenu />
-            <Toaster position="top-center" richColors />
-            <InstallPrompt />
-            <PresenceTracker />
+            <PWAProvider>
+              {children}
+              <CommandMenu />
+              <Toaster position="top-center" richColors />
+              <InstallPrompt />
+              <PresenceTracker />
+            </PWAProvider>
           </AuthProvider>
         </body>
       </html>

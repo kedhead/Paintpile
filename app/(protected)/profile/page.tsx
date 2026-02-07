@@ -12,6 +12,23 @@ import { Settings, Mail, Calendar, User as UserIcon, Heart, Users as UsersIcon, 
 import { formatDate } from '@/lib/utils/formatters';
 import { ProfileBadges } from '@/components/profile/ProfileBadges';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
+import { usePWA } from '@/contexts/PWAContext';
+import { Download } from 'lucide-react';
+
+function InstallButton() {
+  const { isInstallable, install } = usePWA();
+  if (!isInstallable) return null;
+  return (
+    <Button
+      variant="outline"
+      onClick={install}
+      className="flex items-center gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+    >
+      <Download className="h-4 w-4" />
+      Install App
+    </Button>
+  );
+}
 
 export default function ProfilePage() {
   const { currentUser } = useAuth();
@@ -64,14 +81,17 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
           <p className="text-gray-600 mt-1">View and manage your profile</p>
         </div>
-        <Button
-          variant="default"
-          onClick={() => router.push('/profile/edit')}
-          className="flex items-center gap-2"
-        >
-          <Settings className="h-4 w-4" />
-          Edit Profile
-        </Button>
+        <div className="flex gap-2">
+          <InstallButton />
+          <Button
+            variant="default"
+            onClick={() => router.push('/profile/edit')}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Edit Profile
+          </Button>
+        </div>
       </div>
 
       {/* Profile Card */}
@@ -251,8 +271,8 @@ export default function ProfilePage() {
         <button
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'overview'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
         >
           Overview
@@ -260,8 +280,8 @@ export default function ProfilePage() {
         <button
           onClick={() => setActiveTab('badges')}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'badges'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
         >
           <Award className="w-4 h-4" />
@@ -270,8 +290,8 @@ export default function ProfilePage() {
         <button
           onClick={() => setActiveTab('activity')}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'activity'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
         >
           Activity
