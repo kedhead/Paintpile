@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss, FlaskConical, Camera, Zap, Trophy, Home, Globe } from 'lucide-react';
+import { LayoutDashboard, Palette, Book, PlusCircle, LogOut, Users, ChefHat, BookOpen, Shield, Rss, FlaskConical, Camera, Zap, Trophy, Home, Globe, Boxes } from 'lucide-react';
 import { SidebarAd } from '@/components/ads/SidebarAd';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
@@ -33,6 +33,12 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
   }
 
   const navigation = [
+    {
+      name: 'My Collection',
+      href: '/pile',
+      icon: Boxes,
+      current: pathname === '/pile',
+    },
     {
       name: 'My Gallery',
       href: '/dashboard',

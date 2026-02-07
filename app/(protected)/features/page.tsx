@@ -11,7 +11,12 @@ import {
     Sparkles,
     Search,
     BookMarked,
-    ArrowRight
+    ArrowRight,
+    ChefHat,
+    Shield,
+    Book,
+    Wand2,
+    Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -20,68 +25,75 @@ export default function FeaturesPage() {
     const features = [
         {
             title: 'Collection Tracking',
-            description: 'Keep track of your entire miniature collection, from "Pile of Opportunity" to "Parade Ready". Manage inventory of paints, tools, and models.',
+            description: 'Keep track of your entire miniature collection. From pile of shame to fully painted armies.',
             icon: Boxes,
             color: 'text-blue-500',
             bg: 'bg-blue-500/10',
-            href: '/pile',
+            href: '/pile'
         },
         {
             title: 'Smart Paint Recipes',
-            description: 'Create, organize, and share painting recipes. Link specific paints to steps, estimate time, and attach reference photos.',
-            icon: Palette,
-            color: 'text-emerald-500',
-            bg: 'bg-emerald-500/10',
-            href: '/recipes',
+            description: 'Create, share, and discover paint recipes. AI helps you find color matches and mixing ratios.',
+            icon: ChefHat,
+            color: 'text-orange-500',
+            bg: 'bg-orange-500/10',
+            href: '/recipes' // Guide: /guides/recipes
         },
         {
             title: 'Army Management',
-            description: 'Group your projects into armies. Track points, total models painted, and overall progress for your entire force.',
-            icon: Swords,
+            description: 'Organize your models into armies. Track progress, points, and project completion status.',
+            icon: Shield,
             color: 'text-red-500',
             bg: 'bg-red-500/10',
-            href: '/armies',
+            href: '/armies'
         },
         {
             title: 'Paint Diary',
-            description: 'Log your daily painting sessions, notes, and learnings. Tag entries and link relevant tutorials or resources.',
-            icon: BookMarked,
-            color: 'text-amber-500',
-            bg: 'bg-amber-500/10',
-            href: '/diary',
+            description: 'Journal your painting journey. Log time, techniques used, and improvements on every model.',
+            icon: Book,
+            color: 'text-green-500',
+            bg: 'bg-green-500/10',
+            href: '/diary'
         },
         {
             title: 'AI Paint Critic',
-            description: 'Get instant, competition-level feedback on your miniatures. Our AI judge grades your work and provides specific tips for improvement.',
+            description: 'Get instant feedback on your painting. Our AI analyzes technique, contrast, and color theory.',
             icon: Sparkles,
             color: 'text-purple-500',
             bg: 'bg-purple-500/10',
-            href: '/guides/ai-critic',
+            href: '/guides/ai-critic'
+        },
+        {
+            title: 'AI Scheme Visualizer',
+            description: 'Visualize color schemes on your minis before you paint. Test ideas instantly.',
+            icon: Wand2,
+            color: 'text-pink-500',
+            bg: 'bg-pink-500/10',
+            href: '/guides/ai-tools' // Goes to the unified AI tools guide
         },
         {
             title: 'AI Paint Tools',
-            description: 'Use our AI to identify paints from images, suggest similar colors across brands, or generate recipe ideas.',
+            description: 'Color match from photos and get mixing recipes. Never guess a color again.',
             icon: Palette,
             color: 'text-indigo-500',
             bg: 'bg-indigo-500/10',
-            href: '/guides/ai-tools',
+            href: '/guides/ai-tools'
         },
-
         {
             title: 'Community Sharing',
-            description: 'Share your recipes and finished projects with the community. Discover new techniques and get inspired by other hobbiests.',
-            icon: Share2,
-            color: 'text-pink-500',
-            bg: 'bg-pink-500/10',
-            href: '/community',
+            description: 'Share your work, get inspired, and join challenges with other hobbyists.',
+            icon: Users,
+            color: 'text-yellow-500',
+            bg: 'bg-yellow-500/10',
+            href: '/community'
         },
         {
             title: 'Discovery',
-            description: 'Search a vast database of paints and recipes. Find exactly the color you need or the method to achieve that perfect NMM.',
+            description: 'Explore a massive database of paints from all major brands. Find equivalents easily.',
             icon: Search,
-            color: 'text-indigo-500',
-            bg: 'bg-indigo-500/10',
-            href: '/guides/paint-database',
+            color: 'text-cyan-500',
+            bg: 'bg-cyan-500/10',
+            href: '/guides/paint-database'
         },
     ];
 

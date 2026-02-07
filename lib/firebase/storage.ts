@@ -149,3 +149,33 @@ export async function deleteProfilePhoto(path: string): Promise<void> {
   const photoRef = ref(storage, path);
   await deleteObject(photoRef);
 }
+
+/**
+ * Upload a diary entry image
+ */
+export async function uploadDiaryImage(
+  userId: string,
+  file: File
+): Promise<string> {
+  // Compress to reasonable size (1920px max)
+  const compressedFile = await compressImage(file, 1920);
+  const fileName = `diary_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+  const storageRef = ref(storage, `users/${userId}/diary_images/${fileName}`);
+
+  const uploadTask = uploadBytesResumable(storageRef, compressedFile);
+
+  return new Promise((resolve, reject) => {
+    uploadTask.on(
+      'state_changed',
+      null, // No progress tracking needed for now
+      (error) => {
+        console.error('Upload error:', error);
+        reject(error);
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        resolve(downloadURL);
+      }
+    );
+  });
+}

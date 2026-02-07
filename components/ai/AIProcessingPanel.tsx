@@ -5,10 +5,13 @@ import { Photo, ColorSuggestion } from '@/types/photo';
 import { AIProcessingButton } from './AIProcessingButton';
 import { PaintSuggestionsPanel } from './PaintSuggestionsPanel';
 import { Button } from '@/components/ui/Button';
-import { Sparkles, Wand2, Sparkle, ArrowUpCircle, Download, ExternalLink, Lock, Palette } from 'lucide-react';
+import { Sparkles, Wand2, Sparkle, ArrowUpCircle, Download, ExternalLink, Lock, Palette, Save } from 'lucide-react';
 import { OPERATION_COSTS } from '@/lib/ai/constants';
 import { useRouter } from 'next/navigation';
 import { DonationButton } from '@/components/DonationButton';
+import { createDiaryEntry } from '@/lib/firestore/diary';
+import { uploadDiaryImage } from '@/lib/firebase/storage';
+import { toast } from 'sonner';
 
 interface AIProcessingPanelProps {
   photo: Photo;
@@ -39,6 +42,7 @@ export function AIProcessingPanel({
   const [paintVision, setPaintVision] = useState('');
   const [aiCleanedUrl, setAiCleanedUrl] = useState<string | null>(null);
   const [recolorUrl, setRecolorUrl] = useState<string | null>(null);
+  const [isSavingScheme, setIsSavingScheme] = useState(false);
 
   // Check if user has Pro access - DEPRECATED: All users have access with limits
   // if (!isPro) { ... }
@@ -102,6 +106,38 @@ export function AIProcessingPanel({
     onUpdate?.();
   };
 
+  // Handle Save Scheme to Dairy
+  const handleSaveSchemeToDiary = async () => {
+    if (!recolorUrl || !paintVision) return;
+
+    try {
+      setIsSavingScheme(true);
+
+      // 1. Fetch image and convert to File
+      const response = await fetch(recolorUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "visualized-scheme.png", { type: "image/png" });
+
+      // 2. Upload to storage
+      const imageUrl = await uploadDiaryImage(userId, file);
+
+      // 3. Create Diary Entry
+      await createDiaryEntry(userId, {
+        title: `Visualized Scheme: ${paintVision.substring(0, 30)}${paintVision.length > 30 ? '...' : ''}`,
+        content: `**Paint Vision Prompt:**\n${paintVision}\n\nGenerated from project photo.`,
+        links: [{ url: imageUrl, type: 'image', description: 'Visualized Paint Scheme' }],
+        tags: ['AI Visualization', 'Scheme Concept'],
+      });
+
+      toast.success('Saved to Paint Diary');
+    } catch (error) {
+      console.error('Error saving scheme:', error);
+      toast.error('Failed to save to diary');
+    } finally {
+      setIsSavingScheme(false);
+    }
+  };
+
   // Handle image enhancement
   const handleEnhanceImage = async () => {
     const response = await fetch('/api/ai/enhance-image', {
@@ -155,7 +191,6 @@ export function AIProcessingPanel({
   return (
     <div className="bg-card rounded-xl border border-border p-4 mt-4 space-y-4">
 
-      // ... inside component ...
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-border">
         <div className="flex items-center gap-2">
@@ -270,6 +305,15 @@ export function AIProcessingPanel({
                   Visualized Scheme
                 </span>
                 <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSaveSchemeToDiary}
+                    disabled={isSavingScheme}
+                    title="Save to Diary"
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"

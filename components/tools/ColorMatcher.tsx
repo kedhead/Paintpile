@@ -1,13 +1,15 @@
-'use client';
-
 import { useState, useRef, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, Crosshair, RefreshCw, Droplet } from 'lucide-react';
+import { Upload, X, Crosshair, RefreshCw, Droplet, BookMarked, Save } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Paint, UserOwnedPaint } from '@/types/paint';
 import { findTopMatches, hexToRgb, rgbToHex } from '@/lib/utils/color-math';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { createDiaryEntry } from '@/lib/firestore/diary';
+import { uploadDiaryImage } from '@/lib/firebase/storage';
+import { toast } from 'sonner';
 
 // Threshold for "Good Match" (CIE76 DeltaE < 2.3 is JND, < 10 is acceptable match for paints)
 const MATCH_THRESHOLD = 15;
@@ -18,10 +20,12 @@ interface ColorMatcherProps {
 }
 
 export function ColorMatcher({ allPaints, userInventory }: ColorMatcherProps) {
+    const { currentUser } = useAuth();
     const [image, setImage] = useState<string | null>(null);
     const [pickedColor, setPickedColor] = useState<string | null>(null);
     const [matches, setMatches] = useState<{ match: Paint; distance: number; owned: boolean }[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const displayImageRef = useRef<HTMLImageElement>(null);
@@ -106,6 +110,54 @@ export function ColorMatcher({ allPaints, userInventory }: ColorMatcherProps) {
         }, 100); // Slight delay for UI responsiveness
     };
 
+    // --- Save to Diary ---
+    const handleSaveToDiary = async () => {
+        if (!currentUser || !pickedColor) return;
+
+        try {
+            setIsSaving(true);
+
+            // 1. Upload Image (if present)
+            let imageUrl = '';
+            if (image) {
+                // Convert base64 to file
+                const res = await fetch(image);
+                const blob = await res.blob();
+                const file = new File([blob], "color-match-source.jpg", { type: "image/jpeg" });
+
+                imageUrl = await uploadDiaryImage(currentUser.uid, file);
+            }
+
+            // 2. Format matches for content
+            const topMatch = matches[0]?.match;
+            const content = `
+**Color Match Analysis**
+Source Color: ${pickedColor}
+
+**Top Match:**
+${topMatch ? `- ${topMatch.name} (${topMatch.brand})` : 'No close matches found'}
+
+**Other Candidates:**
+${matches.slice(1, 5).map(m => `- ${m.match.name} (${m.match.brand}) - ΔE: ${m.distance.toFixed(2)}`).join('\n')}
+            `.trim();
+
+            // 3. Create Diary Entry
+            await createDiaryEntry(currentUser.uid, {
+                title: `Color Match: ${topMatch?.name || pickedColor}`,
+                content: content,
+                links: imageUrl ? [{ url: imageUrl, type: 'image', description: 'Source Image' }] : [],
+                tags: ['Color Match', 'Tool Result'],
+            });
+
+            toast.success('Saved to Paint Diary');
+        } catch (error) {
+            console.error('Error saving to diary:', error);
+            toast.error('Failed to save entry');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="space-y-8">
             {/* Upload / Image Area */}
@@ -169,6 +221,26 @@ export function ColorMatcher({ allPaints, userInventory }: ColorMatcherProps) {
                                 {pickedColor || 'No color selected'}
                             </p>
                         </div>
+
+                        {/* Save Button */}
+                        {currentUser && pickedColor && (
+                            <div className="ml-auto">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={handleSaveToDiary}
+                                    disabled={isSaving || isProcessing}
+                                >
+                                    {isSaving ? (
+                                        <Spinner size="sm" />
+                                    ) : (
+                                        <Save className="w-4 h-4" />
+                                    )}
+                                    {isSaving ? 'Saving...' : 'Save to Diary'}
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="h-px bg-border my-6" />
@@ -244,3 +316,4 @@ export function ColorMatcher({ allPaints, userInventory }: ColorMatcherProps) {
         </div>
     );
 }
+

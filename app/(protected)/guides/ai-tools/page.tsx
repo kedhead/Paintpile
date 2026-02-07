@@ -1,6 +1,6 @@
 'use client';
 
-import { Palette, Droplet, Zap, ArrowLeft, Camera } from 'lucide-react';
+import { Palette, Droplet, Zap, ArrowLeft, Camera, Sparkles, Wand2, ArrowUpCircle, Sparkle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,21 +26,83 @@ export default function AiToolsGuidePage() {
                         <h1 className="text-4xl font-bold">AI Paint Tools</h1>
                     </div>
                     <p className="text-xl text-muted-foreground">
-                        Powerful utilities to help you identify colors, mix paints, and find the perfect match.
+                        A complete suite of AI-powered utilities to help you identify colors, visualize schemes, and perfect your painting.
                     </p>
                 </div>
 
-                <Tabs defaultValue="colormatch" className="space-y-8">
+                <Tabs defaultValue="project-tools" className="space-y-8">
                     <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
-                        <TabsTrigger value="colormatch">Color Matcher</TabsTrigger>
-                        <TabsTrigger value="mixer">Paint Mixer</TabsTrigger>
+                        <TabsTrigger value="project-tools">Project AI Agents</TabsTrigger>
+                        <TabsTrigger value="standalone-tools">Standalone Utilities</TabsTrigger>
                     </TabsList>
 
-                    {/* Color Matcher Content */}
-                    <TabsContent value="colormatch" className="space-y-8">
-                        <section className="space-y-4">
+                    {/* Project Tools Content */}
+                    <TabsContent value="project-tools" className="space-y-8">
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
+                            <p className="text-sm text-muted-foreground">
+                                These tools are available directly inside your projects. Open a project, upload a photo, and click the <Sparkles className="w-3 h-3 inline mx-1" /> icon to access them.
+                            </p>
+                        </div>
+
+                        {/* Scheme Visualizer */}
+                        <section className="space-y-4 p-6 bg-card rounded-xl border border-border">
                             <div className="flex items-center gap-3">
-                                <Camera className="w-6 h-6 text-primary" />
+                                <Palette className="w-6 h-6 text-pink-500" />
+                                <h2 className="text-2xl font-bold">Scheme Visualizer</h2>
+                            </div>
+                            <p className="text-muted-foreground leading-relaxed">
+                                Instantly test color schemes on your actual miniatures before you paint a single stroke.
+                                Describe your idea (e.g., "Dark blue armor with gold trim and glowing red eyes"), and our AI will recolor your photo to match.
+                            </p>
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-2">
+                                <li className="flex gap-2"><span className="text-primary">✓</span> Test unlimited variations quickly</li>
+                                <li className="flex gap-2"><span className="text-primary">✓</span> Save favorite schemes to your Paint Diary</li>
+                                <li className="flex gap-2"><span className="text-primary">✓</span> Works on unpainted or primed minis</li>
+                            </ul>
+                        </section>
+
+                        {/* Paint Suggestions */}
+                        <section className="space-y-4 p-6 bg-card rounded-xl border border-border">
+                            <div className="flex items-center gap-3">
+                                <Sparkles className="w-6 h-6 text-purple-500" />
+                                <h2 className="text-2xl font-bold">Paint Suggestions</h2>
+                            </div>
+                            <p className="text-muted-foreground leading-relaxed">
+                                Not sure what paints to use? Upload a reference photo or a picture of your unpainted mini,
+                                and the AI will suggest a palette of paints from our database that matches your vision.
+                            </p>
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground mt-2">
+                                <li className="flex gap-2"><span className="text-primary">✓</span> Identifies base, layer, and highlight colors</li>
+                                <li className="flex gap-2"><span className="text-primary">✓</span> Matches against Citadel, Vallejo, and more</li>
+                            </ul>
+                        </section>
+
+                        {/* Enhancement & Cleanup */}
+                        <section className="space-y-4 p-6 bg-card rounded-xl border border-border">
+                            <div className="flex items-center gap-3">
+                                <Wand2 className="w-6 h-6 text-blue-500" />
+                                <h2 className="text-2xl font-bold">Enhance & Cleanup</h2>
+                            </div>
+                            <p className="text-muted-foreground leading-relaxed">
+                                Prepare your photos for social media sharing. Remove messy backgrounds or enhance image clarity with a single click.
+                            </p>
+                            <div className="flex gap-4 mt-2">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Sparkle className="w-4 h-4" /> Background Removal
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <ArrowUpCircle className="w-4 h-4" /> Image Enhancement
+                                </div>
+                            </div>
+                        </section>
+                    </TabsContent>
+
+                    {/* Standalone Tools Content */}
+                    <TabsContent value="standalone-tools" className="space-y-8">
+                        {/* Color Matcher */}
+                        <section className="space-y-4 p-6 bg-card rounded-xl border border-border">
+                            <div className="flex items-center gap-3">
+                                <Camera className="w-6 h-6 text-indigo-500" />
                                 <h2 className="text-2xl font-bold">Color Matcher</h2>
                             </div>
                             <p className="text-muted-foreground leading-relaxed">
@@ -48,84 +110,35 @@ export default function AiToolsGuidePage() {
                                 Upload an image, pick a color, and see which paints from Citadel, Vallejo,
                                 Army Painter, and others match best.
                             </p>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                <div className="bg-card p-6 rounded-xl border border-border">
-                                    <h3 className="font-bold mb-3 text-lg">Features</h3>
-                                    <ul className="space-y-2 text-sm text-muted-foreground">
-                                        <li className="flex gap-2">
-                                            <span className="text-primary">•</span>
-                                            Analyzes any uploaded image
-                                        </li>
-                                        <li className="flex gap-2">
-                                            <span className="text-primary">•</span>
-                                            Matches against our database of 300+ paints
-                                        </li>
-                                        <li className="flex gap-2">
-                                            <span className="text-primary">•</span>
-                                            Shows Delta-E (color difference) accuracy
-                                        </li>
-                                        <li className="flex gap-2">
-                                            <span className="text-primary">•</span>
-                                            Suggests complementary colors
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div className="bg-card p-6 rounded-xl border border-border flex flex-col justify-center items-center text-center space-y-4">
-                                    <p className="text-muted-foreground">Ready to try it?</p>
-                                    <Link href="/tools/color-match">
-                                        <Button className="gap-2">
-                                            Launch Color Matcher <Zap className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-                                </div>
+                            <div className="mt-4">
+                                <Link href="/tools/color-match">
+                                    <Button className="gap-2" variant="secondary">
+                                        Launch Color Matcher <Zap className="w-4 h-4" />
+                                    </Button>
+                                </Link>
                             </div>
                         </section>
-                    </TabsContent>
 
-                    {/* Paint Mixer Content */}
-                    <TabsContent value="mixer" className="space-y-8">
-                        <section className="space-y-4">
+                        {/* Paint Mixer */}
+                        <section className="space-y-4 p-6 bg-card rounded-xl border border-border">
                             <div className="flex items-center gap-3">
-                                <Droplet className="w-6 h-6 text-primary" />
+                                <Droplet className="w-6 h-6 text-cyan-500" />
                                 <h2 className="text-2xl font-bold">Paint Mixer</h2>
                             </div>
                             <p className="text-muted-foreground leading-relaxed">
                                 Calculate the result of mixing different paints together, or find out how to
-                                mix paints you own to achieve a specific target color.
+                                mix paints you own to achieve a specific target color. Uses real subtractive color mixing theory.
                             </p>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                <div className="bg-card p-6 rounded-xl border border-border">
-                                    <h3 className="font-bold mb-3 text-lg">Features</h3>
-                                    <ul className="space-y-2 text-sm text-muted-foreground">
-                                        <li className="flex gap-2">
-                                            <span className="text-primary">•</span>
-                                            Simulate mixing ratios (e.g., 2:1 Red to Blue)
-                                        </li>
-                                        <li className="flex gap-2">
-                                            <span className="text-primary">•</span>
-                                            Uses subtractive color mixing theory
-                                        </li>
-                                        <li className="flex gap-2">
-                                            <span className="text-primary">•</span>
-                                            Save custom mixes to your library
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div className="bg-card p-6 rounded-xl border border-border flex flex-col justify-center items-center text-center space-y-4">
-                                    <p className="text-muted-foreground">Ready to mix?</p>
-                                    <Link href="/tools/paint-mixer">
-                                        <Button className="gap-2">
-                                            Launch Paint Mixer <Zap className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-                                </div>
+                            <div className="mt-4">
+                                <Link href="/tools/paint-mixer">
+                                    <Button className="gap-2" variant="secondary">
+                                        Launch Paint Mixer <Zap className="w-4 h-4" />
+                                    </Button>
+                                </Link>
                             </div>
                         </section>
                     </TabsContent>
                 </Tabs>
-
             </div>
         </div>
     );
