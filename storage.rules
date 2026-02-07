@@ -23,5 +23,18 @@ service firebase.storage {
       // Only the user can delete their own photos
       allow delete: if request.auth.uid == userId;
     }
+    // Diary images
+    match /users/{userId}/diary_images/{fileName} {
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+    }
+
+    // Paint Set covers
+    match /paint_sets/{fileName} {
+        allow read: if true;
+        allow write: if false; // Only admin via Admin SDK
+    }
   }
 }
