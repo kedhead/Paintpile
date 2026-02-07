@@ -46,7 +46,7 @@ service cloud.firestore {
       }
 
       // User's notifications subcollection (Phase 2)
-      match /notifications/{notificationId} {
+      match /notifications/{notificationId} {4
         allow read: if isAuthenticated() && isOwner(userId);
         // Allow creating notifications if authenticated (e.g., likes, follows)
         allow create: if isAuthenticated(); 

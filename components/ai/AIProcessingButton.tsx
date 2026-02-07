@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils/cn';
 interface AIProcessingButtonProps {
   label: string;
   icon: React.ReactNode;
-  estimatedCost: number; // in credits
+  estimatedCost?: number; // in credits
   onClick: () => Promise<void>;
   disabled?: boolean;
   variant?: 'default' | 'outline' | 'ghost';
@@ -46,7 +46,7 @@ export function AIProcessingButton({
     }
   };
 
-  const costDisplay = creditsToDollars(estimatedCost);
+  const costDisplay = estimatedCost !== undefined ? creditsToDollars(estimatedCost) : null;
 
   return (
     <div className="space-y-1">
@@ -65,9 +65,11 @@ export function AIProcessingButton({
           )}
           {label}
         </span>
-        <span className="text-xs text-muted-foreground ml-2">
-          {costDisplay}
-        </span>
+        {costDisplay && (
+          <span className="text-xs text-muted-foreground ml-2">
+            {costDisplay}
+          </span>
+        )}
       </Button>
 
       {error && (

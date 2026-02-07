@@ -227,7 +227,6 @@ export function AIProcessingPanel({
           <AIProcessingButton
             label="Suggest Paints"
             icon={<Sparkles className="h-4 w-4" />}
-            estimatedCost={OPERATION_COSTS.paintSuggestions}
             onClick={handleSuggestPaints}
             className="w-full"
           />
@@ -235,7 +234,6 @@ export function AIProcessingPanel({
           <AIProcessingButton
             label="Visualize Scheme"
             icon={<Palette className="h-4 w-4" />}
-            estimatedCost={OPERATION_COSTS.recolor}
             onClick={handleRecolor}
             className="w-full"
             disabled={!paintVision}
