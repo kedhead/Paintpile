@@ -53,6 +53,8 @@ export function AnalyticsDashboard() {
             inProgress: number;
             completed: number;
             total: number;
+            totalProjects: number;
+            totalMiniatures: number;
         };
     }>({
         totalPaints: 0,
@@ -113,25 +115,32 @@ export function AnalyticsDashboard() {
                     .map(([name, value]) => ({ name, value }))
                     .sort((a, b) => b.value - a.value); // Sort by count descending
 
-                // 4. Process Project Stats
+                // 4. Process Project Stats (Counting Miniatures)
                 const projectStats = {
                     notStarted: 0,
                     inProgress: 0,
                     completed: 0,
-                    total: userProjects.length
+                    totalMiniatures: 0,
+                    totalProjects: userProjects.length
                 };
 
                 userProjects.forEach(p => {
-                    if (p.status === 'not-started') projectStats.notStarted++;
-                    else if (p.status === 'in-progress') projectStats.inProgress++;
-                    else if (p.status === 'completed') projectStats.completed++;
+                    const qty = p.quantity || 1;
+                    projectStats.totalMiniatures += qty;
+
+                    if (p.status === 'not-started') projectStats.notStarted += qty;
+                    else if (p.status === 'in-progress') projectStats.inProgress += qty;
+                    else if (p.status === 'completed') projectStats.completed += qty;
                 });
 
                 setStats({
                     totalPaints: validInventoryCount,
                     totalValue: validInventoryCount * ESTIMATED_PRICE_PER_PAINT,
                     brandData,
-                    projectStats
+                    projectStats: {
+                        ...projectStats,
+                        total: projectStats.totalMiniatures // Keep 'total' property for compatibility but map to miniatures
+                    }
                 });
 
             } catch (error) {
@@ -190,13 +199,14 @@ export function AnalyticsDashboard() {
                 <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-blue-500/10 rounded-full text-blue-500">
-                            <Layers className="w-6 h-6" />
+                            <Archive className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-sm text-muted-foreground">Total Projects</p>
+                            <p className="text-sm text-muted-foreground">Total Miniatures</p>
                             <h3 className="text-2xl font-bold">
                                 {stats.projectStats?.total || 0}
                             </h3>
+                            <p className="text-xs text-muted-foreground"> across {stats.projectStats?.totalProjects || 0} projects</p>
                         </div>
                     </div>
                 </div>
@@ -207,13 +217,13 @@ export function AnalyticsDashboard() {
                 {/* Project Status */}
                 <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-semibold text-foreground">Project Status</h3>
+                        <h3 className="text-lg font-semibold text-foreground">Collection Status</h3>
                         {stats.projectStats && stats.projectStats.notStarted > 0 && (
                             <button
                                 onClick={() => setShowPileDetails(true)}
                                 className="text-sm text-primary hover:underline font-medium"
                             >
-                                View Pile of Opportunity
+                                View Pile Details
                             </button>
                         )}
                     </div>

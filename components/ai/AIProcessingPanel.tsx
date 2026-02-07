@@ -113,8 +113,12 @@ export function AIProcessingPanel({
     try {
       setIsSavingScheme(true);
 
-      // 1. Fetch image and convert to File
-      const response = await fetch(recolorUrl);
+      // 1. Fetch image via proxy to avoid CORS
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(recolorUrl)}`;
+      const response = await fetch(proxyUrl);
+
+      if (!response.ok) throw new Error('Failed to fetch image via proxy');
+
       const blob = await response.blob();
       const file = new File([blob], "visualized-scheme.png", { type: "image/png" });
 

@@ -34,12 +34,6 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
 
   const navigation = [
     {
-      name: 'My Collection',
-      href: '/pile',
-      icon: Boxes,
-      current: pathname === '/pile',
-    },
-    {
       name: 'My Gallery',
       href: '/dashboard',
       icon: LayoutDashboard,

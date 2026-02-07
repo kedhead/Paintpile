@@ -29,7 +29,7 @@ export default function FeaturesPage() {
             icon: Boxes,
             color: 'text-blue-500',
             bg: 'bg-blue-500/10',
-            href: '/pile'
+            href: '/dashboard'
         },
         {
             title: 'Smart Paint Recipes',

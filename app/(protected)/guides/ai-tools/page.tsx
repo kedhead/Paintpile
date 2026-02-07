@@ -44,6 +44,25 @@ export default function AiToolsGuidePage() {
                             </p>
                         </div>
 
+                        {/* How to Use */}
+                        <section className="space-y-4">
+                            <h2 className="text-2xl font-bold">How to Use Project Agents</h2>
+                            <ol className="list-decimal list-inside space-y-2 text-muted-foreground ml-2">
+                                <li>Open any Project from your <strong>Dashboard</strong> or <strong>My Gallery</strong>.</li>
+                                <li>Upload a photo of your miniature (unpainted or painted).</li>
+                                <li>Click the <Sparkles className="w-4 h-4 inline mx-1 text-primary" /> <strong>AI Tools</strong> button on the photo.</li>
+                                <li>Choose an agent:
+                                    <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
+                                        <li><strong>Suggest Paints</strong>: Get instant color recommendations.</li>
+                                        <li><strong>Visualize Scheme</strong>: Type a prompt (e.g. "red armor") to see it applied.</li>
+                                        <li><strong>Enhance/Cleanup</strong>: Remove backgrounds or improve photo quality.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                        </section>
+
+                        <div className="border-t border-border my-8"></div>
+
                         {/* Scheme Visualizer */}
                         <section className="space-y-4 p-6 bg-card rounded-xl border border-border">
                             <div className="flex items-center gap-3">
