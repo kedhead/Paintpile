@@ -4,26 +4,7 @@ import { Button } from '@/components/ui/Button';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0E0E12] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-amber-500/30">
-
-      {/* Background Image - Matching Login Page */}
-      {/* Background Image - Matching Login Page */}
-      {/* Background Image - Matching Login Page */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/login-bg-ultrawide.jpg"
-          alt="Abstract decorative background"
-          fill
-          className="object-cover object-center brightness-110"
-          priority
-          quality={100}
-        />
-        {/* Mobile Gradient: Top/Bottom darkness for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90 lg:hidden" />
-
-        {/* Desktop Gradients: Reduced opacity */}
-        <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-black/60 via-black/30 to-black/60" />
-      </div>
+    <div className="min-h-screen bg-[#1a1a1f] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-amber-500/30">
 
       <div className="w-full max-w-4xl flex flex-col items-center space-y-12 relative z-10">
         {/* Large Logo */}
