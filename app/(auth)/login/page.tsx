@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loginSchema, type LoginFormData } from '@/lib/validation/schemas';
 import Link from 'next/link';
 import Image from 'next/image';
+import PaintSplatterBackground from '@/components/ui/PaintSplatterBackground';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
@@ -55,14 +56,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#1a1a1f] flex flex-col items-center justify-center relative overflow-hidden">
 
-      {/* Background Ambience */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Spotlight Gradient */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-500/5 rounded-full blur-[120px] opacity-40" />
-        {/* Floating Orbs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-600/10 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-amber-400/5 rounded-full blur-[80px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
-      </div>
+      {/* Background Ambience - Paint Splatters */}
+      <PaintSplatterBackground />
 
       {/* Main Content - Centered */}
       <div className="relative z-10 w-full max-w-[500px] px-6 animate-in fade-in zoom-in duration-500">
