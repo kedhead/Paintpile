@@ -8,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loginSchema, type LoginFormData } from '@/lib/validation/schemas';
 import Link from 'next/link';
 import Image from 'next/image';
-import PaintSplatterBackground from '@/components/ui/PaintSplatterBackground';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
@@ -55,9 +54,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#1a1a1f] flex flex-col items-center justify-center relative overflow-hidden">
-
-      {/* Background Ambience - Paint Splatters */}
-      <PaintSplatterBackground />
 
       {/* Main Content - Centered */}
       <div className="relative z-10 w-full max-w-[500px] px-6 animate-in fade-in zoom-in duration-500">
