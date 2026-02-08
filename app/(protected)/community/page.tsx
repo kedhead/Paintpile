@@ -37,7 +37,7 @@ export default function CommunityPage() {
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Hero Header */}
-            <div className="relative h-64 md:h-80 overflow-hidden border-b border-border">
+            <div className="relative h-48 sm:h-64 md:h-80 overflow-hidden border-b border-border">
                 <div className="absolute inset-0">
                     <img
                         src="/images/header.png"

@@ -8,7 +8,7 @@ export default function Home() {
 
       <div className="w-full max-w-4xl flex flex-col items-center space-y-12 relative z-10">
         {/* Large Logo */}
-        <div className="relative w-full h-48 md:h-64 animate-in fade-in zoom-in duration-1000">
+        <div className="relative w-full h-32 sm:h-48 md:h-64 animate-in fade-in zoom-in duration-1000">
           <Image
             src="/paintpile-logo.png"
             alt="PaintPile"

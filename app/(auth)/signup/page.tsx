@@ -71,7 +71,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
-      <div className="relative w-full max-w-4xl h-64 mb-8">
+      <div className="relative w-full max-w-4xl h-32 sm:h-48 md:h-64 mb-6 sm:mb-8">
         <Image
           src="/paintpile-logo.png"
           alt="PaintPile Logo"

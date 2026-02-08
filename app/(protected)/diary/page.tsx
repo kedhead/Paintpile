@@ -87,7 +87,7 @@ export default function DiaryPage() {
     if (!currentUser) return null;
 
     return (
-        <div className="container mx-auto p-6 max-w-7xl">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-10">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
@@ -136,7 +136,7 @@ export default function DiaryPage() {
                     </Button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                     {filteredEntries.map(entry => (
                         <DiaryEntryCard
                             key={entry.entryId}

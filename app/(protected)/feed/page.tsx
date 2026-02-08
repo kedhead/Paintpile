@@ -14,7 +14,7 @@ export default async function FeedPage(props: {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 p-6">
+      <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 p-4 sm:p-6">
         {/* Left Sidebar (Navigation) */}
         <aside className="hidden md:block md:col-span-3 lg:col-span-2">
           <FeedSidebarLeft />

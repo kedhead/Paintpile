@@ -170,13 +170,13 @@ export default function PaintsPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card/50">
-        <div className="max-w-7xl mx-auto p-6 md:p-10">
-          <div className="flex items-center justify-between mb-6">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-4xl font-display font-bold text-foreground mb-2">
+              <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-1 sm:mb-2">
                 Paint Library
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm sm:text-base">
                 Browse 200+ paints or create your own custom colors
               </p>
             </div>
@@ -200,7 +200,8 @@ export default function PaintsPage() {
             <select
               value={selectedBrand}
               onChange={(e) => setSelectedBrand(e.target.value)}
-              className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground"
+              aria-label="Filter by brand"
+              className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors cursor-pointer"
             >
               <option value="all">All Brands ({allBrands.length})</option>
               {allBrands.map((brand) => (
@@ -221,7 +222,7 @@ export default function PaintsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 md:p-10">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-10">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Spinner size="lg" />
@@ -245,7 +246,7 @@ export default function PaintsPage() {
                     className="py-12"
                   />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {filteredCustomPaints.map((paint) => (
                       <PaintCard
                         key={paint.paintId}
@@ -274,7 +275,7 @@ export default function PaintsPage() {
                   actionLabel="Add Custom Paint"
                 />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {filteredGlobalPaints.map((paint) => (
                     <PaintCard
                       key={paint.paintId}

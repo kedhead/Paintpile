@@ -28,7 +28,7 @@ export default function BragBoardPage() {
     }, []);
 
     return (
-        <div className="container max-w-4xl mx-auto py-8 px-4 space-y-8">
+        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
             <div className="text-center space-y-4">
                 <div className="flex items-center justify-center gap-3 mb-2">
                     <Trophy className="w-10 h-10 text-yellow-500" />

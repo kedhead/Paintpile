@@ -87,13 +87,13 @@ export default function PilePage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'not-started':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-muted text-muted-foreground';
       case 'in-progress':
-        return 'bg-secondary-100 text-secondary-700';
+        return 'bg-primary/10 text-primary';
       case 'completed':
-        return 'bg-success-100 text-success-700';
+        return 'bg-green-500/10 text-green-400';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -116,10 +116,10 @@ export default function PilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Pile of Shame</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Pile of Shame</h1>
+          <p className="text-muted-foreground mt-1">
             Track your unpainted miniatures and painting progress
           </p>
         </div>
@@ -130,7 +130,7 @@ export default function PilePage() {
             className="flex items-center gap-2"
           >
             <BarChart3 className="h-5 w-5" />
-            {showStats ? 'Hide' : 'Show'} Stats
+            <span className="hidden sm:inline">{showStats ? 'Hide' : 'Show'} Stats</span>
           </Button>
           <Button
             variant="default"
@@ -153,7 +153,7 @@ export default function PilePage() {
         </CardHeader>
         <CardContent>
           {projects.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
+            <div className="text-center text-muted-foreground py-12">
               <p className="text-lg font-medium">Your pile is empty!</p>
               <p className="text-sm mt-2">Add your first unpainted miniature to get started.</p>
               <Button
@@ -170,32 +170,32 @@ export default function PilePage() {
               {projects.map((item) => (
                 <div
                   key={item.projectId}
-                  className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
+                  className="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-foreground">
                           {item.name}
                         </h3>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
                           {getStatusLabel(item.status)}
                         </span>
                         {item.tags?.filter((tag) => tag !== TAG_SHAME).map((tag) => (
-                          <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                          <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                             {tag}
                           </span>
                         ))}
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           Qty: {item.quantity || 1}
                         </span>
                       </div>
                       {item.description && (
-                        <p className="text-sm text-gray-600">{item.description}</p>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 sm:ml-4">
                       {item.status === 'not-started' && (
                         <Button
                           variant="ghost"
@@ -225,7 +225,7 @@ export default function PilePage() {
                           setEditingItem(item);
                           setShowForm(true);
                         }}
-                        className="text-gray-600 hover:text-gray-900"
+                        className="text-muted-foreground hover:text-foreground"
                       >
                         Edit
                       </Button>
@@ -233,7 +233,7 @@ export default function PilePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(item)}
-                        className="text-accent-600 hover:text-accent-700"
+                        className="text-destructive hover:text-destructive/80"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

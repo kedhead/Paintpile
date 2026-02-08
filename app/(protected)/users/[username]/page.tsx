@@ -149,7 +149,7 @@ export default function UserProfilePage() {
     <div className="min-h-screen bg-background">
       {/* Profile Header */}
       <div className="relative border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto p-6 md:p-10">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-10">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             {/* Avatar */}
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border-4 border-background shadow-lg">
@@ -220,7 +220,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* Projects Grid */}
-      <div className="max-w-7xl mx-auto p-6 md:p-10">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-10">
         <h2 className="text-2xl font-display font-bold text-foreground mb-6">
           Public Projects
         </h2>

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRouter } from 'next/navigation';
 import { Settings, Mail, Calendar, User as UserIcon, Heart, Users as UsersIcon, Award, MessageCircle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { formatDate } from '@/lib/utils/formatters';
 import { ProfileBadges } from '@/components/profile/ProfileBadges';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
@@ -22,7 +23,7 @@ function InstallButton() {
     <Button
       variant="outline"
       onClick={install}
-      className="flex items-center gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+      className="flex items-center gap-2 text-primary border-primary/30 hover:bg-primary/10"
     >
       <Download className="h-4 w-4" />
       Install App
@@ -76,10 +77,10 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-          <p className="text-gray-600 mt-1">View and manage your profile</p>
+          <h1 className="text-3xl font-bold text-foreground">Profile</h1>
+          <p className="text-muted-foreground mt-1">View and manage your profile</p>
         </div>
         <div className="flex gap-2">
           <InstallButton />
@@ -102,13 +103,13 @@ export default function ProfilePage() {
         <CardContent className="space-y-6">
           {/* Avatar */}
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-3xl font-bold">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-primary-foreground text-3xl font-bold">
               {profile.displayName?.[0]?.toUpperCase() || profile.email[0].toUpperCase()}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{profile.displayName}</h2>
+              <h2 className="text-2xl font-bold text-foreground">{profile.displayName}</h2>
               {profile.username && (
-                <p className="text-gray-600">@{profile.username}</p>
+                <p className="text-muted-foreground">@{profile.username}</p>
               )}
             </div>
           </div>
@@ -116,25 +117,25 @@ export default function ProfilePage() {
           {/* Bio */}
           {profile.bio && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Bio</h3>
-              <p className="text-gray-900">{profile.bio}</p>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Bio</h3>
+              <p className="text-foreground">{profile.bio}</p>
             </div>
           )}
 
           {/* Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
             <div className="flex items-center gap-3">
-              <Mail className="h-5 w-5 text-gray-400" />
+              <Mail className="h-5 w-5 text-muted-foreground" />
               <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium text-gray-900">{profile.email}</p>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium text-foreground">{profile.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-gray-400" />
+              <Calendar className="h-5 w-5 text-muted-foreground" />
               <div>
-                <p className="text-sm text-gray-500">Joined</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-muted-foreground">Joined</p>
+                <p className="font-medium text-foreground">
                   {formatDate(profile.createdAt)}
                 </p>
               </div>
@@ -190,30 +191,30 @@ export default function ProfilePage() {
           <CardTitle>Statistics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary-600">
+              <div className="text-2xl sm:text-3xl font-bold text-primary">
                 {profile.stats?.projectCount || 0}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Projects</p>
+              <p className="text-sm text-muted-foreground mt-1">Projects</p>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600">
+              <div className="text-2xl sm:text-3xl font-bold text-purple-500">
                 {profile.stats?.armyCount || 0}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Armies</p>
+              <p className="text-sm text-muted-foreground mt-1">Armies</p>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-secondary-600">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-500">
                 {profile.stats?.photoCount || 0}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Photos</p>
+              <p className="text-sm text-muted-foreground mt-1">Photos</p>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-orange-600">
+              <div className="text-2xl sm:text-3xl font-bold text-orange-500">
                 {profile.stats?.recipesCreated || 0}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Recipes</p>
+              <p className="text-sm text-muted-foreground mt-1">Recipes</p>
             </div>
           </div>
         </CardContent>
@@ -225,105 +226,80 @@ export default function ProfilePage() {
           <CardTitle>Community</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <UsersIcon className="w-5 h-5 text-blue-500" />
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500">
                   {profile.stats?.followerCount || 0}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">Followers</p>
+              <p className="text-sm text-muted-foreground">Followers</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <UsersIcon className="w-5 h-5 text-gray-500" />
-                <div className="text-3xl font-bold text-gray-600">
+                <UsersIcon className="w-5 h-5 text-muted-foreground" />
+                <div className="text-2xl sm:text-3xl font-bold text-muted-foreground">
                   {profile.stats?.followingCount || 0}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">Following</p>
+              <p className="text-sm text-muted-foreground">Following</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Heart className="w-5 h-5 text-accent-500" />
-                <div className="text-3xl font-bold text-accent-600">
+                <Heart className="w-5 h-5 text-red-500" />
+                <div className="text-2xl sm:text-3xl font-bold text-red-500">
                   {profile.stats?.likesReceived || 0}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">Likes Received</p>
+              <p className="text-sm text-muted-foreground">Likes Received</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Award className="w-5 h-5 text-yellow-500" />
-                <div className="text-3xl font-bold text-yellow-600">
+                <div className="text-2xl sm:text-3xl font-bold text-yellow-500">
                   {profile.stats?.badgeCount || 0}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">Badges</p>
+              <p className="text-sm text-muted-foreground">Badges</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-border">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'overview'
-            ? 'border-primary text-primary'
-            : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('badges')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${activeTab === 'badges'
-            ? 'border-primary text-primary'
-            : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          <Award className="w-4 h-4" />
-          Badges {profile.stats?.badgeCount ? `(${profile.stats.badgeCount})` : ''}
-        </button>
-        <button
-          onClick={() => setActiveTab('activity')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'activity'
-            ? 'border-primary text-primary'
-            : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          Activity
-        </button>
-      </div>
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'badges' | 'activity')}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="badges" className="flex items-center gap-2">
+            <Award className="w-4 h-4" />
+            Badges {profile.stats?.badgeCount ? `(${profile.stats.badgeCount})` : ''}
+          </TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+        </TabsList>
 
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground">
-              Your profile overview. Visit other tabs to see badges and activity.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="overview">
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">
+                Your profile overview. Visit other tabs to see badges and activity.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Badges Tab */}
-      {activeTab === 'badges' && (
-        <Card>
-          <CardContent className="pt-6">
-            <ProfileBadges userId={currentUser!.uid} isOwnProfile={true} />
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="badges">
+          <Card>
+            <CardContent className="pt-6">
+              <ProfileBadges userId={currentUser!.uid} isOwnProfile={true} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Activity Tab */}
-      {activeTab === 'activity' && (
-        <div>
+        <TabsContent value="activity">
           <ActivityFeed feedType="user" userId={currentUser!.uid} limitCount={50} />
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
