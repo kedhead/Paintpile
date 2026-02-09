@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
@@ -40,6 +40,8 @@ if (!getApps().length) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+    // Explicitly set persistence for iOS PWA standalone mode
+    setPersistence(auth, browserLocalPersistence).catch(console.warn);
     db = getFirestore(app);
     storage = getStorage(app);
   } catch (error) {

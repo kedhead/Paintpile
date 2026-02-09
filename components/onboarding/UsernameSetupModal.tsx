@@ -32,17 +32,18 @@ export function UsernameSetupModal({ currentUser }: { currentUser: FirebaseUser 
             try {
                 const profile = await getUserProfile(currentUser.uid);
 
-                // Open modal if username is missing or empty
+                // Open modal only if username is truly missing or empty
                 if (!profile?.username) {
                     setIsOpen(true);
                 } else {
-                    // User has a username in DB, permanently cache this locally
+                    // User has a username in DB, cache locally so we skip this next time
                     localStorage.setItem(storageKey, 'true');
                 }
             } catch (err) {
                 console.error('[UsernameSetup] Error checking username:', err);
-                // On error, don't show modal to avoid false positives
-                // The user can set their username manually in settings if needed
+                // On error, don't show modal to avoid false positives.
+                // This prevents iOS PWA users from seeing the modal when
+                // Firestore is slow to respond on first launch.
             } finally {
                 setLoading(false);
             }

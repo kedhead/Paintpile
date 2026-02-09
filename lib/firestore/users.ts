@@ -5,6 +5,7 @@ import { Project } from '@/types/project';
 
 /**
  * Create a new user profile in Firestore
+ * Safe: will not overwrite an existing profile
  */
 export async function createUserProfile(
   userId: string,
@@ -12,6 +13,14 @@ export async function createUserProfile(
   displayName: string
 ): Promise<void> {
   const userRef = doc(db, 'users', userId);
+
+  // Check if profile already exists to prevent overwriting
+  const existing = await getDoc(userRef);
+  if (existing.exists()) {
+    // Profile exists — just update last login, don't overwrite
+    await updateDoc(userRef, { lastLoginAt: serverTimestamp() });
+    return;
+  }
 
   const newUser = {
     userId,
