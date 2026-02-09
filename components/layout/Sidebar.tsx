@@ -137,7 +137,7 @@ export function Sidebar({ isOpen, onClose, onNewProject }: SidebarProps) {
         `}
       >
         {/* Logo */}
-        <div className="p-6">
+        <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] lg:pt-6">
           <Link href="/dashboard" className="block group transition-transform hover:scale-105">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 flex items-center justify-center">
