@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { UsageStats, creditsToDollars } from '@/lib/ai/constants';
 import { Sparkles, TrendingUp } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AIUsageMeterProps {
   userId: string;
@@ -15,6 +16,7 @@ interface AIUsageMeterProps {
 export function AIUsageMeter({ userId }: AIUsageMeterProps) {
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { getAuthToken } = useAuth();
 
   useEffect(() => {
     loadUsageStats();
@@ -23,7 +25,11 @@ export function AIUsageMeter({ userId }: AIUsageMeterProps) {
   const loadUsageStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/ai/usage?userId=${userId}`);
+      const token = await getAuthToken();
+      if (!token) return;
+      const response = await fetch('/api/ai/usage', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const result = await response.json();
 
       if (result.success) {

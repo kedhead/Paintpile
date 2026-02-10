@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
+import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
+        const auth = await verifyAuth(request);
+        if (!auth) return unauthorizedResponse();
+        if (!auth.isAdmin) return forbiddenResponse();
+
         const db = getAdminFirestore();
         const snapshot = await db.collection('paints').get();
 

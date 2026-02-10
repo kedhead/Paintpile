@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         if (!allowedDomains.some(domain => urlObj.hostname.endsWith(domain))) {
             // In development, might want to be more lenient or log warning
             console.warn(`[Proxy] Request for external domain: ${urlObj.hostname}`);
-            // return new NextResponse('Domain not allowed', { status: 403 });
+            return new NextResponse('Domain not allowed', { status: 403 });
         }
     } catch (e) {
         return new NextResponse('Invalid URL', { status: 400 });

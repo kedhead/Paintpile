@@ -10,10 +10,6 @@ import { grantAdminAccess, revokeAdminAccess, getUserCustomClaims } from '@/lib/
 
 export const runtime = 'nodejs';
 
-// Hardcoded list of super admins who can grant admin access
-// These are checked by email from the Authorization header
-const SUPER_ADMINS = ['kendalldavis1@gmail.com'];
-
 export async function POST(request: NextRequest) {
   try {
     // This endpoint is primarily for local development

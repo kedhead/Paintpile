@@ -1,29 +1,20 @@
 /**
  * GET /api/ai/usage
  *
- * Fetch AI usage statistics for a user
+ * Fetch AI usage statistics for the authenticated user
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserUsage } from '@/lib/ai/usage-tracker';
+import { verifyAuth, unauthorizedResponse } from '@/lib/auth/server-auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const auth = await verifyAuth(request);
+    if (!auth) return unauthorizedResponse();
 
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'userId is required',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Get usage statistics
-    const stats = await getUserUsage(userId);
+    // Use the authenticated user's ID — ignore any userId query param
+    const stats = await getUserUsage(auth.uid);
 
     return NextResponse.json({
       success: true,

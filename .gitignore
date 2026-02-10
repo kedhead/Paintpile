@@ -58,3 +58,20 @@ logs/
 
 # Testing
 .nyc_output/
+
+# Environment (bare .env)
+.env
+
+# Scratch / temp files
+data.json
+request.json
+request_code.json
+screen.json
+stitch_tools.json
+stitch_tools.txt
+list.txt
+fetch_latest_screen.ts
+prepare_request.ts
+nul
+bun.lock
+pwaerror.png
