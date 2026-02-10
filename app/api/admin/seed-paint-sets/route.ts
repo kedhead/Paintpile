@@ -1,14 +1,19 @@
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
 import { CURATED_PAINT_SETS } from '@/lib/data/paint-sets';
+import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 
-export async function GET() {
-    return POST();
+export async function GET(request: NextRequest) {
+    return POST(request);
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
     try {
+        const auth = await verifyAuth(request);
+        if (!auth) return unauthorizedResponse();
+        if (!auth.isAdmin) return forbiddenResponse();
+
         const db = getAdminFirestore();
         const batch = db.batch();
         const collectionRef = db.collection('paint-sets');

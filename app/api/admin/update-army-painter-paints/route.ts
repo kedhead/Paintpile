@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { COMPREHENSIVE_PAINTS } from '@/lib/data/comprehensive-paints';
 import { getAdminFirestore } from '@/lib/firebase/admin';
+import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,6 +14,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth) return unauthorizedResponse();
+    if (!auth.isAdmin) return forbiddenResponse();
     console.log('[Update Army Painter] Starting Army Painter paint update...');
 
     const db = getAdminFirestore();
@@ -81,6 +85,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth) return unauthorizedResponse();
+  if (!auth.isAdmin) return forbiddenResponse();
+
   return NextResponse.json({
     message: 'Army Painter Paint Update Endpoint',
     instructions: 'Send a POST request to delete all existing Army Painter paints and replace with updated list (Fanatic + Speedpaint 2.0)',

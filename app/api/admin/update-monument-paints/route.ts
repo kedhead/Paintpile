@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { COMPREHENSIVE_PAINTS } from '@/lib/data/comprehensive-paints';
 import { getAdminFirestore } from '@/lib/firebase/admin';
+import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,11 +10,12 @@ export const dynamic = 'force-dynamic';
  * POST /api/admin/update-monument-paints
  *
  * Deletes all existing ProAcryl paints and replaces them with the updated Monument paint list.
- * This is useful when you've updated the ProAcryl section of comprehensive-paints.ts
- * without needing to reseed the entire database.
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth) return unauthorizedResponse();
+    if (!auth.isAdmin) return forbiddenResponse();
     console.log('[Update Monument] Starting Monument/ProAcryl paint update...');
 
     const db = getAdminFirestore();
@@ -83,6 +85,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth) return unauthorizedResponse();
+  if (!auth.isAdmin) return forbiddenResponse();
+
   return NextResponse.json({
     message: 'Monument Paint Update Endpoint',
     instructions: 'Send a POST request to delete all existing ProAcryl paints and replace with updated Monument paint list',

@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
+import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 
 // Force Node.js runtime (not Edge) for Firebase compatibility
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/**
- * Admin API route for running database migrations
- * GET /api/admin/migrate - Shows status
- * POST /api/admin/migrate - Runs migrations
- *
- * Security: Add authorization check in production!
- */
 export async function GET(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth) return unauthorizedResponse();
+  if (!auth.isAdmin) return forbiddenResponse();
+
   return NextResponse.json({
     message: 'Migration endpoint ready',
     instructions: 'Send a POST request to this endpoint to run migrations',
@@ -22,9 +20,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add auth check here - only allow admin users
-    // Example: const session = await getServerSession();
-    // if (!session || session.user.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await verifyAuth(request);
+    if (!auth) return unauthorizedResponse();
+    if (!auth.isAdmin) return forbiddenResponse();
 
     console.log('Starting migrations...');
 

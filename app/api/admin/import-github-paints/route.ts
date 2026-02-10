@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +15,10 @@ const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/Arcturus5404/miniatur
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth) return unauthorizedResponse();
+    if (!auth.isAdmin) return forbiddenResponse();
+
     const { manufacturer } = await request.json();
 
     if (!manufacturer) {

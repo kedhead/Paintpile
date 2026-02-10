@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { smartImportPaints, smartSeedPaintDatabase } from '@/lib/firestore/paints-smart-import';
+import { verifyAuth, unauthorizedResponse, forbiddenResponse } from '@/lib/auth/server-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,6 +21,10 @@ export const maxDuration = 300; // 5 minutes for large imports
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth) return unauthorizedResponse();
+    if (!auth.isAdmin) return forbiddenResponse();
+
     const body = await request.json();
     const { source, paints, updateExisting = false, dryRun = false } = body;
 
