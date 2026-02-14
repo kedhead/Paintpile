@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
+import { LikeButton } from '@/components/social/LikeButton';
 
 import { saveProject } from '@/lib/firestore/projects';
 import { deleteActivity } from '@/lib/firestore/activities';
@@ -275,15 +276,29 @@ export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
         {/* Action Bar */}
         <div className="flex items-center justify-between pt-4 border-t border-border/30">
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-red-500 transition-colors group/like">
-              <Heart className="w-4 h-4 group-hover/like:fill-current" />
-              <span>{(activity.metadata as any).likeCount || 0}</span>
-            </button>
-            <button className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-blue-500 transition-colors">
+            {currentUser && activity.targetType === 'project' ? (
+              <LikeButton
+                userId={currentUser.uid}
+                targetId={activity.targetId}
+                type="project"
+                initialLikeCount={(activity.metadata as any).likeCount || 0}
+                size="sm"
+                showCount={true}
+              />
+            ) : (
+              <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                <Heart className="w-4 h-4" />
+                <span>{(activity.metadata as any).likeCount || 0}</span>
+              </span>
+            )}
+            <Link
+              href={`${getTargetUrl()}#comments`}
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-blue-500 transition-colors"
+            >
               <MessageCircle className="w-4 h-4" />
               <span>{(activity.metadata as any).commentCount || 0}</span>
-            </button>
-            <button className="text-muted-foreground hover:text-foreground transition-colors">
+            </Link>
+            <button onClick={handleShare} className="text-muted-foreground hover:text-foreground transition-colors">
               <Share2 className="w-4 h-4" />
             </button>
           </div>
