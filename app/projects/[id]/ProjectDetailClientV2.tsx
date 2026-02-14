@@ -28,7 +28,7 @@ import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
-import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare, Loader2, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare, Loader2, MapPin, Save } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
@@ -38,6 +38,8 @@ import { BragCard } from '@/components/ai/BragCard';
 import { CritiqueDetails } from '@/components/ai/CritiqueDetails';
 import { PaintSuggestionsPanel } from '@/components/ai/PaintSuggestionsPanel';
 import { PhotoAnnotator } from '@/components/annotations/PhotoAnnotator';
+import { createDiaryEntry } from '@/lib/firestore/diary';
+import { uploadDiaryImage } from '@/lib/firebase/storage';
 import { ColorSuggestion } from '@/types/photo';
 import {
     Dialog,
@@ -79,6 +81,7 @@ export default function ProjectDetailClientV2() {
     const [recolorPrompt, setRecolorPrompt] = useState('');
     const [recoloring, setRecoloring] = useState(false);
     const [recolorResult, setRecolorResult] = useState<string | null>(null);
+    const [savingScheme, setSavingScheme] = useState(false);
     const heroImageRef = useRef<HTMLImageElement>(null);
     const thumbnailStripRef = useRef<HTMLDivElement>(null);
 
@@ -372,6 +375,38 @@ export default function ProjectDetailClientV2() {
             alert('Failed to visualize scheme. Please try again.');
         } finally {
             setRecoloring(false);
+        }
+    }
+
+    async function handleSaveSchemeToDiary() {
+        if (!recolorResult || !recolorPrompt || !currentUser) return;
+
+        try {
+            setSavingScheme(true);
+
+            const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(recolorResult)}`;
+            const response = await fetch(proxyUrl);
+
+            if (!response.ok) throw new Error('Failed to fetch image via proxy');
+
+            const blob = await response.blob();
+            const file = new File([blob], 'visualized-scheme.png', { type: 'image/png' });
+
+            const imageUrl = await uploadDiaryImage(currentUser.uid, file);
+
+            await createDiaryEntry(currentUser.uid, {
+                title: `Visualized Scheme: ${recolorPrompt.substring(0, 30)}${recolorPrompt.length > 30 ? '...' : ''}`,
+                content: `**Paint Vision Prompt:**\n${recolorPrompt}\n\nGenerated from project photo.`,
+                links: [{ url: imageUrl, type: 'image', description: 'Visualized Paint Scheme' }],
+                tags: ['AI Visualization', 'Scheme Concept'],
+            });
+
+            alert('Saved to Paint Diary!');
+        } catch (err) {
+            console.error('Error saving scheme to diary:', err);
+            alert('Failed to save to diary. Please try again.');
+        } finally {
+            setSavingScheme(false);
         }
     }
 
@@ -749,14 +784,29 @@ export default function ProjectDetailClientV2() {
                                                     alt="Recolored visualization"
                                                     className="w-full rounded-lg border border-border mb-2"
                                                 />
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="w-full"
-                                                    onClick={() => setRecolorResult(null)}
-                                                >
-                                                    Try Another
-                                                </Button>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="flex-1"
+                                                        onClick={handleSaveSchemeToDiary}
+                                                        disabled={savingScheme}
+                                                    >
+                                                        {savingScheme ? (
+                                                            <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                                        ) : (
+                                                            <Save className="w-3 h-3 mr-1.5" />
+                                                        )}
+                                                        {savingScheme ? 'Saving...' : 'Save to Diary'}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => setRecolorResult(null)}
+                                                    >
+                                                        Try Another
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="flex-1 flex flex-col gap-2">
