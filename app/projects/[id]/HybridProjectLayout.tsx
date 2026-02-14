@@ -33,20 +33,20 @@ export function HybridProjectLayout({ projectId, initialProject }: HybridProject
     const { currentUser, loading } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const searchParams = useSearchParams();
-    const [useV2, setUseV2] = useState(false);
+    const [useV2, setUseV2] = useState(true);
 
-    // Feature flag: ?layout=v2 enables V2, ?layout=v1 reverts to V1
+    // V2 is now the default. ?layout=v1 reverts to old layout, ?layout=v2 forces new.
     useEffect(() => {
         const layoutParam = searchParams.get('layout');
-        if (layoutParam === 'v2') {
-            localStorage.setItem(LAYOUT_STORAGE_KEY, 'v2');
-            setUseV2(true);
-        } else if (layoutParam === 'v1') {
-            localStorage.removeItem(LAYOUT_STORAGE_KEY);
+        if (layoutParam === 'v1') {
+            localStorage.setItem(LAYOUT_STORAGE_KEY, 'v1');
             setUseV2(false);
+        } else if (layoutParam === 'v2') {
+            localStorage.removeItem(LAYOUT_STORAGE_KEY);
+            setUseV2(true);
         } else {
             const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
-            setUseV2(stored === 'v2');
+            setUseV2(stored !== 'v1');
         }
     }, [searchParams]);
 
