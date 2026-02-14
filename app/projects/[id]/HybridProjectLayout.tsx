@@ -1,7 +1,9 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileHeader } from '@/components/layout/MobileHeader';
 import { PublicHeader } from '@/components/layout/PublicHeader';
@@ -12,6 +14,16 @@ import { Project } from '@/types/project';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 
+const ProjectDetailClientV2 = dynamic(() => import('./ProjectDetailClientV2'), {
+    loading: () => (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <Spinner size="lg" />
+        </div>
+    ),
+});
+
+const LAYOUT_STORAGE_KEY = 'paintpile-layout-version';
+
 interface HybridProjectLayoutProps {
     projectId: string;
     initialProject: Project | null;
@@ -20,6 +32,23 @@ interface HybridProjectLayoutProps {
 export function HybridProjectLayout({ projectId, initialProject }: HybridProjectLayoutProps) {
     const { currentUser, loading } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const searchParams = useSearchParams();
+    const [useV2, setUseV2] = useState(false);
+
+    // Feature flag: ?layout=v2 enables V2, ?layout=v1 reverts to V1
+    useEffect(() => {
+        const layoutParam = searchParams.get('layout');
+        if (layoutParam === 'v2') {
+            localStorage.setItem(LAYOUT_STORAGE_KEY, 'v2');
+            setUseV2(true);
+        } else if (layoutParam === 'v1') {
+            localStorage.removeItem(LAYOUT_STORAGE_KEY);
+            setUseV2(false);
+        } else {
+            const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
+            setUseV2(stored === 'v2');
+        }
+    }, [searchParams]);
 
     const handleSidebarOpen = useCallback(() => setSidebarOpen(true), []);
     const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
@@ -45,7 +74,7 @@ export function HybridProjectLayout({ projectId, initialProject }: HybridProject
                     onNewProject={() => { }} // We might not have router here easily or just pass logic
                 />
                 <main className="flex-1 lg:pl-64 pt-16 lg:pt-0 transition-all duration-300">
-                    <ProjectDetailClient />
+                    {useV2 ? <ProjectDetailClientV2 /> : <ProjectDetailClient />}
                 </main>
             </div>
         );
@@ -58,9 +87,7 @@ export function HybridProjectLayout({ projectId, initialProject }: HybridProject
             <div className="min-h-screen bg-background flex flex-col">
                 <PublicHeader />
                 <main className="flex-1">
-                    {/* Pass a prop to ProjectDetailClient to indicate read-only/public mode if needed, 
-               though it likely checks currentUser itself. */}
-                    <ProjectDetailClient />
+                    {useV2 ? <ProjectDetailClientV2 /> : <ProjectDetailClient />}
                 </main>
                 <PublicProjectBanner />
             </div>
