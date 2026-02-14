@@ -28,7 +28,7 @@ import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
-import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare, Loader2, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
@@ -37,6 +37,7 @@ import { MiniatureAnalyzer } from '@/components/ai/MiniatureAnalyzer';
 import { BragCard } from '@/components/ai/BragCard';
 import { CritiqueDetails } from '@/components/ai/CritiqueDetails';
 import { PaintSuggestionsPanel } from '@/components/ai/PaintSuggestionsPanel';
+import { PhotoAnnotator } from '@/components/annotations/PhotoAnnotator';
 import { ColorSuggestion } from '@/types/photo';
 import {
     Dialog,
@@ -71,6 +72,7 @@ export default function ProjectDetailClientV2() {
     const [editedTags, setEditedTags] = useState<string[]>([]);
     const [showAddRecipe, setShowAddRecipe] = useState(false);
     const [critiqueOpen, setCritiqueOpen] = useState(false);
+    const [annotatingPhoto, setAnnotatingPhoto] = useState<Photo | null>(null);
     const [suggestingPaints, setSuggestingPaints] = useState(false);
     const [paintSuggestions, setPaintSuggestions] = useState<ColorSuggestion[] | null>(null);
     const [suggestionsConfidence, setSuggestionsConfidence] = useState(0);
@@ -544,6 +546,19 @@ export default function ProjectDetailClientV2() {
                                         >
                                             <Star className="w-3 h-3" />
                                             Set as Featured
+                                        </button>
+                                    )}
+
+                                    {/* Annotate Button - Always visible in V2 */}
+                                    {isOwner && (
+                                        <button
+                                            onClick={() => setAnnotatingPhoto(photos[currentPhotoIndex])}
+                                            className="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors"
+                                        >
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            {photos[currentPhotoIndex].annotations && photos[currentPhotoIndex].annotations!.length > 0
+                                                ? `Annotations (${photos[currentPhotoIndex].annotations!.length})`
+                                                : 'Add Annotations'}
                                         </button>
                                     )}
 
@@ -1145,6 +1160,20 @@ export default function ProjectDetailClientV2() {
                         />
                     </DialogContent>
                 </Dialog>
+            )}
+
+            {/* Photo Annotator */}
+            {annotatingPhoto && (
+                <PhotoAnnotator
+                    photo={annotatingPhoto}
+                    projectId={projectId}
+                    userId={currentUser?.uid}
+                    onClose={() => setAnnotatingPhoto(null)}
+                    onUpdate={() => {
+                        loadPhotos();
+                        setAnnotatingPhoto(null);
+                    }}
+                />
             )}
 
             {/* Add Recipe Modal */}
