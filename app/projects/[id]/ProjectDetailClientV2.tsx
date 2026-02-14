@@ -410,7 +410,7 @@ export default function ProjectDetailClientV2() {
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
-            <div className="max-w-7xl mx-auto px-6 pt-6">
+            <div className="max-w-[1800px] mx-auto px-6 pt-6">
                 <div className="flex items-center gap-4 mb-6">
                     <Link href="/dashboard">
                         <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-secondary transition-colors cursor-pointer">
