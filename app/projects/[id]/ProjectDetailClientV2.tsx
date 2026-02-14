@@ -28,7 +28,7 @@ import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
-import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare, Loader2, MapPin, Save } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare, Loader2, MapPin, Save, BookOpen, Wand2, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
@@ -41,6 +41,8 @@ import { PhotoAnnotator } from '@/components/annotations/PhotoAnnotator';
 import { createDiaryEntry } from '@/lib/firestore/diary';
 import { uploadDiaryImage } from '@/lib/firebase/storage';
 import { ColorSuggestion } from '@/types/photo';
+import { TechniqueAdvice } from '@/lib/ai/anthropic-client';
+import { GeneratedRecipe } from '@/types/ai-recipe';
 import {
     Dialog,
     DialogContent,
@@ -82,6 +84,14 @@ export default function ProjectDetailClientV2() {
     const [recoloring, setRecoloring] = useState(false);
     const [recolorResult, setRecolorResult] = useState<string | null>(null);
     const [savingScheme, setSavingScheme] = useState(false);
+    const [generatingRecipe, setGeneratingRecipe] = useState(false);
+    const [generatedRecipe, setGeneratedRecipe] = useState<GeneratedRecipe | null>(null);
+    const [enhancingPhoto, setEnhancingPhoto] = useState(false);
+    const [enhancedPhotoUrl, setEnhancedPhotoUrl] = useState<string | null>(null);
+    const [analyzingTechniques, setAnalyzingTechniques] = useState(false);
+    const [techniqueAdvice, setTechniqueAdvice] = useState<TechniqueAdvice[] | null>(null);
+    const [techniqueAssessment, setTechniqueAssessment] = useState<string | null>(null);
+    const [expandedTechnique, setExpandedTechnique] = useState<number | null>(null);
     const heroImageRef = useRef<HTMLImageElement>(null);
     const thumbnailStripRef = useRef<HTMLDivElement>(null);
 
@@ -407,6 +417,101 @@ export default function ProjectDetailClientV2() {
             alert('Failed to save to diary. Please try again.');
         } finally {
             setSavingScheme(false);
+        }
+    }
+
+    async function handleGenerateRecipe() {
+        if (!currentUser || photos.length === 0) return;
+        const photo = photos[currentPhotoIndex];
+
+        try {
+            setGeneratingRecipe(true);
+            const response = await fetch('/api/ai/generate-recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    photoId: photo.photoId,
+                    projectId,
+                    userId: currentUser.uid,
+                    imageUrl: photo.url,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to generate recipe');
+            }
+
+            setGeneratedRecipe(result.data.recipe);
+        } catch (err) {
+            console.error('Error generating recipe:', err);
+            alert('Failed to generate recipe. Please try again.');
+        } finally {
+            setGeneratingRecipe(false);
+        }
+    }
+
+    async function handleEnhancePhoto() {
+        if (!currentUser || photos.length === 0) return;
+        const photo = photos[currentPhotoIndex];
+
+        try {
+            setEnhancingPhoto(true);
+            const response = await fetch('/api/ai/enhance-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    photoId: photo.photoId,
+                    projectId,
+                    userId: currentUser.uid,
+                    sourceUrl: photo.url,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to enhance photo');
+            }
+
+            setEnhancedPhotoUrl(result.data.processedUrl);
+        } catch (err) {
+            console.error('Error enhancing photo:', err);
+            alert('Failed to enhance photo. Please try again.');
+        } finally {
+            setEnhancingPhoto(false);
+        }
+    }
+
+    async function handleAnalyzeTechniques() {
+        if (!currentUser || photos.length === 0) return;
+        const photo = photos[currentPhotoIndex];
+
+        try {
+            setAnalyzingTechniques(true);
+            const response = await fetch('/api/ai/technique-advisor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: currentUser.uid,
+                    imageUrl: photo.url,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to analyze techniques');
+            }
+
+            setTechniqueAdvice(result.data.techniques);
+            setTechniqueAssessment(result.data.overallAssessment);
+        } catch (err) {
+            console.error('Error analyzing techniques:', err);
+            alert('Failed to analyze techniques. Please try again.');
+        } finally {
+            setAnalyzingTechniques(false);
         }
     }
 
@@ -887,6 +992,197 @@ export default function ProjectDetailClientV2() {
                                                     projectId={project.projectId}
                                                     projectPhotos={photos}
                                                 />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Row 2 */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-3">
+
+                                    {/* Card 4: Recipe Generator */}
+                                    <div className="bg-card rounded-xl border border-border p-5 flex flex-col">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <BookOpen className="w-4 h-4 text-green-500" />
+                                            <h4 className="text-sm font-semibold text-card-foreground">Recipe Generator</h4>
+                                        </div>
+                                        {generatedRecipe ? (
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-card-foreground mb-1">{generatedRecipe.name}</p>
+                                                <div className="flex gap-3 text-xs text-muted-foreground mb-2">
+                                                    <span>{generatedRecipe.steps.length} steps</span>
+                                                    <span>{generatedRecipe.ingredients.length} colors</span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{generatedRecipe.description}</p>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => setGeneratedRecipe(null)}
+                                                    className="w-full"
+                                                >
+                                                    Generate Another
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1 flex flex-col justify-center items-center text-center py-4">
+                                                <p className="text-xs text-muted-foreground mb-3">
+                                                    Generate a full paint recipe from your photo
+                                                </p>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={handleGenerateRecipe}
+                                                    disabled={generatingRecipe}
+                                                >
+                                                    {generatingRecipe ? (
+                                                        <>
+                                                            <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                                            Generating...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <BookOpen className="w-3 h-3 mr-1.5" />
+                                                            Generate Recipe
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Card 5: Enhance Photo */}
+                                    <div className="bg-card rounded-xl border border-border p-5 flex flex-col">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Wand2 className="w-4 h-4 text-blue-500" />
+                                            <h4 className="text-sm font-semibold text-card-foreground">Enhance Photo</h4>
+                                        </div>
+                                        {enhancedPhotoUrl ? (
+                                            <div className="flex-1">
+                                                <img
+                                                    src={enhancedPhotoUrl}
+                                                    alt="Enhanced photo"
+                                                    className="w-full rounded-lg border border-border mb-2"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <a
+                                                        href={enhancedPhotoUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex-1"
+                                                    >
+                                                        <Button size="sm" variant="outline" className="w-full">
+                                                            Download
+                                                        </Button>
+                                                    </a>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => setEnhancedPhotoUrl(null)}
+                                                    >
+                                                        Try Another
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1 flex flex-col justify-center items-center text-center py-4">
+                                                <p className="text-xs text-muted-foreground mb-3">
+                                                    AI-upscale your photo for display-ready quality
+                                                </p>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={handleEnhancePhoto}
+                                                    disabled={enhancingPhoto}
+                                                >
+                                                    {enhancingPhoto ? (
+                                                        <>
+                                                            <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                                            Enhancing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Wand2 className="w-3 h-3 mr-1.5" />
+                                                            Enhance Photo
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Card 6: Technique Advisor */}
+                                    <div className="bg-card rounded-xl border border-border p-5 flex flex-col">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Lightbulb className="w-4 h-4 text-amber-500" />
+                                            <h4 className="text-sm font-semibold text-card-foreground">Technique Advisor</h4>
+                                        </div>
+                                        {techniqueAdvice && techniqueAdvice.length > 0 ? (
+                                            <div className="flex-1">
+                                                {techniqueAssessment && (
+                                                    <p className="text-xs text-muted-foreground italic mb-3 line-clamp-2">
+                                                        &ldquo;{techniqueAssessment}&rdquo;
+                                                    </p>
+                                                )}
+                                                <div className="space-y-1.5">
+                                                    {techniqueAdvice.map((technique, i) => (
+                                                        <div key={i}>
+                                                            <button
+                                                                onClick={() => setExpandedTechnique(expandedTechnique === i ? null : i)}
+                                                                className="w-full flex items-center justify-between text-left py-1.5 hover:bg-secondary/50 rounded px-1.5 -mx-1.5 transition-colors"
+                                                            >
+                                                                <span className="text-xs font-medium text-card-foreground">{technique.name}</span>
+                                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                                                    technique.difficulty === 'beginner' ? 'bg-green-500/10 text-green-500' :
+                                                                    technique.difficulty === 'intermediate' ? 'bg-yellow-500/10 text-yellow-500' :
+                                                                    'bg-red-500/10 text-red-500'
+                                                                }`}>
+                                                                    {technique.difficulty}
+                                                                </span>
+                                                            </button>
+                                                            {expandedTechnique === i && (
+                                                                <div className="px-1.5 pb-2 text-xs text-muted-foreground">
+                                                                    <p className="mb-1"><span className="font-medium text-card-foreground">Where:</span> {technique.area}</p>
+                                                                    <p className="mb-1">{technique.description}</p>
+                                                                    {technique.paintTip && (
+                                                                        <p className="text-primary/80 italic">{technique.paintTip}</p>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => { setTechniqueAdvice(null); setTechniqueAssessment(null); setExpandedTechnique(null); }}
+                                                    className="w-full mt-3"
+                                                >
+                                                    Analyze Again
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1 flex flex-col justify-center items-center text-center py-4">
+                                                <p className="text-xs text-muted-foreground mb-3">
+                                                    Get personalized technique recommendations
+                                                </p>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={handleAnalyzeTechniques}
+                                                    disabled={analyzingTechniques}
+                                                >
+                                                    {analyzingTechniques ? (
+                                                        <>
+                                                            <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                                            Analyzing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Lightbulb className="w-3 h-3 mr-1.5" />
+                                                            Analyze Techniques
+                                                        </>
+                                                    )}
+                                                </Button>
                                             </div>
                                         )}
                                     </div>

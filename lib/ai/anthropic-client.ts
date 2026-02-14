@@ -21,6 +21,20 @@ export interface DetectedColor {
   notes: string;
 }
 
+export interface TechniqueAdvice {
+  name: string;
+  area: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  description: string;
+  paintTip?: string;
+}
+
+export interface TechniqueAnalysisResult {
+  techniques: TechniqueAdvice[];
+  overallAssessment: string;
+  confidence: number;
+}
+
 /**
  * Anthropic Claude client for color analysis
  */
@@ -723,6 +737,157 @@ Important:
       console.error('Error parsing recipe response:', error);
       console.error('Response text:', responseText);
       throw new Error(`Failed to parse recipe: ${error.message}`);
+    }
+  }
+
+  /**
+   * Analyze painting techniques in a miniature photo and suggest improvements.
+   * Uses Claude Vision API to assess current techniques and recommend next steps.
+   *
+   * @param imageUrl - URL of the miniature photo to analyze
+   * @param context - Optional context (e.g., "space marine", "display piece")
+   * @returns Technique analysis with recommendations
+   */
+  async analyzeTechniques(
+    imageUrl: string,
+    context?: string
+  ): Promise<TechniqueAnalysisResult> {
+    try {
+      const imageData = await this.fetchImageAsBase64(imageUrl);
+      const prompt = this.buildTechniquesPrompt(context);
+
+      const response = await this.callAPIWithFailover({
+        model: this.model,
+        max_tokens: 3000,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: imageData.mediaType,
+                  data: imageData.base64,
+                },
+              },
+              {
+                type: 'text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      });
+
+      const textContent = response.content.find(c => c.type === 'text');
+      if (!textContent || textContent.type !== 'text') {
+        throw new Error('No text response from Claude API');
+      }
+
+      return this.parseTechniquesResponse(textContent.text);
+    } catch (error: any) {
+      console.error('Error analyzing techniques:', error);
+      throw new Error(`Failed to analyze techniques: ${error.message}`);
+    }
+  }
+
+  /**
+   * Build the prompt for technique analysis
+   */
+  private buildTechniquesPrompt(context?: string): string {
+    const contextSection = context && context.trim()
+      ? `\nContext: "${context}"\nConsider this context when making recommendations.`
+      : '';
+
+    return `You are an expert miniature painting coach. Analyze this miniature photo and provide technique improvement recommendations.
+${contextSection}
+
+1. Assess the current techniques visible in the photo (e.g., basecoating, drybrushing, washing, edge highlighting, blending, NMM, OSL, etc.)
+2. Suggest 4-6 specific techniques that would most improve this piece
+3. For each technique, explain where to apply it, the difficulty level, and a concise how-to
+
+Return your response as a JSON object with this exact structure:
+{
+  "techniques": [
+    {
+      "name": "Edge Highlighting",
+      "area": "Armor panels and raised edges",
+      "difficulty": "beginner",
+      "description": "Use a fine detail brush to apply thin lines of a lighter color along raised edges. Load very little paint and drag the side of the brush along the edge for clean, consistent lines.",
+      "paintTip": "Mix your base color with white or use a dedicated highlight color one shade lighter"
+    }
+  ],
+  "overallAssessment": "A brief 2-3 sentence assessment of the current painting level and what areas show the most potential for improvement.",
+  "confidence": 0.85
+}
+
+Important:
+- difficulty must be one of: "beginner", "intermediate", "advanced"
+- description should be 2-3 sentences with actionable how-to instructions
+- paintTip is optional but helpful when a specific paint or tool would help
+- Order techniques from most impactful to least impactful
+- confidence should be 0-1 (your confidence in the recommendations)
+- Return ONLY the JSON object, no additional text`;
+  }
+
+  /**
+   * Parse Claude's technique analysis JSON response
+   */
+  private parseTechniquesResponse(responseText: string): TechniqueAnalysisResult {
+    try {
+      let textToParse = responseText;
+      try {
+        if (responseText.trim().startsWith('[')) {
+          const possibleArray = JSON.parse(responseText);
+          if (Array.isArray(possibleArray) && possibleArray.length === 1 && typeof possibleArray[0] === 'string') {
+            textToParse = possibleArray[0];
+          }
+        }
+      } catch (e) {
+        // Not a JSON array, proceed with original text
+      }
+
+      const cleanText = textToParse
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
+      const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        const rawMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!rawMatch) throw new Error('No JSON found in technique response');
+        try {
+          JSON.parse(rawMatch[0]);
+        } catch (e) {
+          throw new Error('No JSON found in technique response');
+        }
+      }
+
+      const parsed = JSON.parse(jsonMatch![0]);
+
+      if (!parsed.techniques || !Array.isArray(parsed.techniques)) {
+        throw new Error('Invalid response structure: missing techniques array');
+      }
+
+      const validDifficulties = ['beginner', 'intermediate', 'advanced'];
+      const techniques: TechniqueAdvice[] = parsed.techniques.map((t: any) => ({
+        name: t.name || 'Unnamed Technique',
+        area: t.area || 'General',
+        difficulty: validDifficulties.includes(t.difficulty) ? t.difficulty : 'intermediate',
+        description: t.description || '',
+        paintTip: t.paintTip || undefined,
+      }));
+
+      return {
+        techniques,
+        overallAssessment: parsed.overallAssessment || '',
+        confidence: parsed.confidence || 0.5,
+      };
+    } catch (error: any) {
+      console.error('Error parsing technique response:', error);
+      console.error('Response text:', responseText);
+      throw new Error(`Failed to parse technique analysis: ${error.message}`);
     }
   }
 
