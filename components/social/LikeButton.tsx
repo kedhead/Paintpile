@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toggleLike, isEntityLiked } from '@/lib/firestore/likes';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/firebase';
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -53,6 +55,14 @@ export function LikeButton({
       setCheckingStatus(true);
       const status = await isEntityLiked(userId, targetId, type);
       setLiked(status);
+
+      // Fetch the real like count from the entity document
+      const collectionName = type === 'project' ? 'projects' : type === 'army' ? 'armies' : 'recipes';
+      const entityDoc = await getDoc(doc(db, collectionName, targetId));
+      if (entityDoc.exists()) {
+        const realCount = entityDoc.data().likeCount || 0;
+        setLikeCount(realCount);
+      }
     } catch (err) {
       console.error('Error checking like status:', err);
     } finally {

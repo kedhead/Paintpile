@@ -276,12 +276,11 @@ export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
         {/* Action Bar */}
         <div className="flex items-center justify-between pt-4 border-t border-border/30">
           <div className="flex items-center gap-4">
-            {currentUser && activity.targetType === 'project' ? (
+            {currentUser && (activity.targetType === 'project' || activity.targetType === 'army' || activity.targetType === 'recipe') ? (
               <LikeButton
                 userId={currentUser.uid}
                 targetId={activity.targetId}
-                type="project"
-                initialLikeCount={(activity.metadata as any).likeCount || 0}
+                type={activity.targetType as 'project' | 'army' | 'recipe'}
                 size="sm"
                 showCount={true}
               />
