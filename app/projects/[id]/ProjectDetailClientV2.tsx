@@ -28,7 +28,7 @@ import { CommentList } from '@/components/comments/CommentList';
 import { formatDate } from '@/lib/utils/formatters';
 import { getPaintsByIds } from '@/lib/firestore/paints';
 import { PaintChipList } from '@/components/paints/PaintChip';
-import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Palette, ChevronLeft, ChevronRight, Star, Edit2, X, Check, Shield, Sparkles, Eye, MessageSquare, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/ui/TagInput';
@@ -36,6 +36,8 @@ import { ShareButton } from '@/components/ui/ShareButton';
 import { MiniatureAnalyzer } from '@/components/ai/MiniatureAnalyzer';
 import { BragCard } from '@/components/ai/BragCard';
 import { CritiqueDetails } from '@/components/ai/CritiqueDetails';
+import { PaintSuggestionsPanel } from '@/components/ai/PaintSuggestionsPanel';
+import { ColorSuggestion } from '@/types/photo';
 import {
     Dialog,
     DialogContent,
@@ -69,6 +71,12 @@ export default function ProjectDetailClientV2() {
     const [editedTags, setEditedTags] = useState<string[]>([]);
     const [showAddRecipe, setShowAddRecipe] = useState(false);
     const [critiqueOpen, setCritiqueOpen] = useState(false);
+    const [suggestingPaints, setSuggestingPaints] = useState(false);
+    const [paintSuggestions, setPaintSuggestions] = useState<ColorSuggestion[] | null>(null);
+    const [suggestionsConfidence, setSuggestionsConfidence] = useState(0);
+    const [recolorPrompt, setRecolorPrompt] = useState('');
+    const [recoloring, setRecoloring] = useState(false);
+    const [recolorResult, setRecolorResult] = useState<string | null>(null);
     const heroImageRef = useRef<HTMLImageElement>(null);
     const thumbnailStripRef = useRef<HTMLDivElement>(null);
 
@@ -292,6 +300,76 @@ export default function ProjectDetailClientV2() {
         } catch (err) {
             console.error('Error updating project:', err);
             alert('Failed to update project');
+        }
+    }
+
+    async function handleSuggestPaints() {
+        if (!currentUser || photos.length === 0) return;
+        const photo = photos[currentPhotoIndex];
+
+        try {
+            setSuggestingPaints(true);
+            const response = await fetch('/api/ai/suggest-paints', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    photoId: photo.photoId,
+                    projectId,
+                    userId: currentUser.uid,
+                    imageUrl: photo.url,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to generate paint suggestions');
+            }
+
+            setPaintSuggestions(result.data.suggestions);
+            setSuggestionsConfidence(result.data.confidence);
+        } catch (err) {
+            console.error('Error suggesting paints:', err);
+            alert('Failed to analyze colors. Please try again.');
+        } finally {
+            setSuggestingPaints(false);
+        }
+    }
+
+    async function handleRecolor() {
+        if (!currentUser || photos.length === 0) return;
+        if (!recolorPrompt.trim()) {
+            alert('Please enter a color scheme description (e.g., "blue armor, gold trim")');
+            return;
+        }
+        const photo = photos[currentPhotoIndex];
+
+        try {
+            setRecoloring(true);
+            const response = await fetch('/api/ai/recolor-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    photoId: photo.photoId,
+                    projectId,
+                    userId: currentUser.uid,
+                    imageUrl: photo.url,
+                    prompt: recolorPrompt.trim(),
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to visualize scheme');
+            }
+
+            setRecolorResult(result.data.processedUrl);
+        } catch (err) {
+            console.error('Error recoloring:', err);
+            alert('Failed to visualize scheme. Please try again.');
+        } finally {
+            setRecoloring(false);
         }
     }
 
@@ -593,7 +671,14 @@ export default function ProjectDetailClientV2() {
                                             <Palette className="w-4 h-4 text-primary" />
                                             <h4 className="text-sm font-semibold text-card-foreground">Color Palette</h4>
                                         </div>
-                                        {currentPhotoSuggestions?.status === 'completed' && currentPhotoSuggestions.suggestions && currentPhotoSuggestions.suggestions.length > 0 ? (
+                                        {paintSuggestions && paintSuggestions.length > 0 ? (
+                                            <div className="flex-1">
+                                                <PaintSuggestionsPanel
+                                                    suggestions={paintSuggestions}
+                                                    confidence={suggestionsConfidence}
+                                                />
+                                            </div>
+                                        ) : currentPhotoSuggestions?.status === 'completed' && currentPhotoSuggestions.suggestions && currentPhotoSuggestions.suggestions.length > 0 ? (
                                             <div className="flex-1">
                                                 <div className="flex flex-wrap gap-1.5 mb-3">
                                                     {currentPhotoSuggestions.suggestions.slice(0, 8).map((suggestion, i) => (
@@ -614,9 +699,24 @@ export default function ProjectDetailClientV2() {
                                                 <p className="text-xs text-muted-foreground mb-3">
                                                     Analyze colors and get paint match suggestions
                                                 </p>
-                                                <p className="text-[10px] text-muted-foreground/60">
-                                                    Open photo lightbox to run analysis
-                                                </p>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={handleSuggestPaints}
+                                                    disabled={suggestingPaints}
+                                                >
+                                                    {suggestingPaints ? (
+                                                        <>
+                                                            <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                                            Analyzing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Sparkles className="w-3 h-3 mr-1.5" />
+                                                            Analyze Colors
+                                                        </>
+                                                    )}
+                                                </Button>
                                             </div>
                                         )}
                                     </div>
@@ -627,14 +727,58 @@ export default function ProjectDetailClientV2() {
                                             <Eye className="w-4 h-4 text-purple-500" />
                                             <h4 className="text-sm font-semibold text-card-foreground">Visualize Scheme</h4>
                                         </div>
-                                        <div className="flex-1 flex flex-col justify-center items-center text-center py-4">
-                                            <p className="text-xs text-muted-foreground mb-3">
-                                                Preview your miniature in different color schemes with AI
-                                            </p>
-                                            <p className="text-[10px] text-muted-foreground/60">
-                                                Open photo lightbox to visualize
-                                            </p>
-                                        </div>
+                                        {recolorResult ? (
+                                            <div className="flex-1">
+                                                <img
+                                                    src={recolorResult}
+                                                    alt="Recolored visualization"
+                                                    className="w-full rounded-lg border border-border mb-2"
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="w-full"
+                                                    onClick={() => setRecolorResult(null)}
+                                                >
+                                                    Try Another
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1 flex flex-col gap-2">
+                                                <p className="text-xs text-muted-foreground">
+                                                    Describe a color scheme to preview
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    value={recolorPrompt}
+                                                    onChange={(e) => setRecolorPrompt(e.target.value)}
+                                                    placeholder='e.g. "blue armor, gold trim"'
+                                                    className="w-full px-3 py-1.5 bg-input border border-border rounded-lg text-xs text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && recolorPrompt.trim()) handleRecolor();
+                                                    }}
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={handleRecolor}
+                                                    disabled={recoloring || !recolorPrompt.trim()}
+                                                    className="w-full"
+                                                >
+                                                    {recoloring ? (
+                                                        <>
+                                                            <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                                            Generating...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Eye className="w-3 h-3 mr-1.5" />
+                                                            Visualize
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Card 3: AI Critique */}
@@ -682,6 +826,21 @@ export default function ProjectDetailClientV2() {
                                         )}
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Comments Section */}
+                        {project.isPublic && (
+                            <div className="bg-card rounded-xl border border-border shadow-xl p-6">
+                                <CommentList
+                                    targetId={projectId}
+                                    type="project"
+                                    projectId={projectId}
+                                    currentUserId={currentUser?.uid}
+                                    currentUsername={currentUser?.displayName || undefined}
+                                    currentUserPhoto={currentUser?.photoURL || undefined}
+                                    isPublic={project.isPublic}
+                                />
                             </div>
                         )}
                     </div>
@@ -966,22 +1125,7 @@ export default function ProjectDetailClientV2() {
                 </div>
             </div>
 
-            {/* Comments Section - Full Width */}
-            {project.isPublic && (
-                <div className="max-w-7xl mx-auto px-6 mt-12 pb-20">
-                    <div className="bg-card rounded-xl border border-border shadow-xl p-6 md:p-8">
-                        <CommentList
-                            targetId={projectId}
-                            type="project"
-                            projectId={projectId}
-                            currentUserId={currentUser?.uid}
-                            currentUsername={currentUser?.displayName || undefined}
-                            currentUserPhoto={currentUser?.photoURL || undefined}
-                            isPublic={project.isPublic}
-                        />
-                    </div>
-                </div>
-            )}
+            {/* Comments section is now in the left column above */}
 
             {/* Critique Details Dialog */}
             {project.lastCritique && (
