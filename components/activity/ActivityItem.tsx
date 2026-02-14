@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { LikeButton } from '@/components/social/LikeButton';
+import { toast } from 'sonner';
 
 import { saveProject } from '@/lib/firestore/projects';
 import { deleteActivity } from '@/lib/firestore/activities';
@@ -50,7 +51,7 @@ export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
     e.stopPropagation();
     const url = `${window.location.origin}${getTargetUrl()}`;
     navigator.clipboard.writeText(url);
-    // Could add toast here
+    toast.success('Link copied to clipboard!');
   };
 
   const handleSave = async (e: React.MouseEvent) => {
