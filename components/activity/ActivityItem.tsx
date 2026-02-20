@@ -132,9 +132,13 @@ export function ActivityItem({ activity, onDelete }: ActivityItemProps) {
           <p className="text-sm text-foreground">
             <Link href={`/users/${activity.username}`} className="font-bold hover:text-orange-500 transition-colors">{activity.username}</Link>
             {' '}<span className="text-muted-foreground">{actionText}</span>
-            {' '}<Link href={getTargetUrl()} className="font-bold hover:text-orange-500 transition-colors">
-              {activity.metadata.targetUsername || 'something'}
-            </Link>
+            {activity.type !== 'user_joined' && (
+              <>
+                {' '}<Link href={getTargetUrl()} className="font-bold hover:text-orange-500 transition-colors">
+                  {activity.metadata.targetUsername || 'something'}
+                </Link>
+              </>
+            )}
           </p>
           <p className="text-xs text-muted-foreground">{timeAgo}</p>
         </div>
