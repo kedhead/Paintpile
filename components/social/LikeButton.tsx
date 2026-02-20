@@ -67,7 +67,11 @@ export function LikeButton({
         const realCount = entityDoc.data().likeCount || 0;
         setLikeCount(realCount);
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'permission-denied') {
+        // Silently ignore if they don't have access to this entity's like status (e.g. private project)
+        return;
+      }
       console.error('Error checking like status:', err);
     } finally {
       setCheckingStatus(false);

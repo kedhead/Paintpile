@@ -8,10 +8,10 @@ service cloud.firestore {
     }
 
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
     }
     function isAdmin() {
-      return request.auth.token.get('admin', false) == true;
+      return isAuthenticated() && request.auth.token.get('admin', false) == true;
     }
 
     // Allow updating counters if that's the only thing changing
