@@ -15,7 +15,8 @@ export type ActivityType =
   | 'comment_created'      // User commented on a project/army
   | 'project_updated'      // User updated a project (optional, could be noisy)
   | 'army_updated'         // User updated an army (optional, could be noisy)
-  | 'project_critique_shared'; // User shared their AI critique score
+  | 'project_critique_shared' // User shared their AI critique score
+  | 'user_joined';         // User joined the site
 
 /**
  * Type of entity being referenced in activity
@@ -135,4 +136,5 @@ export const ACTIVITY_MESSAGES: Record<ActivityType, (metadata: ActivityMetadata
   project_updated: (m) => `updated project: ${m.projectName}`,
   army_updated: (m) => `updated army: ${m.armyName}`,
   project_critique_shared: (m) => `scored a ${m.critiqueScore}/100 on ${m.projectName}`,
+  user_joined: (m) => `joined the paintpile`,
 };

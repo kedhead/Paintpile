@@ -43,6 +43,25 @@ export async function createUserProfile(
   };
 
   await setDoc(userRef, newUser);
+
+  try {
+    // Import dynamically to avoid circular dependencies just in case
+    const { createActivity } = await import('./activities');
+    await createActivity(
+      userId,
+      displayName,
+      '', // No photo yet
+      'user_joined',
+      userId, // Target is the user themselves
+      'user',
+      {
+        targetUsername: userId, // Fallback for profile link 
+        visibility: 'public'
+      }
+    );
+  } catch (error) {
+    console.error('Failed to create user_joined activity:', error);
+  }
 }
 
 /**
