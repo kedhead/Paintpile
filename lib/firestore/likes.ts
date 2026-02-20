@@ -137,6 +137,7 @@ export async function unlikeProject(userId: string, projectId: string): Promise<
  * Check if a user has liked a project
  */
 export async function isProjectLiked(userId: string, projectId: string): Promise<boolean> {
+  if (!userId) return false;
   const likeId = `${userId}_${projectId}`;
   const likeRef = doc(db, 'likes', likeId);
   const likeSnap = await getDoc(likeRef);
@@ -170,6 +171,7 @@ export async function getProjectLikes(
  * Generic function to check if an entity is liked
  */
 export async function isEntityLiked(userId: string, entityId: string, type: LikeType = 'project'): Promise<boolean> {
+  if (!userId) return false;
   const likeId = `${userId}_${entityId}`;
   const likeRef = doc(db, 'likes', likeId);
   const likeSnap = await getDoc(likeRef);

@@ -53,8 +53,12 @@ export function LikeButton({
   async function checkLikeStatus() {
     try {
       setCheckingStatus(true);
-      const status = await isEntityLiked(userId, targetId, type);
-      setLiked(status);
+      if (userId) {
+        const status = await isEntityLiked(userId, targetId, type);
+        setLiked(status);
+      } else {
+        setLiked(false);
+      }
 
       // Fetch the real like count from the entity document
       const collectionName = type === 'project' ? 'projects' : type === 'army' ? 'armies' : 'recipes';
@@ -73,6 +77,11 @@ export function LikeButton({
   async function handleLikeToggle(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!userId) {
+      alert('Please log in to like this item.');
+      return;
+    }
 
     if (loading) return;
 
