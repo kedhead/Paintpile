@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
-import { getUserProfile, updateUserProfile, getUserByUsername } from '@/lib/firestore/users';
+import { getUserProfile, setUserUsername, getUserByUsername } from '@/lib/firestore/users';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 
@@ -79,12 +79,9 @@ export function UsernameSetupModal({ currentUser }: { currentUser: FirebaseUser 
                 return;
             }
 
-            // 2. Update Profile
-            // Store both display/raw username and lowercase for queries
-            await updateUserProfile(currentUser.uid, {
-                username: username,
-                usernameLower: username.toLowerCase()
-            });
+            // 2. Save username — uses setDoc+merge so it works even if the
+            //    profile document doesn't exist (handles broken Google sign-ups).
+            await setUserUsername(currentUser.uid, username);
 
             // 3. Permanently cache that username is set - never ask again
             const storageKey = `username_set_${currentUser.uid}`;

@@ -60,15 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
 
-    // Check if this is a new user and create profile if needed
+    // Always ensure the Firestore profile exists for Google users.
+    // createUserProfile is idempotent — it checks for an existing document
+    // and won't overwrite if one already exists. The previous approach of
+    // comparing creationTime === lastSignInTime was unreliable and caused
+    // some users to never get a profile document created.
     const user = userCredential.user;
-    if (userCredential.user.metadata.creationTime === userCredential.user.metadata.lastSignInTime) {
-      await createUserProfile(
-        user.uid,
-        user.email || '',
-        user.displayName || 'Anonymous'
-      );
-    }
+    await createUserProfile(
+      user.uid,
+      user.email || '',
+      user.displayName || 'Anonymous'
+    );
 
     return userCredential;
   }

@@ -100,6 +100,20 @@ export async function updateUserProfile(
 }
 
 /**
+ * Set a user's username. Uses setDoc with merge so it works even if the
+ * profile document doesn't yet exist (e.g. for some Google sign-in users
+ * whose profile creation failed during initial signup).
+ */
+export async function setUserUsername(userId: string, username: string): Promise<void> {
+  const userRef = doc(db, 'users', userId);
+  await setDoc(userRef, {
+    username,
+    usernameLower: username.toLowerCase(),
+    userId,
+  }, { merge: true });
+}
+
+/**
  * Increment user stats
  */
 export async function incrementUserStats(
