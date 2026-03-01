@@ -120,15 +120,26 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     setIsProcessing(true);
 
     try {
+      // Pre-load the original image for canvas compositing via proxy to avoid CORS
+      const origImg = new Image();
+      const origLoaded = new Promise<void>((resolve, reject) => {
+        origImg.onload = () => { originalImgRef.current = origImg; resolve(); };
+        origImg.onerror = () => reject(new Error('Failed to load image'));
+      });
+      origImg.src = `/api/proxy-image?url=${encodeURIComponent(sourceUrl)}`;
+
       // Set the URL as the preview image
       setImageDataUrl(sourceUrl);
 
-      // Call depth estimate API directly — URL is already a Firebase Storage URL
-      const depthRes = await fetch('/api/ai/depth-estimate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, sourceUrl }),
-      });
+      // Run API call and image load in parallel
+      const [depthRes] = await Promise.all([
+        fetch('/api/ai/depth-estimate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, sourceUrl }),
+        }),
+        origLoaded,
+      ]);
 
       const depthData = await depthRes.json();
       if (!depthData.success || !depthData.data) {
@@ -153,6 +164,8 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     } catch (error: any) {
       console.error('[LightingRef] Analysis failed:', error);
       toast.error(error.message || 'Analysis failed');
+      // Reset so the user can try again via dropzone or gallery
+      setImageDataUrl(null);
     } finally {
       setIsProcessing(false);
     }
@@ -247,11 +260,13 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     });
   };
 
-  // --- Load original image for canvas compositing ---
+  // --- Load original image for canvas compositing (dropzone flow only) ---
+  // For URL-based flow, originalImgRef is set in handleAnalyzeUrl via proxy
   useEffect(() => {
     if (!imageDataUrl) return;
+    // Skip if already loaded by handleAnalyzeUrl (URL starts with /api/proxy won't be imageDataUrl)
+    if (originalImgRef.current) return;
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => { originalImgRef.current = img; };
     img.src = imageDataUrl;
   }, [imageDataUrl]);
@@ -452,7 +467,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
             <div className="space-y-4">
               <div className="relative rounded-lg overflow-hidden border border-border bg-muted max-w-lg mx-auto">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imageDataUrl} alt="Preview" className="w-full h-auto" crossOrigin="anonymous" />
+                <img src={imageDataUrl} alt="Preview" className="w-full h-auto" />
               </div>
               <div className="flex justify-center gap-3">
                 <Button variant="outline" onClick={handleReset}>

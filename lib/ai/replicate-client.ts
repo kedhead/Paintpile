@@ -390,6 +390,11 @@ export class ReplicateClient {
         }
       );
 
+      // Depth Anything V2 returns { color_depth, grey_depth } — extract grey_depth
+      if (output && typeof output === 'object' && !Array.isArray(output) && output.grey_depth) {
+        return this._handleReplicateOutput(output.grey_depth, startTime);
+      }
+
       return this._handleReplicateOutput(output, startTime);
     } catch (error: any) {
       console.error('[Replicate] Depth estimation failed:', error);
