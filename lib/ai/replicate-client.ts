@@ -24,6 +24,12 @@ export interface AICleanupResult {
   processingTime: number;
 }
 
+export interface DepthEstimateResult {
+  outputUrl?: string;
+  imageBuffer?: Buffer;
+  processingTime: number;
+}
+
 export interface UpscalingResult {
   outputUrl: string;
   processingTime: number;
@@ -40,6 +46,7 @@ export class ReplicateClient {
   private aiCleanupModel: string;
   private recolorModel: string;
   private textGenerationModel: string;
+  private depthEstimationModel: string;
 
   constructor() {
     // Note: 1min.ai (MIN_API_KEY) only supports Anthropic, not Replicate
@@ -85,6 +92,9 @@ export class ReplicateClient {
 
     // Meta Llama 3 70B Instruct for better knowledge retrieval (specifically for paint sets)
     this.textGenerationModel = 'meta/meta-llama-3-70b-instruct';
+
+    // Depth Anything V2 for monocular depth estimation
+    this.depthEstimationModel = 'chenxwh/depth-anything-v2';
   }
 
   /**
@@ -358,6 +368,31 @@ export class ReplicateClient {
     } catch (error: any) {
       console.error('[Replicate] Upscaling failed:', error);
       throw new Error(`Upscaling failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Estimate depth from a single image using Depth Anything V2
+   * @param imageUrl - URL of the image to process
+   * @returns Result with depth map image
+   */
+  async depthEstimate(imageUrl: string): Promise<DepthEstimateResult> {
+    const startTime = Date.now();
+    try {
+      console.log('[Replicate] Starting depth estimation with Depth Anything V2...');
+
+      const output = await this.runWithFailover(
+        this.depthEstimationModel,
+        {
+          image: imageUrl,
+          encoder: 'vitl',
+        }
+      );
+
+      return this._handleReplicateOutput(output, startTime);
+    } catch (error: any) {
+      console.error('[Replicate] Depth estimation failed:', error);
+      throw new Error(`Depth estimation failed: ${error.message}`);
     }
   }
 
