@@ -100,9 +100,9 @@ export class ReplicateClient {
     // Meta Llama 3 70B Instruct for better knowledge retrieval (specifically for paint sets)
     this.textGenerationModel = 'meta/meta-llama-3-70b-instruct';
 
-    // Depth Anything V2 for monocular depth estimation
+    // Depth Pro for high-quality monocular depth estimation
     this.depthEstimationModel = process.env.REPLICATE_DEPTH_MODEL ||
-      'chenxwh/depth-anything-v2:b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4';
+      'garg-aayush/ml-depth-pro';
 
     // IC-Light for AI relighting
     this.relightingModel = process.env.REPLICATE_RELIGHT_MODEL ||
@@ -399,24 +399,24 @@ export class ReplicateClient {
   }
 
   /**
-   * Estimate depth from a single image using Depth Anything V2
+   * Estimate depth from a single image using Depth Pro
    * @param imageUrl - URL of the image to process
    * @returns Result with depth map image
    */
   async depthEstimate(imageUrl: string): Promise<DepthEstimateResult> {
     const startTime = Date.now();
     try {
-      console.log('[Replicate] Starting depth estimation with Depth Anything V2...');
+      console.log('[Replicate] Starting depth estimation with Depth Pro...');
 
       const output = await this.runWithFailover(
         this.depthEstimationModel,
         {
           image: imageUrl,
-          encoder: 'vitl',
         }
       );
 
-      // Depth Anything V2 returns { color_depth, grey_depth } — extract grey_depth
+      // Depth Pro returns a single depth image directly.
+      // Depth Anything V2 returned { color_depth, grey_depth } — handle both for env var override.
       if (output && typeof output === 'object' && !Array.isArray(output) && output.grey_depth) {
         return this._handleReplicateOutput(output.grey_depth, startTime);
       }

@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     const tempUrl = `https://storage.googleapis.com/${bucket.name}/${tempInputPath}`;
 
     // Run depth estimation via Replicate
-    console.log('[DepthEstimate] Running Depth Anything V2...');
+    console.log('[DepthEstimate] Running Depth Pro...');
     const replicateClient = getReplicateClient();
     const result = await replicateClient.depthEstimate(tempUrl);
 
