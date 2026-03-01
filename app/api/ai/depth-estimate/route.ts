@@ -118,21 +118,26 @@ export async function POST(request: NextRequest) {
       .png()
       .toBuffer();
 
-    // Apply slight blur to reduce noise before normal computation
-    const blurredDepth = await sharp(depthBuffer)
+    // Normalize depth map to stretch its histogram to full 0-255 range.
+    // The raw depth map uses most of its range for background-vs-foreground,
+    // leaving tiny gradients across the miniature's actual surfaces.
+    // normalize() stretches whatever range the mini occupies to fill 0-255,
+    // amplifying the subtle surface curvature that matters for lighting.
+    const preparedDepth = await sharp(depthBuffer)
+      .normalize()
       .blur(1.2)
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    const depthPixels = blurredDepth.data;
-    const depthChannels = blurredDepth.info.channels;
+    const depthPixels = preparedDepth.data;
+    const depthChannels = preparedDepth.info.channels;
 
-    // Compute normal map from depth using Sobel-like central differences
-    // Depth values are 0-255; we normalize to [0,1] so the strength param
-    // directly controls how much surface tilt the normals capture.
+    // Compute normal map from depth using weighted multi-sample gradients.
+    // Uses a wider kernel (±3 pixels) with Sobel-style weighting to capture
+    // broad surface curvature, not just sharp edges.
     console.log('[DepthEstimate] Computing normal map...');
     const normalData = Buffer.alloc(width * height * 3);
-    const strength = 10.0; // Higher = more surface detail in normals
+    const strength = 6.0;
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -143,11 +148,21 @@ export async function POST(request: NextRequest) {
           return depthPixels[(cy * width + cx) * depthChannels] / 255.0;
         };
 
-        // Central differences on normalized depth
-        const dX = getDepth(x + 1, y) - getDepth(x - 1, y);
-        const dY = getDepth(x, y + 1) - getDepth(x, y - 1);
+        // Multi-sample gradient with distance weighting (close samples weighted more)
+        // This captures both fine detail and broad curvature
+        const dX = (
+          (getDepth(x + 1, y) - getDepth(x - 1, y)) * 3.0 +  // ±1: weight 3
+          (getDepth(x + 2, y) - getDepth(x - 2, y)) * 2.0 +  // ±2: weight 2
+          (getDepth(x + 3, y) - getDepth(x - 3, y)) * 1.0     // ±3: weight 1
+        ) / 6.0; // normalize by total weight per side
 
-        // Normal vector — strength amplifies subtle depth gradients
+        const dY = (
+          (getDepth(x, y + 1) - getDepth(x, y - 1)) * 3.0 +
+          (getDepth(x, y + 2) - getDepth(x, y - 2)) * 2.0 +
+          (getDepth(x, y + 3) - getDepth(x, y - 3)) * 1.0
+        ) / 6.0;
+
+        // Normal vector — strength amplifies surface gradients
         const nx = -dX * strength;
         const ny = -dY * strength;
         const nz = 1.0;
