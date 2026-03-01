@@ -118,38 +118,39 @@ export async function POST(request: NextRequest) {
       .png()
       .toBuffer();
 
-    // Apply slight blur to reduce edge artifacts before normal computation
+    // Apply slight blur to reduce noise before normal computation
     const blurredDepth = await sharp(depthBuffer)
-      .blur(1.5)
+      .blur(1.2)
       .raw()
       .toBuffer({ resolveWithObject: true });
 
     const depthPixels = blurredDepth.data;
     const depthChannels = blurredDepth.info.channels;
 
-    // Compute normal map from depth using central differences
+    // Compute normal map from depth using Sobel-like central differences
+    // Depth values are 0-255; we normalize to [0,1] so the strength param
+    // directly controls how much surface tilt the normals capture.
     console.log('[DepthEstimate] Computing normal map...');
     const normalData = Buffer.alloc(width * height * 3);
-    const strength = 2.0;
+    const strength = 10.0; // Higher = more surface detail in normals
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * depthChannels;
-
-        // Get depth values (use first channel — grayscale)
+        // Get depth value normalized to [0, 1]
         const getDepth = (px: number, py: number): number => {
           const cx = Math.max(0, Math.min(width - 1, px));
           const cy = Math.max(0, Math.min(height - 1, py));
-          return depthPixels[(cy * width + cx) * depthChannels];
+          return depthPixels[(cy * width + cx) * depthChannels] / 255.0;
         };
 
+        // Central differences on normalized depth
         const dX = getDepth(x + 1, y) - getDepth(x - 1, y);
         const dY = getDepth(x, y + 1) - getDepth(x, y - 1);
 
-        // Normal vector
+        // Normal vector — strength amplifies subtle depth gradients
         const nx = -dX * strength;
         const ny = -dY * strength;
-        const nz = 255.0; // Use 255 scale to keep precision
+        const nz = 1.0;
 
         // Normalize
         const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
