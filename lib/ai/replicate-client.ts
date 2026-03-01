@@ -193,7 +193,14 @@ export class ReplicateClient {
       return { imageBuffer, processingTime };
     }
 
-    // 2. Handle objects with arrayBuffer method (Replicate FileOutput)
+    // 2. Try String() coercion first — Replicate FileOutput objects return their URL via toString()
+    const outputStr = rawOutput != null ? String(rawOutput) : '';
+    if (outputStr.startsWith('http')) {
+      console.log(`[Replicate] URL from String() coercion: ${outputStr}`);
+      return { outputUrl: outputStr, processingTime };
+    }
+
+    // 3. Handle objects with arrayBuffer method (Replicate FileOutput)
     if (rawOutput && typeof rawOutput.arrayBuffer === 'function') {
       console.log('[Replicate] Extracting image data via arrayBuffer()...');
       const ab = await rawOutput.arrayBuffer();
@@ -202,7 +209,7 @@ export class ReplicateClient {
       return { imageBuffer, processingTime };
     }
 
-    // 3. Extract URL from various formats
+    // 4. Extract URL from various formats
     let outputUrl: string | null = null;
 
     // Check for specific URL method
@@ -433,7 +440,7 @@ export class ReplicateClient {
     try {
       console.log(`[Replicate] Starting IC-Light relighting (${lightSource})...`);
 
-      const output = await this.runWithFailover(
+      const rawOutput = await this.runWithFailover(
         this.relightingModel,
         {
           subject_image: imageUrl,
@@ -446,6 +453,11 @@ export class ReplicateClient {
           output_quality: 95,
         }
       );
+
+      // IC-Light returns [FileOutput] — unwrap array to get the single element
+      const output = Array.isArray(rawOutput) ? rawOutput[0] : rawOutput;
+
+      console.log(`[Replicate] IC-Light raw output type: ${typeof output}, constructor: ${output?.constructor?.name}, String: ${String(output).substring(0, 100)}`);
 
       return this._handleReplicateOutput(output, startTime);
     } catch (error: any) {
