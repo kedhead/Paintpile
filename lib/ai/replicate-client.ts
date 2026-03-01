@@ -94,7 +94,8 @@ export class ReplicateClient {
     this.textGenerationModel = 'meta/meta-llama-3-70b-instruct';
 
     // Depth Anything V2 for monocular depth estimation
-    this.depthEstimationModel = 'chenxwh/depth-anything-v2';
+    this.depthEstimationModel = process.env.REPLICATE_DEPTH_MODEL ||
+      'chenxwh/depth-anything-v2:b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4';
   }
 
   /**

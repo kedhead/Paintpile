@@ -1,11 +1,14 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useSearchParams } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
 import { LightingRefTool } from '@/components/tools/LightingRefTool';
 
 export function ClientLightingRefWrapper() {
     const { currentUser, loading } = useAuth();
+    const searchParams = useSearchParams();
+    const imageUrl = searchParams.get('imageUrl') || undefined;
 
     if (loading) {
         return (
@@ -23,5 +26,5 @@ export function ClientLightingRefWrapper() {
         );
     }
 
-    return <LightingRefTool userId={currentUser.uid} />;
+    return <LightingRefTool userId={currentUser.uid} initialImageUrl={imageUrl} />;
 }

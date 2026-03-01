@@ -2,10 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Download, RotateCcw, Sun, Loader2 } from 'lucide-react';
+import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { getUserProjects } from '@/lib/firestore/projects';
+import { getProjectPhotos } from '@/lib/firestore/photos';
+import { Project } from '@/types/project';
+import { Photo } from '@/types/photo';
 
 // --- Light presets ---
 interface LightPreset {
@@ -50,9 +54,10 @@ type ViewMode = 'heatmap' | 'depth' | 'original';
 
 interface LightingRefToolProps {
   userId: string;
+  initialImageUrl?: string;
 }
 
-export function LightingRefTool({ userId }: LightingRefToolProps) {
+export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProps) {
   const { currentUser } = useAuth();
 
   // --- State ---
@@ -70,9 +75,17 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('heatmap');
   const [isDraggingPicker, setIsDraggingPicker] = useState(false);
 
+  // Gallery picker state
+  const [showGalleryPicker, setShowGalleryPicker] = useState(false);
+  const [galleryProjects, setGalleryProjects] = useState<Project[]>([]);
+  const [galleryPhotos, setGalleryPhotos] = useState<Record<string, Photo[]>>({});
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalImgRef = useRef<HTMLImageElement | null>(null);
   const depthImgRef = useRef<HTMLImageElement | null>(null);
+  const initialUrlProcessed = useRef(false);
 
   // --- Dropzone ---
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -101,6 +114,57 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
     accept: { 'image/jpeg': [], 'image/png': [], 'image/webp': [] },
     maxFiles: 1,
   });
+
+  // --- Analyze from URL (skip temp upload) ---
+  const handleAnalyzeUrl = useCallback(async (sourceUrl: string) => {
+    setIsProcessing(true);
+
+    try {
+      // Set the URL as the preview image
+      setImageDataUrl(sourceUrl);
+
+      // Call depth estimate API directly — URL is already a Firebase Storage URL
+      const depthRes = await fetch('/api/ai/depth-estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, sourceUrl }),
+      });
+
+      const depthData = await depthRes.json();
+      if (!depthData.success || !depthData.data) {
+        throw new Error(depthData.error || 'Depth estimation failed');
+      }
+
+      setDepthMapUrl(depthData.data.depthMapUrl);
+      setNormalMapUrl(depthData.data.normalMapUrl);
+      setImgWidth(depthData.data.width);
+      setImgHeight(depthData.data.height);
+
+      // Load normal map into pixel data
+      await loadNormalMap(depthData.data.normalMapUrl, depthData.data.width, depthData.data.height);
+
+      // Load depth map image for depth view
+      const dImg = new Image();
+      dImg.crossOrigin = 'anonymous';
+      dImg.src = depthData.data.depthMapUrl;
+      depthImgRef.current = dImg;
+
+      toast.success(`Analyzed in ${(depthData.data.processingTime / 1000).toFixed(1)}s`);
+    } catch (error: any) {
+      console.error('[LightingRef] Analysis failed:', error);
+      toast.error(error.message || 'Analysis failed');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [userId]);
+
+  // --- Auto-trigger on mount when initialImageUrl is provided ---
+  useEffect(() => {
+    if (initialImageUrl && !initialUrlProcessed.current) {
+      initialUrlProcessed.current = true;
+      handleAnalyzeUrl(initialImageUrl);
+    }
+  }, [initialImageUrl, handleAnalyzeUrl]);
 
   // --- Analyze (upload + API call) ---
   const handleAnalyze = async () => {
@@ -187,6 +251,7 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
   useEffect(() => {
     if (!imageDataUrl) return;
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => { originalImgRef.current = img; };
     img.src = imageDataUrl;
   }, [imageDataUrl]);
@@ -311,6 +376,43 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
     depthImgRef.current = null;
   };
 
+  // --- Gallery picker ---
+  const handleOpenGallery = async () => {
+    setShowGalleryPicker(true);
+    setIsLoadingGallery(true);
+    try {
+      const projects = await getUserProjects(userId);
+      setGalleryProjects(projects.filter(p => p.photoCount > 0));
+    } catch (error) {
+      console.error('[LightingRef] Failed to load projects:', error);
+      toast.error('Failed to load projects');
+    } finally {
+      setIsLoadingGallery(false);
+    }
+  };
+
+  const handleExpandProject = async (projectId: string) => {
+    if (expandedProject === projectId) {
+      setExpandedProject(null);
+      return;
+    }
+    setExpandedProject(projectId);
+    if (!galleryPhotos[projectId]) {
+      try {
+        const photos = await getProjectPhotos(projectId);
+        setGalleryPhotos(prev => ({ ...prev, [projectId]: photos }));
+      } catch (error) {
+        console.error('[LightingRef] Failed to load photos:', error);
+        toast.error('Failed to load photos');
+      }
+    }
+  };
+
+  const handleSelectGalleryPhoto = (photoUrl: string) => {
+    setShowGalleryPicker(false);
+    handleAnalyzeUrl(photoUrl);
+  };
+
   // Picker dot position from current lightDir
   const dotX = lightDir[0] * pickerRadius + pickerSize / 2;
   const dotY = lightDir[1] * pickerRadius + pickerSize / 2;
@@ -323,25 +425,34 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
       {!hasResults && !isProcessing && (
         <div className="space-y-4">
           {!imageDataUrl ? (
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors
-                ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'}`}
-            >
-              <input {...getInputProps()} />
-              <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-4" />
-              <p className="text-foreground font-medium">
-                {isDragActive ? 'Drop your image here' : 'Drop a photo of your mini, or click to browse'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                JPEG, PNG, or WebP — max 5MB
-              </p>
-            </div>
+            <>
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors
+                  ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'}`}
+              >
+                <input {...getInputProps()} />
+                <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-4" />
+                <p className="text-foreground font-medium">
+                  {isDragActive ? 'Drop your image here' : 'Drop a photo of your mini, or click to browse'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  JPEG, PNG, or WebP — max 5MB
+                </p>
+              </div>
+
+              <div className="flex justify-center">
+                <Button variant="outline" onClick={handleOpenGallery}>
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  Choose from Gallery
+                </Button>
+              </div>
+            </>
           ) : (
             <div className="space-y-4">
               <div className="relative rounded-lg overflow-hidden border border-border bg-muted max-w-lg mx-auto">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imageDataUrl} alt="Preview" className="w-full h-auto" />
+                <img src={imageDataUrl} alt="Preview" className="w-full h-auto" crossOrigin="anonymous" />
               </div>
               <div className="flex justify-center gap-3">
                 <Button variant="outline" onClick={handleReset}>
@@ -355,6 +466,88 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Gallery picker modal */}
+      {showGalleryPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col mx-4">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-semibold text-foreground">Choose from Gallery</h3>
+              <Button size="sm" variant="ghost" onClick={() => setShowGalleryPicker(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {isLoadingGallery ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                </div>
+              ) : galleryProjects.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No projects with photos found.</p>
+              ) : (
+                galleryProjects.map((project) => (
+                  <div key={project.projectId} className="border border-border rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => handleExpandProject(project.projectId)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
+                    >
+                      {project.coverPhotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={project.coverPhotoUrl}
+                          alt=""
+                          className="w-10 h-10 rounded object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                          <FolderOpen className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">{project.name}</p>
+                        <p className="text-xs text-muted-foreground">{project.photoCount} photo{project.photoCount !== 1 ? 's' : ''}</p>
+                      </div>
+                      <span className="text-muted-foreground text-sm">
+                        {expandedProject === project.projectId ? '▲' : '▼'}
+                      </span>
+                    </button>
+
+                    {expandedProject === project.projectId && (
+                      <div className="border-t border-border p-3">
+                        {!galleryPhotos[project.projectId] ? (
+                          <div className="flex justify-center py-4">
+                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                          </div>
+                        ) : galleryPhotos[project.projectId].length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">No photos</p>
+                        ) : (
+                          <div className="grid grid-cols-4 gap-2">
+                            {galleryPhotos[project.projectId].map((photo) => (
+                              <button
+                                key={photo.photoId}
+                                onClick={() => handleSelectGalleryPhoto(photo.url)}
+                                className="aspect-square rounded overflow-hidden border border-border hover:border-primary hover:ring-2 hover:ring-primary/30 transition-all"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={photo.thumbnailUrl || photo.url}
+                                  alt={photo.caption || 'Photo'}
+                                  className="w-full h-full object-cover"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
 

@@ -5,7 +5,7 @@ import { Photo, ColorSuggestion } from '@/types/photo';
 import { AIProcessingButton } from './AIProcessingButton';
 import { PaintSuggestionsPanel } from './PaintSuggestionsPanel';
 import { Button } from '@/components/ui/Button';
-import { Sparkles, Wand2, Sparkle, ArrowUpCircle, Download, ExternalLink, Lock, Palette, Save } from 'lucide-react';
+import { Sparkles, Wand2, Sparkle, ArrowUpCircle, Download, ExternalLink, Lock, Palette, Save, Sun } from 'lucide-react';
 import { OPERATION_COSTS } from '@/lib/ai/constants';
 import { useRouter } from 'next/navigation';
 import { DonationButton } from '@/components/DonationButton';
@@ -237,6 +237,15 @@ export function AIProcessingPanel({
             onClick={handleRecolor}
             className="w-full"
             disabled={!paintVision}
+          />
+
+          <AIProcessingButton
+            label="Lighting Ref"
+            icon={<Sun className="h-4 w-4" />}
+            onClick={async () => {
+              router.push(`/tools/lighting-ref?imageUrl=${encodeURIComponent(photo.url)}`);
+            }}
+            className="w-full"
           />
         </div>
 
