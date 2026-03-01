@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     // Allow Google Storage and Replicate (where AI images might come from)
     const allowedDomains = [
         'storage.googleapis.com',
+        'firebasestorage.googleapis.com',
         'replicate.delivery',
         'pbxt.replicate.delivery'
     ];

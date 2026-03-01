@@ -30,6 +30,12 @@ export interface DepthEstimateResult {
   processingTime: number;
 }
 
+export interface RelightResult {
+  outputUrl?: string;
+  imageBuffer?: Buffer;
+  processingTime: number;
+}
+
 export interface UpscalingResult {
   outputUrl: string;
   processingTime: number;
@@ -47,6 +53,7 @@ export class ReplicateClient {
   private recolorModel: string;
   private textGenerationModel: string;
   private depthEstimationModel: string;
+  private relightingModel: string;
 
   constructor() {
     // Note: 1min.ai (MIN_API_KEY) only supports Anthropic, not Replicate
@@ -96,6 +103,10 @@ export class ReplicateClient {
     // Depth Anything V2 for monocular depth estimation
     this.depthEstimationModel = process.env.REPLICATE_DEPTH_MODEL ||
       'chenxwh/depth-anything-v2:b239ea33cff32bb7abb5db39ffe9a09c14cbc2894331d1ef66fe096eed88ebd4';
+
+    // IC-Light for AI relighting
+    this.relightingModel = process.env.REPLICATE_RELIGHT_MODEL ||
+      'zsxkib/ic-light:d41bcb10d8c159868f4cfbd7c6a2ca01484f7d39e4613419d5952c61562f1ba7';
   }
 
   /**
@@ -399,6 +410,39 @@ export class ReplicateClient {
     } catch (error: any) {
       console.error('[Replicate] Depth estimation failed:', error);
       throw new Error(`Depth estimation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Relight an image using IC-Light
+   * @param imageUrl - URL of the subject image
+   * @param lightSource - Light direction: "None", "Left Light", "Right Light", "Top Light", "Bottom Light"
+   * @param prompt - Optional text prompt for the relighting
+   * @returns Result with relit image
+   */
+  async relightImage(imageUrl: string, lightSource: string, prompt?: string): Promise<RelightResult> {
+    const startTime = Date.now();
+    try {
+      console.log(`[Replicate] Starting IC-Light relighting (${lightSource})...`);
+
+      const output = await this.runWithFailover(
+        this.relightingModel,
+        {
+          subject_image: imageUrl,
+          prompt: prompt || 'a miniature figurine, detailed painting, studio lighting',
+          light_source: lightSource,
+          steps: 25,
+          cfg: 2.0,
+          number_of_images: 1,
+          output_format: 'png',
+          output_quality: 95,
+        }
+      );
+
+      return this._handleReplicateOutput(output, startTime);
+    } catch (error: any) {
+      console.error(`[Replicate] IC-Light relighting failed (${lightSource}):`, error);
+      throw new Error(`Relighting failed (${lightSource}): ${error.message}`);
     }
   }
 
