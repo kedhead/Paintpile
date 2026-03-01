@@ -102,7 +102,7 @@ export class ReplicateClient {
 
     // Depth Pro for high-quality monocular depth estimation
     this.depthEstimationModel = process.env.REPLICATE_DEPTH_MODEL ||
-      'garg-aayush/ml-depth-pro';
+      'garg-aayush/ml-depth-pro:63efd78f11d91e3236df416c894f5b49e996271c3f96f98ac806288a5da59db8';
 
     // IC-Light for AI relighting
     this.relightingModel = process.env.REPLICATE_RELIGHT_MODEL ||
