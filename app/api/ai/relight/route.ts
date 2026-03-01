@@ -7,26 +7,26 @@ import sharp from 'sharp';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const VALID_DIRECTIONS: Record<string, string> = {
+  none: 'None',
+  left: 'Left Light',
+  right: 'Right Light',
+  top: 'Top Light',
+  bottom: 'Bottom Light',
+};
+
 interface RelightRequest {
   userId: string;
   sourceUrl: string;
+  direction: string; // 'none' | 'left' | 'right' | 'top' | 'bottom'
   prompt?: string;
 }
-
-const LIGHT_DIRECTIONS = [
-  { key: 'none', label: 'None' },
-  { key: 'left', label: 'Left Light' },
-  { key: 'right', label: 'Right Light' },
-  { key: 'top', label: 'Top Light' },
-  { key: 'bottom', label: 'Bottom Light' },
-] as const;
 
 /**
  * POST /api/ai/relight
  *
- * Generates relit versions of an image from 5 light directions using IC-Light.
- * All 5 directions run in parallel on Replicate (~22s total).
- * Results are uploaded to Firebase Storage as temp files.
+ * Generates a relit version of an image for a single light direction using IC-Light.
+ * Called once per direction — the client caches results and lets users pick directions.
  *
  * No credits/quota — free tool for all authenticated users.
  */
@@ -36,11 +36,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: RelightRequest = await request.json();
-    const { userId, sourceUrl, prompt } = body;
+    const { userId, sourceUrl, direction, prompt } = body;
 
-    if (!userId || !sourceUrl) {
+    if (!userId || !sourceUrl || !direction) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: userId, sourceUrl' },
+        { success: false, error: 'Missing required fields: userId, sourceUrl, direction' },
+        { status: 400 }
+      );
+    }
+
+    const lightLabel = VALID_DIRECTIONS[direction];
+    if (!lightLabel) {
+      return NextResponse.json(
+        { success: false, error: `Invalid direction: ${direction}. Must be one of: ${Object.keys(VALID_DIRECTIONS).join(', ')}` },
         { status: 400 }
       );
     }
@@ -64,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Download source image
-    console.log('[Relight] Downloading source image...');
+    console.log(`[Relight] Downloading source image for direction: ${lightLabel}...`);
     const sourceResponse = await fetch(sourceUrl);
     if (!sourceResponse.ok) {
       throw new Error(`Failed to download source image: ${sourceResponse.status}`);
@@ -91,16 +99,6 @@ export async function POST(request: NextRequest) {
     const width = resizedMeta.width!;
     const height = resizedMeta.height!;
 
-    // Pick IC-Light dimensions: snap to nearest allowed value (multiples of 64, 256-1024)
-    const allowedSizes = [256, 320, 384, 448, 512, 576, 640, 704, 768, 832, 896, 960, 1024];
-    const snapToAllowed = (v: number) => allowedSizes.reduce((prev, curr) =>
-      Math.abs(curr - v) < Math.abs(prev - v) ? curr : prev
-    );
-    const icWidth = snapToAllowed(width);
-    const icHeight = snapToAllowed(height);
-
-    console.log(`[Relight] Processing dimensions: ${width}x${height}, IC-Light: ${icWidth}x${icHeight}`);
-
     // Upload resized image to temp storage for Replicate
     const storage = getAdminStorage();
     const bucket = storage.bucket();
@@ -115,53 +113,39 @@ export async function POST(request: NextRequest) {
     await tempFile.makePublic();
     const tempUrl = `https://storage.googleapis.com/${bucket.name}/${tempInputPath}`;
 
-    // Run directions sequentially to avoid Replicate rate limits
-    // (low-credit accounts: 6 req/min, burst of 1)
-    console.log('[Relight] Running IC-Light for all 5 directions (sequential)...');
+    // Run IC-Light for this single direction
+    console.log(`[Relight] Running IC-Light for direction: ${lightLabel}...`);
     const replicateClient = getReplicateClient();
-    const relightResults: { key: string; url: string }[] = [];
+    const result = await replicateClient.relightImage(tempUrl, lightLabel, prompt);
 
-    for (const { key, label } of LIGHT_DIRECTIONS) {
-      console.log(`[Relight] Starting direction: ${label}`);
-      const result = await replicateClient.relightImage(tempUrl, label, prompt);
-
-      // Get image buffer
-      let imageBuffer: Buffer;
-      if (result.imageBuffer) {
-        imageBuffer = result.imageBuffer;
-      } else if (result.outputUrl) {
-        imageBuffer = await replicateClient.downloadImage(result.outputUrl);
-      } else {
-        throw new Error(`No image data returned for direction: ${label}`);
-      }
-
-      // Upload to Firebase
-      const outputPath = `users/${userId}/temp/relight_${key}_${timestamp}.png`;
-      const outputFile = bucket.file(outputPath);
-      await outputFile.save(imageBuffer, {
-        contentType: 'image/png',
-        metadata: { contentType: 'image/png' },
-      });
-      await outputFile.makePublic();
-      const outputUrl = `https://storage.googleapis.com/${bucket.name}/${outputPath}`;
-
-      console.log(`[Relight] Completed direction: ${label} (${result.processingTime}ms)`);
-      relightResults.push({ key, url: outputUrl });
+    // Get image buffer
+    let imageBuffer: Buffer;
+    if (result.imageBuffer) {
+      imageBuffer = result.imageBuffer;
+    } else if (result.outputUrl) {
+      imageBuffer = await replicateClient.downloadImage(result.outputUrl);
+    } else {
+      throw new Error(`No image data returned for direction: ${lightLabel}`);
     }
 
-    // Build images map
-    const images: Record<string, string> = {};
-    for (const { key, url } of relightResults) {
-      images[key] = url;
-    }
+    // Upload result to Firebase
+    const outputPath = `users/${userId}/temp/relight_${direction}_${timestamp}.png`;
+    const outputFile = bucket.file(outputPath);
+    await outputFile.save(imageBuffer, {
+      contentType: 'image/png',
+      metadata: { contentType: 'image/png' },
+    });
+    await outputFile.makePublic();
+    const outputUrl = `https://storage.googleapis.com/${bucket.name}/${outputPath}`;
 
     const processingTime = Date.now() - startTime;
-    console.log(`[Relight] All directions complete in ${processingTime}ms`);
+    console.log(`[Relight] Direction ${lightLabel} complete in ${processingTime}ms`);
 
     return NextResponse.json({
       success: true,
       data: {
-        images,
+        direction,
+        imageUrl: outputUrl,
         width,
         height,
         processingTime,

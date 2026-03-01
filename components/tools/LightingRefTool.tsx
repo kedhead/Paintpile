@@ -33,8 +33,12 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [relightImages, setRelightImages] = useState<Record<string, string> | null>(null);
-  const [activeDirection, setActiveDirection] = useState<Direction>('top');
+  const [processingDirection, setProcessingDirection] = useState<string | null>(null);
+  // Cache of generated results: direction → image URL
+  const [relightCache, setRelightCache] = useState<Record<string, string>>({});
+  const [activeDirection, setActiveDirection] = useState<Direction | null>(null);
+  // The source URL used for relighting (Firebase URL)
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
 
   // Gallery picker state
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
@@ -59,7 +63,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     reader.onload = () => {
       setImageDataUrl(reader.result as string);
       setImageFile(file);
-      setRelightImages(null);
+      setRelightCache({});
+      setActiveDirection(null);
+      setSourceUrl(null);
     };
     reader.readAsDataURL(file);
   }, []);
@@ -70,16 +76,22 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     maxFiles: 1,
   });
 
-  // --- Relight from URL (gallery / initialImageUrl flow) ---
-  const handleRelightUrl = useCallback(async (sourceUrl: string) => {
+  // --- Generate a single direction ---
+  const generateDirection = useCallback(async (dir: Direction, srcUrl: string) => {
+    // Already cached?
+    if (relightCache[dir]) {
+      setActiveDirection(dir);
+      return;
+    }
+
     setIsProcessing(true);
-    setImageDataUrl(sourceUrl);
+    setProcessingDirection(dir);
 
     try {
       const res = await fetch('/api/ai/relight', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, sourceUrl }),
+        body: JSON.stringify({ userId, sourceUrl: srcUrl, direction: dir }),
       });
 
       const data = await res.json();
@@ -87,30 +99,41 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         throw new Error(data.error || 'Relighting failed');
       }
 
-      setRelightImages(data.data.images);
-      setActiveDirection('top');
-      toast.success(`Generated in ${(data.data.processingTime / 1000).toFixed(0)}s`);
+      setRelightCache(prev => ({ ...prev, [dir]: data.data.imageUrl }));
+      setActiveDirection(dir);
+      toast.success(`${dir} light generated in ${(data.data.processingTime / 1000).toFixed(0)}s`);
     } catch (error: any) {
       console.error('[LightingRef] Relighting failed:', error);
       toast.error(error.message || 'Relighting failed');
-      setImageDataUrl(null);
     } finally {
       setIsProcessing(false);
+      setProcessingDirection(null);
     }
-  }, [userId]);
+  }, [userId, relightCache]);
+
+  // --- Handle URL-based source (gallery pick / initialImageUrl) ---
+  const handleSourceUrl = useCallback(async (url: string) => {
+    setImageDataUrl(url);
+    setSourceUrl(url);
+    setRelightCache({});
+    setActiveDirection(null);
+    // Auto-generate "top" direction
+    await generateDirection('top', url);
+  }, [generateDirection]);
 
   // --- Auto-trigger on mount when initialImageUrl is provided ---
   useEffect(() => {
     if (initialImageUrl && !initialUrlProcessed.current) {
       initialUrlProcessed.current = true;
-      handleRelightUrl(initialImageUrl);
+      handleSourceUrl(initialImageUrl);
     }
-  }, [initialImageUrl, handleRelightUrl]);
+  }, [initialImageUrl, handleSourceUrl]);
 
-  // --- Relight from uploaded file ---
+  // --- Upload file then generate first direction ---
   const handleAnalyze = async () => {
     if (!imageFile) return;
     setIsProcessing(true);
+    setProcessingDirection('top');
 
     try {
       const token = await currentUser?.getIdToken();
@@ -132,11 +155,13 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         throw new Error(uploadData.error || 'Failed to upload image');
       }
 
-      // Call relight API
+      setSourceUrl(uploadData.url);
+
+      // Generate first direction
       const res = await fetch('/api/ai/relight', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, sourceUrl: uploadData.url }),
+        body: JSON.stringify({ userId, sourceUrl: uploadData.url, direction: 'top' }),
       });
 
       const data = await res.json();
@@ -144,24 +169,36 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         throw new Error(data.error || 'Relighting failed');
       }
 
-      setRelightImages(data.data.images);
+      setRelightCache({ top: data.data.imageUrl });
       setActiveDirection('top');
-      toast.success(`Generated in ${(data.data.processingTime / 1000).toFixed(0)}s`);
+      toast.success(`Top light generated in ${(data.data.processingTime / 1000).toFixed(0)}s`);
     } catch (error: any) {
       console.error('[LightingRef] Relighting failed:', error);
       toast.error(error.message || 'Relighting failed');
     } finally {
       setIsProcessing(false);
+      setProcessingDirection(null);
+    }
+  };
+
+  // --- Direction button click ---
+  const handleDirectionClick = (dir: Direction) => {
+    if (!sourceUrl) return;
+    if (relightCache[dir]) {
+      // Already generated — just switch
+      setActiveDirection(dir);
+    } else {
+      // Generate it
+      generateDirection(dir, sourceUrl);
     }
   };
 
   // --- Download ---
   const handleDownload = async () => {
-    if (!relightImages || !relightImages[activeDirection]) return;
+    if (!activeDirection || !relightCache[activeDirection]) return;
 
     try {
-      const imageUrl = relightImages[activeDirection];
-      // Fetch through proxy to avoid CORS
+      const imageUrl = relightCache[activeDirection];
       const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
       const response = await fetch(proxiedUrl);
       const blob = await response.blob();
@@ -180,8 +217,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const handleReset = () => {
     setImageFile(null);
     setImageDataUrl(null);
-    setRelightImages(null);
-    setActiveDirection('top');
+    setRelightCache({});
+    setActiveDirection(null);
+    setSourceUrl(null);
   };
 
   // --- Gallery picker ---
@@ -218,18 +256,19 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
 
   const handleSelectGalleryPhoto = (photoUrl: string) => {
     setShowGalleryPicker(false);
-    handleRelightUrl(photoUrl);
+    handleSourceUrl(photoUrl);
   };
 
-  const hasResults = !!relightImages;
-  const currentImageUrl = hasResults && relightImages[activeDirection]
-    ? `/api/proxy-image?url=${encodeURIComponent(relightImages[activeDirection])}`
+  const hasResults = Object.keys(relightCache).length > 0;
+  const showUpload = !hasResults && !isProcessing && !sourceUrl;
+  const currentImageUrl = activeDirection && relightCache[activeDirection]
+    ? `/api/proxy-image?url=${encodeURIComponent(relightCache[activeDirection])}`
     : null;
 
   return (
     <div className="space-y-6">
       {/* Upload section */}
-      {!hasResults && !isProcessing && (
+      {showUpload && (
         <div className="space-y-4">
           {!imageDataUrl ? (
             <>
@@ -358,12 +397,12 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         </div>
       )}
 
-      {/* Processing state */}
-      {isProcessing && (
+      {/* Processing state (first generation or when no results yet) */}
+      {isProcessing && !hasResults && (
         <div className="flex flex-col items-center justify-center py-16 space-y-4">
           <Loader2 className="w-10 h-10 text-primary animate-spin" />
-          <p className="text-foreground font-medium">Generating lighting references...</p>
-          <p className="text-sm text-muted-foreground">Generating 5 directions — this takes ~2 minutes</p>
+          <p className="text-foreground font-medium">Generating {processingDirection} lighting...</p>
+          <p className="text-sm text-muted-foreground">This usually takes ~20 seconds</p>
         </div>
       )}
 
@@ -371,7 +410,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       {hasResults && (
         <div className="space-y-4">
           {/* Relit image display */}
-          <div className="rounded-lg overflow-hidden border border-border bg-black">
+          <div className="rounded-lg overflow-hidden border border-border bg-black relative">
             {currentImageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -380,22 +419,40 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                 className="w-full h-auto"
               />
             )}
+            {/* Inline loading overlay when generating additional direction */}
+            {isProcessing && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+                <p className="text-white text-sm mt-2">Generating {processingDirection} lighting...</p>
+              </div>
+            )}
           </div>
 
           {/* Direction buttons + actions */}
           <div className="flex flex-wrap items-center gap-2">
-            {DIRECTIONS.map(({ key, label }) => (
-              <Button
-                key={key}
-                size="sm"
-                variant={activeDirection === key ? 'default' : 'outline'}
-                onClick={() => setActiveDirection(key)}
-              >
-                {label}
-              </Button>
-            ))}
+            {DIRECTIONS.map(({ key, label }) => {
+              const isGenerated = !!relightCache[key];
+              const isActive = activeDirection === key;
+              const isGenerating = processingDirection === key;
+              return (
+                <Button
+                  key={key}
+                  size="sm"
+                  variant={isActive ? 'default' : 'outline'}
+                  onClick={() => handleDirectionClick(key)}
+                  disabled={isProcessing}
+                  className="relative"
+                >
+                  {isGenerating && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                  {label}
+                  {isGenerated && !isActive && (
+                    <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                  )}
+                </Button>
+              );
+            })}
             <div className="flex-1" />
-            <Button size="sm" variant="outline" onClick={handleDownload}>
+            <Button size="sm" variant="outline" onClick={handleDownload} disabled={!currentImageUrl}>
               <Download className="w-4 h-4 mr-2" />
               Download
             </Button>
@@ -404,6 +461,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
               New Image
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Click a direction to generate it. Generated directions show a green dot and switch instantly.
+          </p>
         </div>
       )}
     </div>
