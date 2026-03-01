@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Download, RotateCcw, Sun, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 // --- Light presets ---
@@ -52,6 +53,8 @@ interface LightingRefToolProps {
 }
 
 export function LightingRefTool({ userId }: LightingRefToolProps) {
+  const { currentUser } = useAuth();
+
   // --- State ---
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
@@ -105,6 +108,10 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
     setIsProcessing(true);
 
     try {
+      // Get auth token for authenticated upload
+      const token = await currentUser?.getIdToken();
+      if (!token) throw new Error('Not authenticated');
+
       // Step 1: Upload to temp storage
       const formData = new FormData();
       formData.append('file', imageFile);
@@ -112,6 +119,7 @@ export function LightingRefTool({ userId }: LightingRefToolProps) {
 
       const uploadRes = await fetch('/api/upload/temp-image', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
       });
 
