@@ -216,6 +216,14 @@ export class ReplicateClient {
     // Check for array output
     else if (Array.isArray(rawOutput) && rawOutput.length > 0) {
       const first = rawOutput[0];
+      // Handle array of FileOutput objects (e.g. IC-Light returns [FileOutput])
+      if (first && typeof first.arrayBuffer === 'function') {
+        console.log('[Replicate] Extracting image data from array[0] via arrayBuffer()...');
+        const ab = await first.arrayBuffer();
+        const imageBuffer = Buffer.from(ab);
+        console.log(`[Replicate] ArrayBuffer extraction completed in ${processingTime}ms`);
+        return { imageBuffer, processingTime };
+      }
       if (typeof first === 'string' && first.startsWith('http')) {
         outputUrl = first;
       } else if (first && typeof first.url === 'function') {
