@@ -154,10 +154,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       // Load normal map into pixel data
       await loadNormalMap(depthData.data.normalMapUrl, depthData.data.width, depthData.data.height);
 
-      // Load depth map image for depth view
+      // Load depth map image for depth view (proxy to avoid CORS)
       const dImg = new Image();
-      dImg.crossOrigin = 'anonymous';
-      dImg.src = depthData.data.depthMapUrl;
+      dImg.src = `/api/proxy-image?url=${encodeURIComponent(depthData.data.depthMapUrl)}`;
       depthImgRef.current = dImg;
 
       toast.success(`Analyzed in ${(depthData.data.processingTime / 1000).toFixed(1)}s`);
@@ -225,10 +224,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       // Step 3: Load normal map into pixel data
       await loadNormalMap(depthData.data.normalMapUrl, depthData.data.width, depthData.data.height);
 
-      // Load depth map image for depth view
+      // Load depth map image for depth view (proxy to avoid CORS)
       const dImg = new Image();
-      dImg.crossOrigin = 'anonymous';
-      dImg.src = depthData.data.depthMapUrl;
+      dImg.src = `/api/proxy-image?url=${encodeURIComponent(depthData.data.depthMapUrl)}`;
       depthImgRef.current = dImg;
 
       toast.success(`Analyzed in ${(depthData.data.processingTime / 1000).toFixed(1)}s`);
@@ -241,9 +239,10 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   };
 
   const loadNormalMap = async (url: string, w: number, h: number) => {
+    // Load via proxy to avoid CORS — we need getImageData() canvas access
+    const proxiedUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
     return new Promise<void>((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
       img.onload = () => {
         const offscreen = document.createElement('canvas');
         offscreen.width = w;
@@ -256,7 +255,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         resolve();
       };
       img.onerror = () => reject(new Error('Failed to load normal map'));
-      img.src = url;
+      img.src = proxiedUrl;
     });
   };
 
