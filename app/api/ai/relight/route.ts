@@ -115,39 +115,39 @@ export async function POST(request: NextRequest) {
     await tempFile.makePublic();
     const tempUrl = `https://storage.googleapis.com/${bucket.name}/${tempInputPath}`;
 
-    // Run all 5 directions in parallel
-    console.log('[Relight] Running IC-Light for all 5 directions...');
+    // Run directions sequentially to avoid Replicate rate limits
+    // (low-credit accounts: 6 req/min, burst of 1)
+    console.log('[Relight] Running IC-Light for all 5 directions (sequential)...');
     const replicateClient = getReplicateClient();
+    const relightResults: { key: string; url: string }[] = [];
 
-    const relightResults = await Promise.all(
-      LIGHT_DIRECTIONS.map(async ({ key, label }) => {
-        console.log(`[Relight] Starting direction: ${label}`);
-        const result = await replicateClient.relightImage(tempUrl, label, prompt);
+    for (const { key, label } of LIGHT_DIRECTIONS) {
+      console.log(`[Relight] Starting direction: ${label}`);
+      const result = await replicateClient.relightImage(tempUrl, label, prompt);
 
-        // Get image buffer
-        let imageBuffer: Buffer;
-        if (result.imageBuffer) {
-          imageBuffer = result.imageBuffer;
-        } else if (result.outputUrl) {
-          imageBuffer = await replicateClient.downloadImage(result.outputUrl);
-        } else {
-          throw new Error(`No image data returned for direction: ${label}`);
-        }
+      // Get image buffer
+      let imageBuffer: Buffer;
+      if (result.imageBuffer) {
+        imageBuffer = result.imageBuffer;
+      } else if (result.outputUrl) {
+        imageBuffer = await replicateClient.downloadImage(result.outputUrl);
+      } else {
+        throw new Error(`No image data returned for direction: ${label}`);
+      }
 
-        // Upload to Firebase
-        const outputPath = `users/${userId}/temp/relight_${key}_${timestamp}.png`;
-        const outputFile = bucket.file(outputPath);
-        await outputFile.save(imageBuffer, {
-          contentType: 'image/png',
-          metadata: { contentType: 'image/png' },
-        });
-        await outputFile.makePublic();
-        const outputUrl = `https://storage.googleapis.com/${bucket.name}/${outputPath}`;
+      // Upload to Firebase
+      const outputPath = `users/${userId}/temp/relight_${key}_${timestamp}.png`;
+      const outputFile = bucket.file(outputPath);
+      await outputFile.save(imageBuffer, {
+        contentType: 'image/png',
+        metadata: { contentType: 'image/png' },
+      });
+      await outputFile.makePublic();
+      const outputUrl = `https://storage.googleapis.com/${bucket.name}/${outputPath}`;
 
-        console.log(`[Relight] Completed direction: ${label} (${result.processingTime}ms)`);
-        return { key, url: outputUrl };
-      })
-    );
+      console.log(`[Relight] Completed direction: ${label} (${result.processingTime}ms)`);
+      relightResults.push({ key, url: outputUrl });
+    }
 
     // Build images map
     const images: Record<string, string> = {};

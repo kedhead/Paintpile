@@ -363,7 +363,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         <div className="flex flex-col items-center justify-center py-16 space-y-4">
           <Loader2 className="w-10 h-10 text-primary animate-spin" />
           <p className="text-foreground font-medium">Generating lighting references...</p>
-          <p className="text-sm text-muted-foreground">This usually takes ~20 seconds</p>
+          <p className="text-sm text-muted-foreground">Generating 5 directions — this takes ~2 minutes</p>
         </div>
       )}
 
