@@ -301,14 +301,21 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
 
     // Pre-compute enabled lights' properties
     const enabledLights = lights.filter(l => l.enabled);
-    const lightProps = enabledLights.map(l => ({
-      lx: l.x * w,
-      ly: l.y * h,
-      lz: l.z * Math.max(w, h),
-      rgb: hexToRgb(l.color),
-      intensity: l.intensity,
-      radiusSq: (l.radius * Math.max(w, h)) ** 2,
-    }));
+    const dim = Math.max(w, h);
+    const normalStrength = 0.3; // how much normals modulate the radial light
+    const lightProps = enabledLights.map(l => {
+      // Radius in pixels — controls gaussian falloff width
+      const radiusPx = l.radius * dim;
+      return {
+        lx: l.x * w,
+        ly: l.y * h,
+        lz: l.z * dim,
+        rgb: hexToRgb(l.color),
+        intensity: l.intensity,
+        // Pre-compute for gaussian: exp(-dist² / (2 * sigma²))
+        invTwoSigmaSq: 1 / (2 * radiusPx * radiusPx),
+      };
+    });
 
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
@@ -320,45 +327,42 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         const ny = (pixels[pi + 1] / 255) * 2 - 1;
         const nz = (pixels[pi + 2] / 255) * 2 - 1;
 
-        // Accumulate lighting from all enabled lights
+        // Accumulate light contribution
         let lr = ambient, lg = ambient, lb = ambient;
 
         for (let li = 0; li < lightProps.length; li++) {
           const light = lightProps[li];
           const dx = light.lx - x;
           const dy = light.ly - y;
-          const dz = light.lz;
           const dist2d = dx * dx + dy * dy;
 
-          // Normalize light direction
-          const len = Math.sqrt(dist2d + dz * dz);
-          if (len === 0) continue;
-          const ldx = dx / len;
-          const ldy = dy / len;
-          const ldz = dz / len;
+          // Gaussian radial falloff — smooth, natural light spread
+          const radial = Math.exp(-dist2d * light.invTwoSigmaSq);
 
-          // Lambertian
-          const dot = nx * ldx + ny * ldy + nz * ldz;
-          const lambert = Math.max(0, dot);
+          // Subtle normal-based modulation for 3D depth feel
+          const len = Math.sqrt(dist2d + light.lz * light.lz);
+          let normalMod = 1.0;
+          if (len > 0) {
+            const dot = nx * (dx / len) + ny * (dy / len) + nz * (light.lz / len);
+            // Blend between 1.0 (no normal effect) and lambertian
+            normalMod = 1.0 - normalStrength + normalStrength * Math.max(0, dot);
+          }
 
-          // Attenuation
-          const atten = 1 / (1 + dist2d / light.radiusSq);
-
-          const contribution = lambert * atten * light.intensity;
+          const contribution = radial * normalMod * light.intensity;
           lr += contribution * light.rgb[0];
           lg += contribution * light.rgb[1];
           lb += contribution * light.rgb[2];
         }
 
-        // Clamp and convert to 0-255
-        const shadeR = Math.min(255, Math.round(lr * 255));
-        const shadeG = Math.min(255, Math.round(lg * 255));
-        const shadeB = Math.min(255, Math.round(lb * 255));
+        // Multiply original image by accumulated light (preserves photo detail)
+        const litR = Math.min(255, Math.round(origData[pi]     * lr));
+        const litG = Math.min(255, Math.round(origData[pi + 1] * lg));
+        const litB = Math.min(255, Math.round(origData[pi + 2] * lb));
 
-        // Blend with original
-        out[pi]     = Math.round(origData[pi]     * (1 - alpha) + shadeR * alpha);
-        out[pi + 1] = Math.round(origData[pi + 1] * (1 - alpha) + shadeG * alpha);
-        out[pi + 2] = Math.round(origData[pi + 2] * (1 - alpha) + shadeB * alpha);
+        // Blend lit result with original at opacity
+        out[pi]     = Math.round(origData[pi]     * (1 - alpha) + litR * alpha);
+        out[pi + 1] = Math.round(origData[pi + 1] * (1 - alpha) + litG * alpha);
+        out[pi + 2] = Math.round(origData[pi + 2] * (1 - alpha) + litB * alpha);
         out[pi + 3] = 255;
       }
     }
