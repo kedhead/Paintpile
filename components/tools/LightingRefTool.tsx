@@ -20,6 +20,7 @@ interface Light {
   x: number;        // 0-1 normalized position on image
   y: number;        // 0-1 normalized position on image
   z: number;        // height above surface (controls angle)
+  dz: number;       // depth position: 0 = behind model, 0.5 = middle, 1 = in front
   tx: number;       // target/endpoint x (spot: aim target, line: second endpoint)
   ty: number;       // target/endpoint y
   color: string;    // hex color
@@ -35,7 +36,7 @@ function createDefaultLights(): Light[] {
     {
       id: 'light-1',
       shape: 'radial',
-      x: 0.3, y: 0.25, z: 0.6,
+      x: 0.3, y: 0.25, z: 0.6, dz: 0.5,
       tx: 0.5, ty: 0.5,
       color: '#fff5e0',
       intensity: 1.2,
@@ -47,7 +48,7 @@ function createDefaultLights(): Light[] {
     {
       id: 'light-2',
       shape: 'radial',
-      x: 0.7, y: 0.75, z: 0.4,
+      x: 0.7, y: 0.75, z: 0.4, dz: 0.5,
       tx: 0.5, ty: 0.5,
       color: '#e0e8ff',
       intensity: 0.8,
@@ -357,6 +358,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         shape: l.shape,
         lx, ly,
         lz: l.z * dim,
+        ldz: l.dz,           // depth position 0=behind, 1=in front
         ltx, lty,
         rgb: hexToRgb(l.color),
         intensity: l.intensity,
@@ -436,28 +438,42 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
             falloff = Math.exp(-dist2d * light.invTwoSigmaSq);
           }
 
-          // Compute effective light Z offset, incorporating surface depth
-          // Without depth: all pixels at z=0, light at lz above flat plane
-          // With depth: each pixel has its own Z from depth map, so light direction
-          // changes per-pixel — a low light illuminates undersides/recesses,
-          // a high light illuminates tops/raised areas
-          let effectiveLz = light.lz;
+          // Height component: light above the image plane (existing z)
+          const heightZ = light.lz;
+
+          // Depth component: 3D distance between light's depth position and surface depth
+          // light.ldz: 0 = behind/far, 0.5 = middle, 1 = in front/close
+          // surfaceDepth: 0 = far from camera, 1 = close to camera
+          // depthDiff > 0 means light is in front of surface, < 0 means behind
+          let depthZ = 0;
           if (depthAlpha > 0 && depthPixels) {
-            // Depth map: brighter = closer to camera = raised surface (0-1 range)
-            const surfaceZ = (depthPixels[pi] / 255) * dim * 0.3; // scale to scene units
-            // Blend between flat (lz) and depth-aware (lz - surfaceZ)
-            effectiveLz = light.lz - depthAlpha * surfaceZ;
+            const surfaceDepth = depthPixels[pi] / 255;
+            const depthDiff = light.ldz - surfaceDepth;
+            // Scale to scene units — 0.6 factor gives strong visible depth separation
+            depthZ = depthDiff * dim * depthAlpha * 0.6;
           }
 
-          // Normal-based modulation using depth-aware light direction
-          const len = Math.sqrt(dist2d + effectiveLz * effectiveLz);
+          // Combined Z for light direction (height + depth offset)
+          const totalZ = heightZ + depthZ;
+
+          // Normal-based modulation using full 3D light direction
+          const len = Math.sqrt(dist2d + totalZ * totalZ);
           let normalMod = 1.0;
           if (len > 0) {
-            const dot = nx * (dx / len) + ny * (dy / len) + nz * (effectiveLz / len);
+            const dot = nx * (dx / len) + ny * (dy / len) + nz * (totalZ / len);
             normalMod = 1.0 - light.normalStrength + light.normalStrength * Math.max(0, dot);
           }
 
-          const contribution = falloff * normalMod * light.intensity;
+          // Depth also attenuates falloff: surfaces far from light in depth get less light
+          let depthFalloff = 1.0;
+          if (depthAlpha > 0 && depthPixels) {
+            const surfaceDepth = depthPixels[pi] / 255;
+            const depthDist = Math.abs(light.ldz - surfaceDepth);
+            // Gaussian in depth space — surfaces at same depth as light get full light
+            depthFalloff = 1.0 - depthAlpha + depthAlpha * Math.exp(-depthDist * depthDist * 8);
+          }
+
+          const contribution = falloff * normalMod * depthFalloff * light.intensity;
           lr += contribution * light.rgb[0];
           lg += contribution * light.rgb[1];
           lb += contribution * light.rgb[2];
@@ -558,7 +574,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     if (shape === 'spot') {
       newLight = {
         id, shape: 'spot',
-        x: 0.3, y: 0.3, z: 0.5,
+        x: 0.3, y: 0.3, z: 0.5, dz: 0.5,
         tx: 0.5, ty: 0.5,
         color: '#ffffff', intensity: 1.0, radius: 0.5, enabled: true,
         coneAngle: 30, softness: 0.5,
@@ -566,7 +582,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     } else if (shape === 'line') {
       newLight = {
         id, shape: 'line',
-        x: 0.3, y: 0.5, z: 0.5,
+        x: 0.3, y: 0.5, z: 0.5, dz: 0.5,
         tx: 0.7, ty: 0.5,
         color: '#ffffff', intensity: 1.0, radius: 0.5, enabled: true,
         coneAngle: 30, softness: 0.5,
@@ -574,7 +590,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     } else {
       newLight = {
         id, shape: 'radial',
-        x: 0.5, y: 0.5, z: 0.5,
+        x: 0.5, y: 0.5, z: 0.5, dz: 0.5,
         tx: 0.5, ty: 0.5,
         color: '#ffffff', intensity: 1.0, radius: 0.5, enabled: true,
         coneAngle: 30, softness: 0.5,
@@ -1093,6 +1109,25 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                       onChange={(e) => updateLight(selectedLight.id, { z: Number(e.target.value) / 100 })}
                       className="w-full accent-primary"
                     />
+                  </div>
+
+                  {/* Depth position (forward/back) */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Depth: {selectedLight.dz <= 0.33 ? 'Behind' : selectedLight.dz >= 0.67 ? 'In Front' : 'Middle'}
+                    </p>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={Math.round(selectedLight.dz * 100)}
+                      onChange={(e) => updateLight(selectedLight.id, { dz: Number(e.target.value) / 100 })}
+                      className="w-full accent-primary"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground -mt-0.5">
+                      <span>Behind</span>
+                      <span>In Front</span>
+                    </div>
                   </div>
 
                   {/* Spot-only: Cone Angle */}
