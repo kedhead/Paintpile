@@ -324,10 +324,10 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     // Pre-compute enabled lights' properties
     const enabledLights = lights.filter(l => l.enabled);
     const dim = Math.max(w, h);
-    const normalStrength = 0.3; // how much normals modulate the radial light
     const lightProps = enabledLights.map(l => {
-      // Radius in pixels — controls gaussian falloff width
-      const radiusPx = l.radius * dim;
+      // Radius in pixels — radial uses tighter scale for focused orb-like pools
+      const scale = l.shape === 'radial' ? 0.25 : 1.0;
+      const radiusPx = l.radius * dim * scale;
       const invTwoSigmaSq = 1 / (2 * radiusPx * radiusPx);
       // Spot-specific pre-computation
       const coneCos = Math.cos((l.coneAngle * Math.PI) / 180);
@@ -341,6 +341,10 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       const segDy = lty - ly;
       const segLenSq = segDx * segDx + segDy * segDy;
 
+      // Spotlights get strong normal modulation for directional depth;
+      // radial/line stay subtle so they act more like ambient wash
+      const normalStrength = l.shape === 'spot' ? 0.7 : 0.3;
+
       return {
         shape: l.shape,
         lx, ly,
@@ -352,6 +356,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         coneCos,
         softness: l.softness,
         segDx, segDy, segLenSq,
+        normalStrength,
       };
     });
 
@@ -423,12 +428,12 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
             falloff = Math.exp(-dist2d * light.invTwoSigmaSq);
           }
 
-          // Subtle normal-based modulation for 3D depth feel
+          // Normal-based modulation — strong for spotlights (directional depth), subtle for radial/line
           const len = Math.sqrt(dist2d + light.lz * light.lz);
           let normalMod = 1.0;
           if (len > 0) {
             const dot = nx * (dx / len) + ny * (dy / len) + nz * (light.lz / len);
-            normalMod = 1.0 - normalStrength + normalStrength * Math.max(0, dot);
+            normalMod = 1.0 - light.normalStrength + light.normalStrength * Math.max(0, dot);
           }
 
           const contribution = falloff * normalMod * light.intensity;
