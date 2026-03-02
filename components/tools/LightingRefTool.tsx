@@ -436,24 +436,28 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
             falloff = Math.exp(-dist2d * light.invTwoSigmaSq);
           }
 
-          // Normal-based modulation — strong for spotlights (directional depth), subtle for radial/line
-          const len = Math.sqrt(dist2d + light.lz * light.lz);
+          // Compute effective light Z offset, incorporating surface depth
+          // Without depth: all pixels at z=0, light at lz above flat plane
+          // With depth: each pixel has its own Z from depth map, so light direction
+          // changes per-pixel — a low light illuminates undersides/recesses,
+          // a high light illuminates tops/raised areas
+          let effectiveLz = light.lz;
+          if (depthAlpha > 0 && depthPixels) {
+            // Depth map: brighter = closer to camera = raised surface (0-1 range)
+            const surfaceZ = (depthPixels[pi] / 255) * dim * 0.3; // scale to scene units
+            // Blend between flat (lz) and depth-aware (lz - surfaceZ)
+            effectiveLz = light.lz - depthAlpha * surfaceZ;
+          }
+
+          // Normal-based modulation using depth-aware light direction
+          const len = Math.sqrt(dist2d + effectiveLz * effectiveLz);
           let normalMod = 1.0;
           if (len > 0) {
-            const dot = nx * (dx / len) + ny * (dy / len) + nz * (light.lz / len);
+            const dot = nx * (dx / len) + ny * (dy / len) + nz * (effectiveLz / len);
             normalMod = 1.0 - light.normalStrength + light.normalStrength * Math.max(0, dot);
           }
 
-          // Depth-based modulation: raised/closer surfaces (bright in depth map) catch more light
-          let depthMod = 1.0;
-          if (depthAlpha > 0 && depthPixels) {
-            // Depth map: brighter = closer to camera = raised surface
-            const depthVal = depthPixels[pi] / 255; // 0 = far, 1 = close
-            // Blend: at depthAlpha=1, range is [0.2, 1.2] so recessed surfaces get dimmed
-            depthMod = 1.0 - depthAlpha + depthAlpha * (0.2 + depthVal);
-          }
-
-          const contribution = falloff * normalMod * depthMod * light.intensity;
+          const contribution = falloff * normalMod * light.intensity;
           lr += contribution * light.rgb[0];
           lg += contribution * light.rgb[1];
           lb += contribution * light.rgb[2];
