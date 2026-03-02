@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen, Plus, Trash2, Circle, Flashlight, Minus, ChevronDown } from 'lucide-react';
+import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen, Plus, Trash2, Circle, Flashlight, Minus, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -105,6 +105,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const [ambientIntensity, setAmbientIntensity] = useState(15);
   const [opacity, setOpacity] = useState(60);
   const [depthInfluence, setDepthInfluence] = useState(0);
+  const [showHandles, setShowHandles] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('matcap');
 
   // The source URL used for depth estimation (Firebase URL)
@@ -816,7 +817,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                   style={{ display: 'block' }}
                 />
                 {/* Light handle overlays */}
-                {viewMode === 'matcap' && lights.map(light => {
+                {viewMode === 'matcap' && showHandles && lights.map(light => {
                   const isSelected = selectedLightId === light.id;
                   const disabledClass = !light.enabled ? 'opacity-40' : '';
 
@@ -1187,6 +1188,15 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                 {mode === 'matcap' ? 'Lighting' : mode === 'depth' ? 'Depth Map' : 'Original'}
               </Button>
             ))}
+
+            <Button
+              size="sm"
+              variant={showHandles ? 'outline' : 'default'}
+              onClick={() => setShowHandles(!showHandles)}
+              title={showHandles ? 'Hide light handles' : 'Show light handles'}
+            >
+              {showHandles ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            </Button>
 
             <div className="flex-1" />
 
