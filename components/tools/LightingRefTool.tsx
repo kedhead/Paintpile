@@ -304,7 +304,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     const lightProps = enabledLights.map(l => ({
       lx: l.x * w,
       ly: l.y * h,
-      lz: l.z,
+      lz: l.z * Math.max(w, h),
       rgb: hexToRgb(l.color),
       intensity: l.intensity,
       radiusSq: (l.radius * Math.max(w, h)) ** 2,
