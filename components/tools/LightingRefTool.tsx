@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen } from 'lucide-react';
+import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -11,16 +11,40 @@ import { getProjectPhotos } from '@/lib/firestore/photos';
 import { Project } from '@/types/project';
 import { Photo } from '@/types/photo';
 
-// --- Light direction presets ---
-const DIRECTION_PRESETS = [
-  { key: 'zenithal', label: 'Zenithal', dir: [0, -1, 0.8] },
-  { key: 'left', label: 'Left', dir: [-1, 0, 0.5] },
-  { key: 'right', label: 'Right', dir: [1, 0, 0.5] },
-  { key: 'below', label: 'Below', dir: [0, 1, 0.3] },
-  { key: 'front', label: 'Front', dir: [0, 0, 1] },
-  { key: 'top-left', label: 'Top-L', dir: [-0.7, -0.7, 0.5] },
-  { key: 'top-right', label: 'Top-R', dir: [0.7, -0.7, 0.5] },
-] as const;
+// --- Light model ---
+interface Light {
+  id: string;
+  x: number;        // 0-1 normalized position on image
+  y: number;        // 0-1 normalized position on image
+  z: number;        // height above surface (controls angle)
+  color: string;    // hex color
+  intensity: number; // 0-2 range
+  radius: number;   // falloff radius in normalized coords
+  enabled: boolean;
+}
+
+function createDefaultLights(): Light[] {
+  return [
+    {
+      id: 'light-1',
+      x: 0.3, y: 0.25, z: 0.6,
+      color: '#fff5e0',
+      intensity: 1.2,
+      radius: 0.5,
+      enabled: true,
+    },
+    {
+      id: 'light-2',
+      x: 0.7, y: 0.75, z: 0.4,
+      color: '#e0e8ff',
+      intensity: 0.8,
+      radius: 0.6,
+      enabled: true,
+    },
+  ];
+}
+
+let lightIdCounter = 3;
 
 type ViewMode = 'matcap' | 'depth' | 'original';
 
@@ -29,10 +53,13 @@ interface LightingRefToolProps {
   initialImageUrl?: string;
 }
 
-function normalize3(v: number[]): number[] {
-  const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-  if (len === 0) return [0, 0, 1];
-  return [v[0] / len, v[1] / len, v[2] / len];
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.substring(0, 2), 16) / 255,
+    parseInt(h.substring(2, 4), 16) / 255,
+    parseInt(h.substring(4, 6), 16) / 255,
+  ];
 }
 
 export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProps) {
@@ -51,9 +78,10 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const [analysisWidth, setAnalysisWidth] = useState(0);
   const [analysisHeight, setAnalysisHeight] = useState(0);
 
-  // Lighting controls
-  const [lightDir, setLightDir] = useState<number[]>([0, -1, 0.8]); // zenithal default
-  const [activePreset, setActivePreset] = useState<string>('zenithal');
+  // Multi-light controls
+  const [lights, setLights] = useState<Light[]>(createDefaultLights);
+  const [selectedLightId, setSelectedLightId] = useState<string | null>('light-1');
+  const [ambientIntensity, setAmbientIntensity] = useState(15);
   const [opacity, setOpacity] = useState(60);
   const [viewMode, setViewMode] = useState<ViewMode>('matcap');
 
@@ -67,9 +95,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
 
-  // Circular picker drag state
-  const circleRef = useRef<HTMLDivElement>(null);
-  const [isDraggingCircle, setIsDraggingCircle] = useState(false);
+  // Light dragging state
+  const [draggingLightId, setDraggingLightId] = useState<string | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const initialUrlProcessed = useRef(false);
@@ -105,8 +133,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     setNormalData(null);
     setOriginalImage(null);
     setSourceUrl(null);
-    setActivePreset('zenithal');
-    setLightDir([0, -1, 0.8]);
+    setLights(createDefaultLights());
+    setSelectedLightId('light-1');
+    setAmbientIntensity(15);
     setViewMode('matcap');
   }
 
@@ -233,7 +262,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     }
   };
 
-  // --- Render matcap shading onto canvas ---
+  // --- Render multi-light shading onto canvas ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !normalData || !originalImage || analysisWidth === 0) return;
@@ -248,7 +277,6 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     }
 
     if (viewMode === 'depth' && depthMapUrl) {
-      // Draw depth map — loaded via an image
       const depthImg = new Image();
       depthImg.crossOrigin = 'anonymous';
       depthImg.onload = () => ctx.drawImage(depthImg, 0, 0, analysisWidth, analysisHeight);
@@ -256,8 +284,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       return;
     }
 
-    // Matcap shading mode
-    const light = normalize3(lightDir);
+    // Multi-light point lighting
     const pixels = normalData.data;
     const w = analysisWidth;
     const h = analysisHeight;
@@ -267,113 +294,162 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     const origPixels = ctx.getImageData(0, 0, w, h);
     const origData = origPixels.data;
 
-    // Compute matcap overlay
     const output = ctx.createImageData(w, h);
     const out = output.data;
     const alpha = opacity / 100;
+    const ambient = ambientIntensity / 100;
 
-    for (let i = 0; i < w * h; i++) {
-      const pi = i * 4;
+    // Pre-compute enabled lights' properties
+    const enabledLights = lights.filter(l => l.enabled);
+    const lightProps = enabledLights.map(l => ({
+      lx: l.x * w,
+      ly: l.y * h,
+      lz: l.z,
+      rgb: hexToRgb(l.color),
+      intensity: l.intensity,
+      radiusSq: (l.radius * Math.max(w, h)) ** 2,
+    }));
 
-      // Decode normal from RGB [0,255] → [-1,1]
-      const nx = (pixels[pi] / 255) * 2 - 1;
-      const ny = (pixels[pi + 1] / 255) * 2 - 1;
-      const nz = (pixels[pi + 2] / 255) * 2 - 1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        const pi = i * 4;
 
-      // Dot product for lambertian shading
-      const dot = nx * light[0] + ny * light[1] + nz * light[2];
-      const brightness = Math.max(0, dot);
+        // Decode normal from RGB [0,255] -> [-1,1]
+        const nx = (pixels[pi] / 255) * 2 - 1;
+        const ny = (pixels[pi + 1] / 255) * 2 - 1;
+        const nz = (pixels[pi + 2] / 255) * 2 - 1;
 
-      // Map to grayscale shading value (0=shadow, 255=highlight)
-      const shade = Math.round(brightness * 255);
+        // Accumulate lighting from all enabled lights
+        let lr = ambient, lg = ambient, lb = ambient;
 
-      // Blend: original * (1 - alpha) + shade * alpha
-      out[pi] = Math.round(origData[pi] * (1 - alpha) + shade * alpha);
-      out[pi + 1] = Math.round(origData[pi + 1] * (1 - alpha) + shade * alpha);
-      out[pi + 2] = Math.round(origData[pi + 2] * (1 - alpha) + shade * alpha);
-      out[pi + 3] = 255;
+        for (let li = 0; li < lightProps.length; li++) {
+          const light = lightProps[li];
+          const dx = light.lx - x;
+          const dy = light.ly - y;
+          const dz = light.lz;
+          const dist2d = dx * dx + dy * dy;
+
+          // Normalize light direction
+          const len = Math.sqrt(dist2d + dz * dz);
+          if (len === 0) continue;
+          const ldx = dx / len;
+          const ldy = dy / len;
+          const ldz = dz / len;
+
+          // Lambertian
+          const dot = nx * ldx + ny * ldy + nz * ldz;
+          const lambert = Math.max(0, dot);
+
+          // Attenuation
+          const atten = 1 / (1 + dist2d / light.radiusSq);
+
+          const contribution = lambert * atten * light.intensity;
+          lr += contribution * light.rgb[0];
+          lg += contribution * light.rgb[1];
+          lb += contribution * light.rgb[2];
+        }
+
+        // Clamp and convert to 0-255
+        const shadeR = Math.min(255, Math.round(lr * 255));
+        const shadeG = Math.min(255, Math.round(lg * 255));
+        const shadeB = Math.min(255, Math.round(lb * 255));
+
+        // Blend with original
+        out[pi]     = Math.round(origData[pi]     * (1 - alpha) + shadeR * alpha);
+        out[pi + 1] = Math.round(origData[pi + 1] * (1 - alpha) + shadeG * alpha);
+        out[pi + 2] = Math.round(origData[pi + 2] * (1 - alpha) + shadeB * alpha);
+        out[pi + 3] = 255;
+      }
     }
 
     ctx.putImageData(output, 0, 0);
-  }, [normalData, originalImage, lightDir, opacity, viewMode, analysisWidth, analysisHeight, depthMapUrl]);
+  }, [normalData, originalImage, lights, opacity, ambientIntensity, viewMode, analysisWidth, analysisHeight, depthMapUrl]);
 
-  // --- Circular direction picker ---
-  const handleCircleInteraction = useCallback((clientX: number, clientY: number) => {
-    const circle = circleRef.current;
-    if (!circle) return;
+  // --- Light dragging (mouse) ---
+  const getLightAtPos = useCallback((clientX: number, clientY: number): string | null => {
+    const container = canvasContainerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    const nx = (clientX - rect.left) / rect.width;
+    const ny = (clientY - rect.top) / rect.height;
 
-    const rect = circle.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const radius = rect.width / 2;
+    // Check lights in reverse order (top-most first)
+    for (let i = lights.length - 1; i >= 0; i--) {
+      const l = lights[i];
+      const dx = nx - l.x;
+      const dy = ny - l.y;
+      // Hit radius ~24px in normalized coords
+      const hitRadius = 24 / rect.width;
+      if (dx * dx + dy * dy < hitRadius * hitRadius) {
+        return l.id;
+      }
+    }
+    return null;
+  }, [lights]);
 
-    const dx = (clientX - cx) / radius;
-    const dy = (clientY - cy) / radius;
+  const updateLightPosition = useCallback((lightId: string, clientX: number, clientY: number) => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const nx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const ny = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
 
-    // Clamp to unit circle
-    const len = Math.sqrt(dx * dx + dy * dy);
-    const clampedX = len > 1 ? dx / len : dx;
-    const clampedY = len > 1 ? dy / len : dy;
-
-    // Z component decreases as we move away from center
-    const z = Math.sqrt(Math.max(0, 1 - clampedX * clampedX - clampedY * clampedY));
-
-    setLightDir([clampedX, clampedY, z + 0.2]);
-    setActivePreset('');
+    setLights(prev => prev.map(l =>
+      l.id === lightId ? { ...l, x: nx, y: ny } : l
+    ));
   }, []);
 
-  const handleCircleMouseDown = useCallback((e: React.MouseEvent) => {
-    setIsDraggingCircle(true);
-    handleCircleInteraction(e.clientX, e.clientY);
-  }, [handleCircleInteraction]);
-
-  useEffect(() => {
-    if (!isDraggingCircle) return;
-
-    const handleMove = (e: MouseEvent) => {
+  const handleCanvasPointerDown = useCallback((e: React.PointerEvent) => {
+    const hitId = getLightAtPos(e.clientX, e.clientY);
+    if (hitId) {
+      setSelectedLightId(hitId);
+      setDraggingLightId(hitId);
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
       e.preventDefault();
-      handleCircleInteraction(e.clientX, e.clientY);
+    } else {
+      setSelectedLightId(null);
+    }
+  }, [getLightAtPos]);
+
+  const handleCanvasPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!draggingLightId) return;
+    e.preventDefault();
+    updateLightPosition(draggingLightId, e.clientX, e.clientY);
+  }, [draggingLightId, updateLightPosition]);
+
+  const handleCanvasPointerUp = useCallback(() => {
+    setDraggingLightId(null);
+  }, []);
+
+  // --- Light management ---
+  const addLight = () => {
+    if (lights.length >= 3) return;
+    const id = `light-${lightIdCounter++}`;
+    const newLight: Light = {
+      id,
+      x: 0.5, y: 0.5, z: 0.5,
+      color: '#ffffff',
+      intensity: 1.0,
+      radius: 0.5,
+      enabled: true,
     };
-    const handleUp = () => setIsDraggingCircle(false);
-
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
-    };
-  }, [isDraggingCircle, handleCircleInteraction]);
-
-  // Touch support for circular picker
-  const handleCircleTouchStart = useCallback((e: React.TouchEvent) => {
-    setIsDraggingCircle(true);
-    const touch = e.touches[0];
-    handleCircleInteraction(touch.clientX, touch.clientY);
-  }, [handleCircleInteraction]);
-
-  useEffect(() => {
-    if (!isDraggingCircle) return;
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      const touch = e.touches[0];
-      handleCircleInteraction(touch.clientX, touch.clientY);
-    };
-    const handleTouchEnd = () => setIsDraggingCircle(false);
-
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd);
-    return () => {
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isDraggingCircle, handleCircleInteraction]);
-
-  // --- Preset click ---
-  const handlePresetClick = (key: string, dir: readonly number[]) => {
-    setLightDir([...dir]);
-    setActivePreset(key);
+    setLights(prev => [...prev, newLight]);
+    setSelectedLightId(id);
   };
+
+  const removeLight = (id: string) => {
+    setLights(prev => prev.filter(l => l.id !== id));
+    if (selectedLightId === id) {
+      setSelectedLightId(lights.find(l => l.id !== id)?.id ?? null);
+    }
+  };
+
+  const updateLight = (id: string, updates: Partial<Light>) => {
+    setLights(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
+  const selectedLight = lights.find(l => l.id === selectedLightId) ?? null;
 
   // --- Download ---
   const handleDownload = () => {
@@ -383,7 +459,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     canvas.toBlob((blob) => {
       if (!blob) return;
       const link = document.createElement('a');
-      link.download = `lighting-ref-${activePreset || 'custom'}.png`;
+      link.download = `lighting-ref-multilight.png`;
       link.href = URL.createObjectURL(blob);
       link.click();
       URL.revokeObjectURL(link.href);
@@ -436,11 +512,6 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
 
   const hasResults = normalData !== null && originalImage !== null;
   const showUpload = !hasResults && !isProcessing && !sourceUrl;
-
-  // Compute indicator position for circular picker
-  const normLight = normalize3(lightDir);
-  const indicatorX = normLight[0] * 0.8; // 80% of radius
-  const indicatorY = normLight[1] * 0.8;
 
   return (
     <div className="space-y-6">
@@ -587,77 +658,198 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       {hasResults && (
         <div className="space-y-4">
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* Canvas */}
+            {/* Canvas with light dots overlay */}
             <div className="flex-1 min-w-0">
-              <div className="rounded-lg overflow-hidden border border-border bg-black">
+              <div
+                ref={canvasContainerRef}
+                className="relative rounded-lg overflow-hidden border border-border bg-black select-none"
+                onPointerDown={handleCanvasPointerDown}
+                onPointerMove={handleCanvasPointerMove}
+                onPointerUp={handleCanvasPointerUp}
+                style={{ touchAction: 'none' }}
+              >
                 <canvas
                   ref={canvasRef}
                   className="w-full h-auto"
                   style={{ display: 'block' }}
                 />
+                {/* Light dot overlays */}
+                {viewMode === 'matcap' && lights.map(light => (
+                  <div
+                    key={light.id}
+                    className={`absolute w-6 h-6 rounded-full border-2 pointer-events-none transition-shadow ${
+                      selectedLightId === light.id
+                        ? 'border-white ring-2 ring-white/50 shadow-lg'
+                        : 'border-white/70 shadow-md'
+                    } ${!light.enabled ? 'opacity-40' : ''}`}
+                    style={{
+                      left: `${light.x * 100}%`,
+                      top: `${light.y * 100}%`,
+                      transform: 'translate(-50%, -50%)',
+                      backgroundColor: light.color,
+                      boxShadow: light.enabled
+                        ? `0 0 ${12 * light.intensity}px ${light.color}`
+                        : undefined,
+                    }}
+                  />
+                ))}
               </div>
             </div>
 
             {/* Controls sidebar */}
-            <div className="lg:w-56 space-y-4 flex-shrink-0">
-              {/* Direction presets */}
+            <div className="lg:w-60 space-y-4 flex-shrink-0">
+              {/* Light list */}
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Light Direction</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {DIRECTION_PRESETS.map(({ key, label, dir }) => (
-                    <Button
-                      key={key}
-                      size="sm"
-                      variant={activePreset === key ? 'default' : 'outline'}
-                      onClick={() => handlePresetClick(key, dir)}
-                      className="text-xs px-2 py-1 h-7"
-                    >
-                      {label}
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lights</p>
+                  {lights.length < 3 && (
+                    <Button size="sm" variant="ghost" onClick={addLight} className="h-6 w-6 p-0">
+                      <Plus className="w-3.5 h-3.5" />
                     </Button>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  {lights.map((light, idx) => (
+                    <button
+                      key={light.id}
+                      onClick={() => setSelectedLightId(light.id)}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
+                        selectedLightId === light.id
+                          ? 'bg-primary/10 text-foreground'
+                          : 'text-muted-foreground hover:bg-muted/50'
+                      }`}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full border border-border flex-shrink-0"
+                        style={{ backgroundColor: light.color }}
+                      />
+                      <span className="flex-1 text-left">Light {idx + 1}</span>
+                      {!light.enabled && (
+                        <span className="text-[10px] text-muted-foreground">OFF</span>
+                      )}
+                    </button>
                   ))}
                 </div>
               </div>
 
-              {/* Circular picker */}
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Custom Direction</p>
-                <div
-                  ref={circleRef}
-                  className="w-28 h-28 mx-auto rounded-full border-2 border-border bg-muted/30 relative cursor-crosshair select-none"
-                  onMouseDown={handleCircleMouseDown}
-                  onTouchStart={handleCircleTouchStart}
-                >
-                  {/* Crosshair lines */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-full h-px bg-border" />
+              {/* Selected light controls */}
+              {selectedLight && (
+                <div className="space-y-3 border-t border-border pt-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Light {lights.findIndex(l => l.id === selectedLight.id) + 1}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => updateLight(selectedLight.id, { enabled: !selectedLight.enabled })}
+                        className={`text-xs px-1.5 py-0.5 rounded ${
+                          selectedLight.enabled
+                            ? 'bg-primary/20 text-primary'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {selectedLight.enabled ? 'ON' : 'OFF'}
+                      </button>
+                      {lights.length > 1 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeLight(selectedLight.id)}
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="h-full w-px bg-border" />
+
+                  {/* Color */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Color</p>
+                    <input
+                      type="color"
+                      value={selectedLight.color}
+                      onChange={(e) => updateLight(selectedLight.id, { color: e.target.value })}
+                      className="w-full h-8 rounded cursor-pointer border border-border"
+                    />
                   </div>
-                  {/* Light direction indicator */}
-                  <div
-                    className="absolute w-4 h-4 rounded-full bg-yellow-400 border-2 border-white shadow-md pointer-events-none"
-                    style={{
-                      left: `calc(50% + ${indicatorX * 50}% - 8px)`,
-                      top: `calc(50% + ${indicatorY * 50}% - 8px)`,
-                    }}
+
+                  {/* Intensity */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Intensity: {Math.round(selectedLight.intensity * 100)}%
+                    </p>
+                    <input
+                      type="range"
+                      min={0}
+                      max={200}
+                      value={Math.round(selectedLight.intensity * 100)}
+                      onChange={(e) => updateLight(selectedLight.id, { intensity: Number(e.target.value) / 100 })}
+                      className="w-full accent-primary"
+                    />
+                  </div>
+
+                  {/* Radius */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Radius: {Math.round(selectedLight.radius * 100)}%
+                    </p>
+                    <input
+                      type="range"
+                      min={5}
+                      max={150}
+                      value={Math.round(selectedLight.radius * 100)}
+                      onChange={(e) => updateLight(selectedLight.id, { radius: Number(e.target.value) / 100 })}
+                      className="w-full accent-primary"
+                    />
+                  </div>
+
+                  {/* Height (z) */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Height: {Math.round(selectedLight.z * 100)}%
+                    </p>
+                    <input
+                      type="range"
+                      min={5}
+                      max={150}
+                      value={Math.round(selectedLight.z * 100)}
+                      onChange={(e) => updateLight(selectedLight.id, { z: Number(e.target.value) / 100 })}
+                      className="w-full accent-primary"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Global controls */}
+              <div className="space-y-3 border-t border-border pt-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Ambient: {ambientIntensity}%
+                  </p>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={ambientIntensity}
+                    onChange={(e) => setAmbientIntensity(Number(e.target.value))}
+                    className="w-full accent-primary"
                   />
                 </div>
-              </div>
 
-              {/* Opacity slider */}
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                  Overlay Opacity: {opacity}%
-                </p>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={opacity}
-                  onChange={(e) => setOpacity(Number(e.target.value))}
-                  className="w-full accent-primary"
-                />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Overlay Opacity: {opacity}%
+                  </p>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={opacity}
+                    onChange={(e) => setOpacity(Number(e.target.value))}
+                    className="w-full accent-primary"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -689,7 +881,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Click direction presets or drag the circle to change light angle. Adjust opacity to blend with your photo.
+            Drag lights on the image to reposition. Select a light to adjust its color, intensity, radius, and height.
           </p>
         </div>
       )}
