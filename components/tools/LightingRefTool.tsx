@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen, Plus, Trash2 } from 'lucide-react';
+import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen, Plus, Trash2, Circle, Flashlight, Minus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -12,36 +12,56 @@ import { Project } from '@/types/project';
 import { Photo } from '@/types/photo';
 
 // --- Light model ---
+type LightShape = 'radial' | 'spot' | 'line';
+
 interface Light {
   id: string;
+  shape: LightShape;
   x: number;        // 0-1 normalized position on image
   y: number;        // 0-1 normalized position on image
   z: number;        // height above surface (controls angle)
+  tx: number;       // target/endpoint x (spot: aim target, line: second endpoint)
+  ty: number;       // target/endpoint y
   color: string;    // hex color
   intensity: number; // 0-2 range
   radius: number;   // falloff radius in normalized coords
   enabled: boolean;
+  coneAngle: number;  // spot only — half-angle in degrees (15-60)
+  softness: number;   // spot only — edge softness (0-1)
 }
 
 function createDefaultLights(): Light[] {
   return [
     {
       id: 'light-1',
+      shape: 'radial',
       x: 0.3, y: 0.25, z: 0.6,
+      tx: 0.5, ty: 0.5,
       color: '#fff5e0',
       intensity: 1.2,
       radius: 0.5,
       enabled: true,
+      coneAngle: 30,
+      softness: 0.5,
     },
     {
       id: 'light-2',
+      shape: 'radial',
       x: 0.7, y: 0.75, z: 0.4,
+      tx: 0.5, ty: 0.5,
       color: '#e0e8ff',
       intensity: 0.8,
       radius: 0.6,
       enabled: true,
+      coneAngle: 30,
+      softness: 0.5,
     },
   ];
+}
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
 }
 
 let lightIdCounter = 3;
@@ -97,6 +117,8 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
 
   // Light dragging state
   const [draggingLightId, setDraggingLightId] = useState<string | null>(null);
+  const [draggingHandle, setDraggingHandle] = useState<'position' | 'target'>('position');
+  const [showAddMenu, setShowAddMenu] = useState(false);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -306,14 +328,30 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     const lightProps = enabledLights.map(l => {
       // Radius in pixels — controls gaussian falloff width
       const radiusPx = l.radius * dim;
+      const invTwoSigmaSq = 1 / (2 * radiusPx * radiusPx);
+      // Spot-specific pre-computation
+      const coneCos = Math.cos((l.coneAngle * Math.PI) / 180);
+      // Line-specific: endpoints in pixel space
+      const ltx = l.tx * w;
+      const lty = l.ty * h;
+      const lx = l.x * w;
+      const ly = l.y * h;
+      // Line segment vector and squared length
+      const segDx = ltx - lx;
+      const segDy = lty - ly;
+      const segLenSq = segDx * segDx + segDy * segDy;
+
       return {
-        lx: l.x * w,
-        ly: l.y * h,
+        shape: l.shape,
+        lx, ly,
         lz: l.z * dim,
+        ltx, lty,
         rgb: hexToRgb(l.color),
         intensity: l.intensity,
-        // Pre-compute for gaussian: exp(-dist² / (2 * sigma²))
-        invTwoSigmaSq: 1 / (2 * radiusPx * radiusPx),
+        invTwoSigmaSq,
+        coneCos,
+        softness: l.softness,
+        segDx, segDy, segLenSq,
       };
     });
 
@@ -336,19 +374,64 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
           const dy = light.ly - y;
           const dist2d = dx * dx + dy * dy;
 
-          // Gaussian radial falloff — smooth, natural light spread
-          const radial = Math.exp(-dist2d * light.invTwoSigmaSq);
+          // Per-shape falloff
+          let falloff: number;
+
+          if (light.shape === 'spot') {
+            // Vector from light to pixel (normalized)
+            const toPxDx = x - light.lx;
+            const toPxDy = y - light.ly;
+            const toPxLen = Math.sqrt(toPxDx * toPxDx + toPxDy * toPxDy);
+            if (toPxLen < 0.001) {
+              falloff = 1.0; // at light center
+            } else {
+              // Aim direction from light to target
+              const aimDx = light.ltx - light.lx;
+              const aimDy = light.lty - light.ly;
+              const aimLen = Math.sqrt(aimDx * aimDx + aimDy * aimDy);
+              if (aimLen < 0.001) {
+                falloff = Math.exp(-dist2d * light.invTwoSigmaSq);
+              } else {
+                const cosAngle = (toPxDx * aimDx + toPxDy * aimDy) / (toPxLen * aimLen);
+                const coneFalloff = smoothstep(
+                  light.coneCos - light.softness * 0.3,
+                  light.coneCos,
+                  cosAngle
+                );
+                falloff = coneFalloff * Math.exp(-dist2d * light.invTwoSigmaSq);
+              }
+            }
+          } else if (light.shape === 'line') {
+            // Project pixel onto line segment, get perpendicular distance
+            if (light.segLenSq < 0.001) {
+              // Degenerate line — treat as radial
+              falloff = Math.exp(-dist2d * light.invTwoSigmaSq);
+            } else {
+              // t = dot(pixel - p1, p2 - p1) / |p2 - p1|²
+              const t = Math.max(0, Math.min(1,
+                ((x - light.lx) * light.segDx + (y - light.ly) * light.segDy) / light.segLenSq
+              ));
+              const closestX = light.lx + t * light.segDx;
+              const closestY = light.ly + t * light.segDy;
+              const perpDx = x - closestX;
+              const perpDy = y - closestY;
+              const perpDist2 = perpDx * perpDx + perpDy * perpDy;
+              falloff = Math.exp(-perpDist2 * light.invTwoSigmaSq);
+            }
+          } else {
+            // Radial (default)
+            falloff = Math.exp(-dist2d * light.invTwoSigmaSq);
+          }
 
           // Subtle normal-based modulation for 3D depth feel
           const len = Math.sqrt(dist2d + light.lz * light.lz);
           let normalMod = 1.0;
           if (len > 0) {
             const dot = nx * (dx / len) + ny * (dy / len) + nz * (light.lz / len);
-            // Blend between 1.0 (no normal effect) and lambertian
             normalMod = 1.0 - normalStrength + normalStrength * Math.max(0, dot);
           }
 
-          const contribution = radial * normalMod * light.intensity;
+          const contribution = falloff * normalMod * light.intensity;
           lr += contribution * light.rgb[0];
           lg += contribution * light.rgb[1];
           lb += contribution * light.rgb[2];
@@ -371,75 +454,109 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   }, [normalData, originalImage, lights, opacity, ambientIntensity, viewMode, analysisWidth, analysisHeight, depthMapUrl]);
 
   // --- Light dragging (mouse) ---
-  const getLightAtPos = useCallback((clientX: number, clientY: number): string | null => {
+  const getHandleAtPos = useCallback((clientX: number, clientY: number): { id: string; handle: 'position' | 'target' } | null => {
     const container = canvasContainerRef.current;
     if (!container) return null;
     const rect = container.getBoundingClientRect();
     const nx = (clientX - rect.left) / rect.width;
     const ny = (clientY - rect.top) / rect.height;
+    const hitRadius = 24 / rect.width;
+    const hitRadiusSq = hitRadius * hitRadius;
 
     // Check lights in reverse order (top-most first)
+    // Check target handles first (they're smaller, so should take priority when overlapping)
+    for (let i = lights.length - 1; i >= 0; i--) {
+      const l = lights[i];
+      if (l.shape === 'radial') continue;
+      const dx = nx - l.tx;
+      const dy = ny - l.ty;
+      if (dx * dx + dy * dy < hitRadiusSq) {
+        return { id: l.id, handle: 'target' };
+      }
+    }
+    // Then check position handles
     for (let i = lights.length - 1; i >= 0; i--) {
       const l = lights[i];
       const dx = nx - l.x;
       const dy = ny - l.y;
-      // Hit radius ~24px in normalized coords
-      const hitRadius = 24 / rect.width;
-      if (dx * dx + dy * dy < hitRadius * hitRadius) {
-        return l.id;
+      if (dx * dx + dy * dy < hitRadiusSq) {
+        return { id: l.id, handle: 'position' };
       }
     }
     return null;
   }, [lights]);
 
-  const updateLightPosition = useCallback((lightId: string, clientX: number, clientY: number) => {
+  const updateHandlePosition = useCallback((lightId: string, handle: 'position' | 'target', clientX: number, clientY: number) => {
     const container = canvasContainerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const nx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const ny = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
 
-    setLights(prev => prev.map(l =>
-      l.id === lightId ? { ...l, x: nx, y: ny } : l
-    ));
+    setLights(prev => prev.map(l => {
+      if (l.id !== lightId) return l;
+      if (handle === 'target') return { ...l, tx: nx, ty: ny };
+      return { ...l, x: nx, y: ny };
+    }));
   }, []);
 
   const handleCanvasPointerDown = useCallback((e: React.PointerEvent) => {
-    const hitId = getLightAtPos(e.clientX, e.clientY);
-    if (hitId) {
-      setSelectedLightId(hitId);
-      setDraggingLightId(hitId);
+    const hit = getHandleAtPos(e.clientX, e.clientY);
+    setShowAddMenu(false);
+    if (hit) {
+      setSelectedLightId(hit.id);
+      setDraggingLightId(hit.id);
+      setDraggingHandle(hit.handle);
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       e.preventDefault();
     } else {
       setSelectedLightId(null);
     }
-  }, [getLightAtPos]);
+  }, [getHandleAtPos]);
 
   const handleCanvasPointerMove = useCallback((e: React.PointerEvent) => {
     if (!draggingLightId) return;
     e.preventDefault();
-    updateLightPosition(draggingLightId, e.clientX, e.clientY);
-  }, [draggingLightId, updateLightPosition]);
+    updateHandlePosition(draggingLightId, draggingHandle, e.clientX, e.clientY);
+  }, [draggingLightId, draggingHandle, updateHandlePosition]);
 
   const handleCanvasPointerUp = useCallback(() => {
     setDraggingLightId(null);
   }, []);
 
   // --- Light management ---
-  const addLight = () => {
-    if (lights.length >= 3) return;
+  const addLight = (shape: LightShape = 'radial') => {
+    if (lights.length >= 5) return;
     const id = `light-${lightIdCounter++}`;
-    const newLight: Light = {
-      id,
-      x: 0.5, y: 0.5, z: 0.5,
-      color: '#ffffff',
-      intensity: 1.0,
-      radius: 0.5,
-      enabled: true,
-    };
+    let newLight: Light;
+    if (shape === 'spot') {
+      newLight = {
+        id, shape: 'spot',
+        x: 0.3, y: 0.3, z: 0.5,
+        tx: 0.5, ty: 0.5,
+        color: '#ffffff', intensity: 1.0, radius: 0.5, enabled: true,
+        coneAngle: 30, softness: 0.5,
+      };
+    } else if (shape === 'line') {
+      newLight = {
+        id, shape: 'line',
+        x: 0.3, y: 0.5, z: 0.5,
+        tx: 0.7, ty: 0.5,
+        color: '#ffffff', intensity: 1.0, radius: 0.5, enabled: true,
+        coneAngle: 30, softness: 0.5,
+      };
+    } else {
+      newLight = {
+        id, shape: 'radial',
+        x: 0.5, y: 0.5, z: 0.5,
+        tx: 0.5, ty: 0.5,
+        color: '#ffffff', intensity: 1.0, radius: 0.5, enabled: true,
+        coneAngle: 30, softness: 0.5,
+      };
+    }
     setLights(prev => [...prev, newLight]);
     setSelectedLightId(id);
+    setShowAddMenu(false);
   };
 
   const removeLight = (id: string) => {
@@ -677,26 +794,83 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                   className="w-full h-auto"
                   style={{ display: 'block' }}
                 />
-                {/* Light dot overlays */}
-                {viewMode === 'matcap' && lights.map(light => (
-                  <div
-                    key={light.id}
-                    className={`absolute w-6 h-6 rounded-full border-2 pointer-events-none transition-shadow ${
-                      selectedLightId === light.id
-                        ? 'border-white ring-2 ring-white/50 shadow-lg'
-                        : 'border-white/70 shadow-md'
-                    } ${!light.enabled ? 'opacity-40' : ''}`}
-                    style={{
-                      left: `${light.x * 100}%`,
-                      top: `${light.y * 100}%`,
-                      transform: 'translate(-50%, -50%)',
-                      backgroundColor: light.color,
-                      boxShadow: light.enabled
-                        ? `0 0 ${12 * light.intensity}px ${light.color}`
-                        : undefined,
-                    }}
-                  />
-                ))}
+                {/* Light handle overlays */}
+                {viewMode === 'matcap' && lights.map(light => {
+                  const isSelected = selectedLightId === light.id;
+                  const disabledClass = !light.enabled ? 'opacity-40' : '';
+
+                  // SVG overlay for connecting lines (spot/line)
+                  const connectingLine = (light.shape === 'spot' || light.shape === 'line') ? (
+                    <svg
+                      key={`${light.id}-line`}
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{ overflow: 'visible' }}
+                    >
+                      <line
+                        x1={`${light.x * 100}%`}
+                        y1={`${light.y * 100}%`}
+                        x2={`${light.tx * 100}%`}
+                        y2={`${light.ty * 100}%`}
+                        stroke={isSelected ? 'white' : 'rgba(255,255,255,0.5)'}
+                        strokeWidth={isSelected ? 2 : 1}
+                        strokeDasharray={light.shape === 'spot' ? '6 3' : 'none'}
+                        className={disabledClass}
+                      />
+                    </svg>
+                  ) : null;
+
+                  // Primary position handle
+                  const positionHandle = (
+                    <div
+                      className={`absolute w-6 h-6 rounded-full border-2 pointer-events-none transition-shadow ${
+                        isSelected
+                          ? 'border-white ring-2 ring-white/50 shadow-lg'
+                          : 'border-white/70 shadow-md'
+                      } ${disabledClass}`}
+                      style={{
+                        left: `${light.x * 100}%`,
+                        top: `${light.y * 100}%`,
+                        transform: 'translate(-50%, -50%)',
+                        backgroundColor: light.color,
+                        boxShadow: light.enabled
+                          ? `0 0 ${12 * light.intensity}px ${light.color}`
+                          : undefined,
+                      }}
+                    />
+                  );
+
+                  // Target/endpoint handle for spot and line
+                  const targetHandle = (light.shape === 'spot' || light.shape === 'line') ? (
+                    <div
+                      className={`absolute w-4 h-4 rounded-full border-2 pointer-events-none transition-shadow ${
+                        isSelected
+                          ? 'border-white ring-1 ring-white/40'
+                          : 'border-white/60'
+                      } ${disabledClass}`}
+                      style={{
+                        left: `${light.tx * 100}%`,
+                        top: `${light.ty * 100}%`,
+                        transform: 'translate(-50%, -50%)',
+                        backgroundColor: light.shape === 'line' ? light.color : 'transparent',
+                        boxShadow: light.shape === 'line' && light.enabled
+                          ? `0 0 ${8 * light.intensity}px ${light.color}`
+                          : undefined,
+                      }}
+                    >
+                      {light.shape === 'spot' && (
+                        <div className="w-2 h-2 rounded-full bg-white/80 absolute inset-0 m-auto" />
+                      )}
+                    </div>
+                  ) : null;
+
+                  return (
+                    <div key={light.id}>
+                      {connectingLine}
+                      {positionHandle}
+                      {targetHandle}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -706,10 +880,43 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lights</p>
-                  {lights.length < 3 && (
-                    <Button size="sm" variant="ghost" onClick={addLight} className="h-6 w-6 p-0">
-                      <Plus className="w-3.5 h-3.5" />
-                    </Button>
+                  {lights.length < 5 && (
+                    <div className="relative">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowAddMenu(!showAddMenu)}
+                        className="h-6 px-1.5 gap-0.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                      {showAddMenu && (
+                        <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
+                          <button
+                            onClick={() => addLight('radial')}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-muted/50"
+                          >
+                            <Circle className="w-3.5 h-3.5" />
+                            Radial
+                          </button>
+                          <button
+                            onClick={() => addLight('spot')}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-muted/50"
+                          >
+                            <Flashlight className="w-3.5 h-3.5" />
+                            Spotlight
+                          </button>
+                          <button
+                            onClick={() => addLight('line')}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-muted/50"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                            Line
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="space-y-1">
@@ -727,7 +934,9 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                         className="w-4 h-4 rounded-full border border-border flex-shrink-0"
                         style={{ backgroundColor: light.color }}
                       />
-                      <span className="flex-1 text-left">Light {idx + 1}</span>
+                      <span className="flex-1 text-left">
+                        {light.shape === 'spot' ? 'Spot' : light.shape === 'line' ? 'Line' : 'Radial'} {idx + 1}
+                      </span>
                       {!light.enabled && (
                         <span className="text-[10px] text-muted-foreground">OFF</span>
                       )}
@@ -741,7 +950,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                 <div className="space-y-3 border-t border-border pt-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Light {lights.findIndex(l => l.id === selectedLight.id) + 1}
+                      {selectedLight.shape === 'spot' ? 'Spot' : selectedLight.shape === 'line' ? 'Line' : 'Radial'} {lights.findIndex(l => l.id === selectedLight.id) + 1}
                     </p>
                     <div className="flex items-center gap-1">
                       <button
@@ -764,6 +973,43 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Shape selector */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Shape</p>
+                    <div className="flex gap-1">
+                      {([
+                        { shape: 'radial' as LightShape, icon: Circle, label: 'Radial' },
+                        { shape: 'spot' as LightShape, icon: Flashlight, label: 'Spot' },
+                        { shape: 'line' as LightShape, icon: Minus, label: 'Line' },
+                      ]).map(({ shape, icon: Icon, label }) => (
+                        <button
+                          key={shape}
+                          onClick={() => {
+                            const updates: Partial<Light> = { shape };
+                            // Set sensible defaults when switching shape
+                            if (shape === 'spot' && selectedLight.shape !== 'spot') {
+                              updates.tx = Math.min(1, selectedLight.x + 0.2);
+                              updates.ty = Math.min(1, selectedLight.y + 0.2);
+                            } else if (shape === 'line' && selectedLight.shape !== 'line') {
+                              updates.tx = Math.min(1, selectedLight.x + 0.4);
+                              updates.ty = selectedLight.y;
+                            }
+                            updateLight(selectedLight.id, updates);
+                          }}
+                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                            selectedLight.shape === shape
+                              ? 'bg-primary/20 text-primary'
+                              : 'bg-muted text-muted-foreground hover:text-foreground'
+                          }`}
+                          title={label}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                          {label}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -822,6 +1068,38 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                       className="w-full accent-primary"
                     />
                   </div>
+
+                  {/* Spot-only: Cone Angle */}
+                  {selectedLight.shape === 'spot' && (
+                    <>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Cone Angle: {selectedLight.coneAngle}°
+                        </p>
+                        <input
+                          type="range"
+                          min={15}
+                          max={60}
+                          value={selectedLight.coneAngle}
+                          onChange={(e) => updateLight(selectedLight.id, { coneAngle: Number(e.target.value) })}
+                          className="w-full accent-primary"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Softness: {Math.round(selectedLight.softness * 100)}%
+                        </p>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={Math.round(selectedLight.softness * 100)}
+                          onChange={(e) => updateLight(selectedLight.id, { softness: Number(e.target.value) / 100 })}
+                          className="w-full accent-primary"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -885,7 +1163,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Drag lights on the image to reposition. Select a light to adjust its color, intensity, radius, and height.
+            Drag light handles on the image to reposition. Spotlights and line lights have a second draggable handle for aim/endpoint.
           </p>
         </div>
       )}
