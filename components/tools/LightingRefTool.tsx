@@ -94,6 +94,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const [normalMapUrl, setNormalMapUrl] = useState<string | null>(null);
   const [depthMapUrl, setDepthMapUrl] = useState<string | null>(null);
   const [normalData, setNormalData] = useState<ImageData | null>(null);
+  const [depthData, setDepthData] = useState<ImageData | null>(null);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
   const [analysisWidth, setAnalysisWidth] = useState(0);
   const [analysisHeight, setAnalysisHeight] = useState(0);
@@ -103,6 +104,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const [selectedLightId, setSelectedLightId] = useState<string | null>('light-1');
   const [ambientIntensity, setAmbientIntensity] = useState(15);
   const [opacity, setOpacity] = useState(60);
+  const [depthInfluence, setDepthInfluence] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('matcap');
 
   // The source URL used for depth estimation (Firebase URL)
@@ -153,6 +155,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     setNormalMapUrl(null);
     setDepthMapUrl(null);
     setNormalData(null);
+    setDepthData(null);
     setOriginalImage(null);
     setSourceUrl(null);
     setLights(createDefaultLights());
@@ -215,13 +218,15 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       setAnalysisWidth(width);
       setAnalysisHeight(height);
 
-      // Load normal map pixels and original image in parallel
-      const [nData, origImg] = await Promise.all([
+      // Load normal map, depth map, and original image in parallel
+      const [nData, dData, origImg] = await Promise.all([
         loadNormalMapData(nUrl, width, height),
+        loadNormalMapData(dUrl, width, height),
         loadOriginalImage(displayUrl),
       ]);
 
       setNormalData(nData);
+      setDepthData(dData);
       setOriginalImage(origImg);
       toast.success(`Depth analysis complete in ${(processingTime / 1000).toFixed(0)}s`);
     } catch (error: any) {
@@ -308,6 +313,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
 
     // Multi-light point lighting
     const pixels = normalData.data;
+    const depthPixels = depthData?.data ?? null;
     const w = analysisWidth;
     const h = analysisHeight;
 
@@ -320,6 +326,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     const out = output.data;
     const alpha = opacity / 100;
     const ambient = ambientIntensity / 100;
+    const depthAlpha = depthInfluence / 100; // 0 = no depth effect, 1 = full
 
     // Pre-compute enabled lights' properties
     const enabledLights = lights.filter(l => l.enabled);
@@ -436,7 +443,16 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
             normalMod = 1.0 - light.normalStrength + light.normalStrength * Math.max(0, dot);
           }
 
-          const contribution = falloff * normalMod * light.intensity;
+          // Depth-based modulation: raised/closer surfaces (bright in depth map) catch more light
+          let depthMod = 1.0;
+          if (depthAlpha > 0 && depthPixels) {
+            // Depth map: brighter = closer to camera = raised surface
+            const depthVal = depthPixels[pi] / 255; // 0 = far, 1 = close
+            // Blend: at depthAlpha=1, range is [0.2, 1.2] so recessed surfaces get dimmed
+            depthMod = 1.0 - depthAlpha + depthAlpha * (0.2 + depthVal);
+          }
+
+          const contribution = falloff * normalMod * depthMod * light.intensity;
           lr += contribution * light.rgb[0];
           lg += contribution * light.rgb[1];
           lb += contribution * light.rgb[2];
@@ -456,7 +472,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     }
 
     ctx.putImageData(output, 0, 0);
-  }, [normalData, originalImage, lights, opacity, ambientIntensity, viewMode, analysisWidth, analysisHeight, depthMapUrl]);
+  }, [normalData, depthData, originalImage, lights, opacity, ambientIntensity, depthInfluence, viewMode, analysisWidth, analysisHeight, depthMapUrl]);
 
   // --- Light dragging (mouse) ---
   const getHandleAtPos = useCallback((clientX: number, clientY: number): { id: string; handle: 'position' | 'target' } | null => {
@@ -1136,6 +1152,23 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                     onChange={(e) => setOpacity(Number(e.target.value))}
                     className="w-full accent-primary"
                   />
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Depth Influence: {depthInfluence}%
+                  </p>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={depthInfluence}
+                    onChange={(e) => setDepthInfluence(Number(e.target.value))}
+                    className="w-full accent-primary"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Raised surfaces catch more light
+                  </p>
                 </div>
               </div>
             </div>
