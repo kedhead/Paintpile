@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen, Plus, Trash2, Circle, Flashlight, Minus, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { Upload, Download, RotateCcw, Sun, Loader2, ImageIcon, X, FolderOpen, Plus, Trash2, Circle, Flashlight, Minus, ChevronDown, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -107,6 +107,8 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
   const [opacity, setOpacity] = useState(60);
   const [depthInfluence, setDepthInfluence] = useState(0);
   const [showHandles, setShowHandles] = useState(true);
+  const [showHighlightMap, setShowHighlightMap] = useState(false);
+  const [highlightThreshold, setHighlightThreshold] = useState(70);
   const [viewMode, setViewMode] = useState<ViewMode>('matcap');
 
   // The source URL used for depth estimation (Firebase URL)
@@ -330,6 +332,13 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
     const ambient = ambientIntensity / 100;
     const depthAlpha = depthInfluence / 100; // 0 = no depth effect, 1 = full
 
+    // Highlight map: pre-compute thresholds
+    const highlightMapOn = showHighlightMap;
+    // threshold slider 0-100 maps to light intensity thresholds
+    // Higher slider = more selective (only the brightest spots)
+    const highThresh = (highlightThreshold / 100) * 1.5;  // strong highlight zone
+    const midThresh = highThresh * 0.6;                     // moderate highlight zone
+
     // Pre-compute enabled lights' properties
     const enabledLights = lights.filter(l => l.enabled);
     const dim = Math.max(w, h);
@@ -503,15 +512,38 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
         const litB = Math.min(255, Math.round(origData[pi + 2] * lb));
 
         // Blend lit result with original at opacity
-        out[pi]     = Math.round(origData[pi]     * (1 - alpha) + litR * alpha);
-        out[pi + 1] = Math.round(origData[pi + 1] * (1 - alpha) + litG * alpha);
-        out[pi + 2] = Math.round(origData[pi + 2] * (1 - alpha) + litB * alpha);
+        let finalR = Math.round(origData[pi]     * (1 - alpha) + litR * alpha);
+        let finalG = Math.round(origData[pi + 1] * (1 - alpha) + litG * alpha);
+        let finalB = Math.round(origData[pi + 2] * (1 - alpha) + litB * alpha);
+
+        // Highlight map overlay: mark areas where light hits hardest
+        if (highlightMapOn) {
+          // Total light brightness (excluding ambient) relative to max possible
+          const totalLight = (lr + lg + lb - ambient * 3) / 3;
+          // Normalize: threshold is 0-1 range from the slider
+          if (totalLight > highThresh) {
+            // Strong highlight — bright cyan overlay
+            finalR = Math.round(finalR * 0.3 + 0 * 0.7);
+            finalG = Math.round(finalG * 0.3 + 255 * 0.7);
+            finalB = Math.round(finalB * 0.3 + 255 * 0.7);
+          } else if (totalLight > midThresh) {
+            // Moderate highlight — subtle warm yellow tint
+            const t = 0.4;
+            finalR = Math.round(finalR * (1 - t) + 255 * t);
+            finalG = Math.round(finalG * (1 - t) + 230 * t);
+            finalB = Math.round(finalB * (1 - t) + 80 * t);
+          }
+        }
+
+        out[pi]     = finalR;
+        out[pi + 1] = finalG;
+        out[pi + 2] = finalB;
         out[pi + 3] = 255;
       }
     }
 
     ctx.putImageData(output, 0, 0);
-  }, [normalData, depthData, originalImage, lights, opacity, ambientIntensity, depthInfluence, viewMode, analysisWidth, analysisHeight, depthMapUrl]);
+  }, [normalData, depthData, originalImage, lights, opacity, ambientIntensity, depthInfluence, showHighlightMap, highlightThreshold, viewMode, analysisWidth, analysisHeight, depthMapUrl]);
 
   // --- Light dragging (mouse) ---
   const getHandleAtPos = useCallback((clientX: number, clientY: number): { id: string; handle: 'position' | 'target' } | null => {
@@ -1228,6 +1260,32 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                     Raised surfaces catch more light
                   </p>
                 </div>
+
+                {showHighlightMap && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Highlight Threshold: {highlightThreshold}%
+                    </p>
+                    <input
+                      type="range"
+                      min={10}
+                      max={95}
+                      value={highlightThreshold}
+                      onChange={(e) => setHighlightThreshold(Number(e.target.value))}
+                      className="w-full accent-primary"
+                    />
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#00ffff' }} />
+                        <span className="text-[10px] text-muted-foreground">Strong highlight</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#ffe650' }} />
+                        <span className="text-[10px] text-muted-foreground">Mid-tone</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1253,6 +1311,16 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
               title={showHandles ? 'Hide light handles' : 'Show light handles'}
             >
               {showHandles ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            </Button>
+
+            <Button
+              size="sm"
+              variant={showHighlightMap ? 'default' : 'outline'}
+              onClick={() => setShowHighlightMap(!showHighlightMap)}
+              title={showHighlightMap ? 'Hide highlight map' : 'Show highlight map'}
+            >
+              <Sparkles className="w-4 h-4 mr-1" />
+              Highlights
             </Button>
 
             <div className="flex-1" />
