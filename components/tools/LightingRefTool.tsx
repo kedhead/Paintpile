@@ -351,7 +351,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
       const segLenSq = segDx * segDx + segDy * segDy;
 
       // Spotlights get strong normal modulation for directional depth;
-      // radial/line stay subtle so they act more like ambient wash
+      // radial stays subtle; line handles normals internally (rim light)
       const normalStrength = l.shape === 'spot' ? 0.7 : 0.3;
 
       return {
@@ -391,6 +391,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
 
           // Per-shape falloff
           let falloff: number;
+          let rimNormalOverride = -1; // -1 means no override (use standard normal calc)
 
           if (light.shape === 'spot') {
             // Vector from light to pixel (normalized)
@@ -417,12 +418,13 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
               }
             }
           } else if (light.shape === 'line') {
-            // Project pixel onto line segment, get perpendicular distance
+            // Edge/rim light: the line defines a light source edge.
+            // Surfaces facing toward the line glow (rim highlight),
+            // surfaces facing away stay dark. Uses perpendicular direction
+            // from line to pixel as the light direction for normal modulation.
             if (light.segLenSq < 0.001) {
-              // Degenerate line — treat as radial
               falloff = Math.exp(-dist2d * light.invTwoSigmaSq);
             } else {
-              // t = dot(pixel - p1, p2 - p1) / |p2 - p1|²
               const t = Math.max(0, Math.min(1,
                 ((x - light.lx) * light.segDx + (y - light.ly) * light.segDy) / light.segLenSq
               ));
@@ -431,7 +433,18 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
               const perpDx = x - closestX;
               const perpDy = y - closestY;
               const perpDist2 = perpDx * perpDx + perpDy * perpDy;
+              // Gentle distance falloff — rim effect should reach across the image
               falloff = Math.exp(-perpDist2 * light.invTwoSigmaSq);
+
+              // Override normal modulation: use perpendicular direction as light direction
+              // so surfaces facing the line edge get the rim highlight
+              const perpLen = Math.sqrt(perpDist2 + light.lz * light.lz);
+              if (perpLen > 0.001) {
+                // Direction from pixel toward the line (reversed perp)
+                const rimDot = nx * (-perpDx / perpLen) + ny * (-perpDy / perpLen) + nz * (light.lz / perpLen);
+                // Strong normal influence — rim light is all about surface angle
+                rimNormalOverride = 0.15 + 0.85 * Math.max(0, rimDot);
+              }
             }
           } else {
             // Radial (default)
@@ -457,11 +470,16 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
           const totalZ = heightZ + depthZ;
 
           // Normal-based modulation using full 3D light direction
-          const len = Math.sqrt(dist2d + totalZ * totalZ);
           let normalMod = 1.0;
-          if (len > 0) {
-            const dot = nx * (dx / len) + ny * (dy / len) + nz * (totalZ / len);
-            normalMod = 1.0 - light.normalStrength + light.normalStrength * Math.max(0, dot);
+          if (rimNormalOverride >= 0) {
+            // Rim/edge light: use pre-computed perpendicular normal modulation
+            normalMod = rimNormalOverride;
+          } else {
+            const len = Math.sqrt(dist2d + totalZ * totalZ);
+            if (len > 0) {
+              const dot = nx * (dx / len) + ny * (dy / len) + nz * (totalZ / len);
+              normalMod = 1.0 - light.normalStrength + light.normalStrength * Math.max(0, dot);
+            }
           }
 
           // Depth also attenuates falloff: surfaces far from light in depth get less light
@@ -954,7 +972,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                             className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-muted/50"
                           >
                             <Minus className="w-3.5 h-3.5" />
-                            Line
+                            Rim Light
                           </button>
                         </div>
                       )}
@@ -977,7 +995,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                         style={{ backgroundColor: light.color }}
                       />
                       <span className="flex-1 text-left">
-                        {light.shape === 'spot' ? 'Spot' : light.shape === 'line' ? 'Line' : 'Radial'} {idx + 1}
+                        {light.shape === 'spot' ? 'Spot' : light.shape === 'line' ? 'Rim' : 'Radial'} {idx + 1}
                       </span>
                       {!light.enabled && (
                         <span className="text-[10px] text-muted-foreground">OFF</span>
@@ -992,7 +1010,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                 <div className="space-y-3 border-t border-border pt-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      {selectedLight.shape === 'spot' ? 'Spot' : selectedLight.shape === 'line' ? 'Line' : 'Radial'} {lights.findIndex(l => l.id === selectedLight.id) + 1}
+                      {selectedLight.shape === 'spot' ? 'Spot' : selectedLight.shape === 'line' ? 'Rim' : 'Radial'} {lights.findIndex(l => l.id === selectedLight.id) + 1}
                     </p>
                     <div className="flex items-center gap-1">
                       <button
@@ -1025,7 +1043,7 @@ export function LightingRefTool({ userId, initialImageUrl }: LightingRefToolProp
                       {([
                         { shape: 'radial' as LightShape, icon: Circle, label: 'Radial' },
                         { shape: 'spot' as LightShape, icon: Flashlight, label: 'Spot' },
-                        { shape: 'line' as LightShape, icon: Minus, label: 'Line' },
+                        { shape: 'line' as LightShape, icon: Minus, label: 'Rim' },
                       ]).map(({ shape, icon: Icon, label }) => (
                         <button
                           key={shape}
